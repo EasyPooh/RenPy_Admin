@@ -1,6 +1,6 @@
 import FormLabel from './FormLabel';
 
-const TextareaField = ({ label, placeholder, value, onChange }) => (
+const TextareaField = ({ label, placeholder, value, onChange, ...props }) => (
   <div className="w-full">
     <FormLabel label={label} />
     <textarea
@@ -9,6 +9,7 @@ const TextareaField = ({ label, placeholder, value, onChange }) => (
       placeholder={placeholder}
       value={value}
       onChange={onChange}
+      {...props}
     />
   </div>
 );

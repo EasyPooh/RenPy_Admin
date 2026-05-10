@@ -1,16 +1,15 @@
 import FormLabel from './FormLabel';
 import { ChevronDown } from 'lucide-react';
 
-const SelectField = ({ label, value, onChange }) => {
+const SelectField = ({ label, value, onChange, ...props }) => {
   return (
     <div className="w-full">
       <FormLabel label={label} />
       <div className="relative">
         <select
-          value={value}
-          // จัดการ Change event ให้ส่งค่ากลับไปที่ไฟล์แม่
-          onChange={(e) => onChange(e.target.value)} 
+          {...props}
           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition-all appearance-none bg-white text-slate-700 font-medium cursor-pointer"
+
         >
           <option value="developing">กำลังพัฒนา</option>
           <option value="on-hold">พักการพัฒนา</option>
