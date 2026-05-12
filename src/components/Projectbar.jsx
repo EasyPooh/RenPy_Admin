@@ -5,8 +5,10 @@ const Projectbar = () => {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <div className="shrink-0 flex items-center flex-col">
-            <span className="text-2xl font-bold text-blue-600">โปรเจคของฉัน</span>
-            <p class="text-sm text-gray-500">เลือกโปรเจคของคุณ</p>    
+            <span className="text-2xl font-bold text-blue-600">
+              โปรเจคของฉัน
+            </span>
+            <p class="text-sm text-gray-500">เลือกโปรเจคของคุณ</p>
           </div>
 
           {/* Button */}

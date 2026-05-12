@@ -1,6 +1,13 @@
-import FormLabel from './FormLabel';
+import FormLabel from "./FormLabel";
 
-const InputField = ({ label, required, placeholder, value, onChange, ...props }) => (
+const InputField = ({
+  label,
+  required,
+  placeholder,
+  value,
+  onChange,
+  ...props
+}) => (
   <div className="w-full">
     <FormLabel label={label} required={required} />
     <input

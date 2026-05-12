@@ -1,4 +1,4 @@
-import FormLabel from './FormLabel';
+import FormLabel from "./FormLabel";
 
 const TextareaField = ({ label, placeholder, value, onChange, ...props }) => (
   <div className="w-full">

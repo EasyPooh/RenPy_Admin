@@ -1,5 +1,5 @@
-import FormLabel from './FormLabel';
-import { ChevronDown } from 'lucide-react';
+import FormLabel from "./FormLabel";
+import { ChevronDown } from "lucide-react";
 
 const SelectField = ({ label, value, onChange, ...props }) => {
   return (
@@ -9,7 +9,6 @@ const SelectField = ({ label, value, onChange, ...props }) => {
         <select
           {...props}
           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition-all appearance-none bg-white text-slate-700 font-medium cursor-pointer"
-
         >
           <option value="developing">กำลังพัฒนา</option>
           <option value="on-hold">พักการพัฒนา</option>
