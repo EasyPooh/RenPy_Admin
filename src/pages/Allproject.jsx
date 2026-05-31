@@ -67,7 +67,7 @@ function Allproject() {
       <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-10">
           {/* --- Header Section --- */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-4xl shadow-sm border border-gray-100">
             <div className="flex items-center gap-5">
               <div className="p-4 bg-violet-600 text-white rounded-2xl shadow-lg shadow-violet-200">
                 <LayoutGrid className="w-8 h-8" />
@@ -106,37 +106,41 @@ function Allproject() {
               {projects.map((item) => (
                 <div
                   key={item.id}
-                  className="group bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden flex flex-col"
+                  className="group bg-white rounded-4xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden flex flex-col"
                 >
-                  {/* Thumbnail Area */}
-                  <div className="relative h-52 overflow-hidden bg-gray-100">
-                    <img
-                      src={
-                        item.image_url ||
-                        "https://placehold.co/600x400?text=No+Image"
-                      }
-                      alt={item.titles}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      // เพิ่ม Error Handler เผื่อลิงก์พัง
-                      onError={(e) => {
-                        e.target.src =
-                          "https://placehold.co/600x400?text=No+Image";
-                      }}
-                    />
-                    {/* Status Badge */}
-                    <div className="absolute top-4 left-4">
-                      {item.status === "developing" ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/90 backdrop-blur-md text-amber-700 text-xs font-bold rounded-full border border-amber-200">
-                          <Clock className="w-3 h-3" /> กำลังพัฒนา
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/90 backdrop-blur-md text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3" /> เสร็จสมบูรณ์
-                        </span>
-                      )}
+                  <Link
+                    to={`/SceneManagementPage/${item.id}`}
+                    className="block cursor-pointer"
+                  >
+                    {/* Thumbnail Area */}
+                    <div className="relative h-52 overflow-hidden bg-gray-100">
+                      <img
+                        src={
+                          item.image_url ||
+                          "https://placehold.co/600x400?text=No+Image"
+                        }
+                        alt={item.titles}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        // เพิ่ม Error Handler เผื่อลิงก์พัง
+                        onError={(e) => {
+                          e.target.src =
+                            "https://placehold.co/600x400?text=No+Image";
+                        }}
+                      />
+                      {/* Status Badge */}
+                      <div className="absolute top-4 left-4">
+                        {item.status === "developing" ? (
+                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/90 backdrop-blur-md text-amber-700 text-xs font-bold rounded-full border border-amber-200">
+                            <Clock className="w-3 h-3" /> กำลังพัฒนา
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/90 backdrop-blur-md text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" /> เสร็จสมบูรณ์
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
+                  </Link>
                   {/* Details Area */}
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex-1 space-y-3">

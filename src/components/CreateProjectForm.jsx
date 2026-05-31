@@ -2,10 +2,10 @@ import InputField from "./InputField";
 import TextareaField from "./TextareaField";
 import SelectField from "./SelectField";
 import Button from "./Button";
-import { Save, Upload } from "lucide-react"; // เพิ่มไอคอน Upload
+import { Save } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useRef } from "react"; // 👈 เพิ่มการ import useRef เข้ามาจัดการการล้างค่าอินพุต
 
 const CreateProjectForm = () => {
   const navigate = useNavigate();
@@ -19,6 +19,17 @@ const CreateProjectForm = () => {
     image_url: "",
   });
 
+  // 👈 เพิ่ม ref สำหรับอ้างอิงและล้างค่ากล่องเลือกไฟล์ของเบราว์เซอร์
+  const fileInputRef = useRef(null);
+
+  // 👈 เพิ่มฟังก์ชันจัดการลบรูปภาพพรีวิวออก
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // ล้างชื่อไฟล์ค้างในอินพุต
+    }
+  };
+
   // ฟังก์ชันอัปโหลดรูปไปยัง Supabase Storage
   const uploadImage = async (file) => {
     const fileExt = file.name.split(".").pop();
@@ -26,7 +37,7 @@ const CreateProjectForm = () => {
     const filePath = `${fileName}`;
 
     const { data, error } = await supabase.storage
-      .from("Project-Thumbnail") // <--- ตรวจสอบชื่อ Bucket ใน Supabase ให้ตรงกัน
+      .from("Project-Thumbnail")
       .upload(filePath, file);
 
     if (error) throw error;
@@ -45,19 +56,17 @@ const CreateProjectForm = () => {
     try {
       let finalImageUrl = formData.image_url;
 
-      // 1. ถ้ามีการเลือกไฟล์ ให้ทำการอัปโหลดก่อน
       if (selectedFile) {
         finalImageUrl = await uploadImage(selectedFile);
       }
 
-      // 2. บันทึกข้อมูลลงตาราง Projects
       const { error } = await supabase.from("Projects").insert([
         {
           titles: formData.titles,
           description: formData.description,
           game_type: formData.game_type,
           status: formData.status,
-          image_url: finalImageUrl, // ใช้ URL ที่อัปโหลดเสร็จ หรือ URL ที่กรอกมา
+          image_url: finalImageUrl,
         },
       ]);
 
@@ -120,27 +129,79 @@ const CreateProjectForm = () => {
             </SelectField>
           </div>
 
-          {/* ส่วนอัปโหลดรูปภาพ */}
+          {/* === ส่วนอัปโหลดรูปภาพดีไซน์ใหม่ ปรับขนาดฟอนต์หัวข้อให้เท่ากันเป๊ะ === */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+            {/* 👈 ปรับคลาสเป็น text-sm font-medium text-gray-700 block เพื่อให้เท่ากับ InputField ตัวอื่น */}
+            <label className="text-sm font-medium text-gray-700 block">
               ภาพปกโปรเจกต์
             </label>
-            <div className="flex flex-col gap-4">
-              {/* เลือกอัปโหลดไฟล์ */}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setSelectedFile(e.target.files[0])}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 cursor-pointer"
-              />
-              {/* แสดงตัวอย่างรูปที่เลือก */}
-              {selectedFile && (
-                <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200">
+
+            {/* อินพุตรับไฟล์แบบซ่อนเพื่อความสะอาดตา */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) setSelectedFile(file);
+              }}
+              className="hidden"
+            />
+
+            {/* Container หลักควบคุมหน้าตาพรีวิวและกล่องอัปโหลด */}
+            <div className="relative w-full h-52 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group transition-all duration-300">
+              {selectedFile ? (
+                /* เคสที่ 1: เลือกรูปภาพแล้ว -> แสดงรูปภาพพรีวิวพร้อม Overlay ปุ่มควบคุมตอน Hover */
+                <>
                   <img
                     src={URL.createObjectURL(selectedFile)}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-4 py-2 bg-white text-gray-800 text-xs font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
+                    >
+                      เปลี่ยนรูปใหม่
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+                    >
+                      เอารูปออก
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* เคสที่ 2: ยังไม่มีรูปภาพ -> แสดงกล่องขอบปรุมินิมอลสไตล์เดียวกับหน้าแก้ไข */
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-full flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gray-100/70 transition-colors border-2 border-dashed border-gray-200 rounded-2xl"
+                >
+                  <svg
+                    className="w-10 h-10 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-500">
+                      คลิกเพื่ออัปโหลดภาพปก
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      แนะนำขนาด 16:9 (หรือลากไฟล์มาวาง)
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -151,9 +212,9 @@ const CreateProjectForm = () => {
               variant="ghost"
               type="button"
               onClick={(e) => {
-                e.preventDefault(); // ป้องกันพฤติกรรมฟอร์ม
-                e.stopPropagation(); // หยุดการส่งต่อ Event ไปยัง form tag
-                navigate(-1); // ย้อนกลับ
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(-1);
               }}
             >
               ยกเลิก

@@ -1,24 +1,12 @@
 import React from "react";
 import { BookOpen, FileText } from "lucide-react"; // นำเข้าไอคอนจาก Lucide
-//import { db } from "../lib/firebase"; // ดึงตัวแปร db มาจากไฟล์ที่เราเซ็ตไว้
-//import { collection, addDoc } from "firebase/firestore";
+import { useNavigate } from "react-router";
 
 const LandingNavbar = () => {
-  /*const testFirebase = async () => {
-    try {
-      // ลองสร้างข้อมูลจำลองใน Collection ชื่อ "test"
-      const docRef = await addDoc(collection(db, "test"), {
-        message: "Hello from React!",
-        timestamp: new Date(),
-        status: "Success"
-      });
-      console.log("Document written with ID: ", docRef.id);
-      alert("เชื่อมต่อสำเร็จ! ข้อมูลถูกบันทึกลง Firebase แล้ว");
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      alert("เกิดข้อผิดพลาด: " + e.message);
-    }
-  }*/
+  const navigate = useNavigate();
+  const test = () => {
+    navigate("/SceneManagementPage");
+  };
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,7 +31,10 @@ const LandingNavbar = () => {
               <span>คู่มือ</span>
             </a>
 
-            <button className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-all shadow-md active:scale-95">
+            <button
+              onClick={test}
+              className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-all shadow-md active:scale-95"
+            >
               เข้าสู่ระบบ
             </button>
           </div>

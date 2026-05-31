@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import Allproject from "./pages/Allproject";
 import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
+import SceneManagementPage from "./pages/SceneManagementPage";
 
 function App() {
   return (
@@ -15,6 +16,10 @@ function App() {
         <Route path="/Allproject" element={<Allproject />} />
         <Route path="/CreateProject" element={<CreateProject />} />
         <Route path="/EditProject/:id" element={<EditProject />} />
+        <Route
+          path="/SceneManagementPage/:id"
+          element={<SceneManagementPage />}
+        />
       </Routes>
     </BrowserRouter>
   );
