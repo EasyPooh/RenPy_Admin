@@ -3,7 +3,7 @@ import TextareaField from "./TextareaField";
 import SelectField from "./SelectField";
 import Button from "./Button";
 import { Save } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase, MOCK_USER_ID } from "../lib/supabaseClient";
 import { useNavigate } from "react-router";
 import { useState, useRef } from "react"; // 👈 เพิ่มการ import useRef เข้ามาจัดการการล้างค่าอินพุต
 
@@ -67,6 +67,7 @@ const CreateProjectForm = () => {
           game_type: formData.game_type,
           status: formData.status,
           image_url: finalImageUrl,
+          user_id: MOCK_USER_ID, // ใช้ Mock User ID ที่เรากำหนดไว้ใน supabaseClient.js
         },
       ]);
 

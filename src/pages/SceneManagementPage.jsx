@@ -7,6 +7,11 @@ import SceneSidebar from "../components/SceneList/SceneSidebar";
 import WorkspaceContainer from "../components/WorkspaceContainer/WorkspaceContainer";
 import Navbar from "../components/Navbar";
 import TopNavbar from "../components/SceneList/TopNavbar";
+import WorkspaceToolbar from "../components/WorkspaceContainer/WorkspaceToolbar";
+import DialogueSection from "../components/WorkspaceContainer/DialogueSection";
+import TextareaField from "../components/TextareaField";
+import StartSection from "../components/WorkspaceContainer/StartSection";
+import { useNavigate } from "react-router-dom";
 
 const SceneManagementPage = () => {
   const [scenes, setScenes] = useState([
@@ -142,21 +147,48 @@ const SceneManagementPage = () => {
       scene.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       scene.id.toString().includes(searchQuery),
   );
+  // 1. สร้าง State สำหรับเก็บรายการ Block ทั้งหมด (เริ่มต้นเป็นอาเรย์ว่าง)
+  const [blocks, setBlocks] = useState([]);
+  // 2. ฟังก์ชัน Logic สำหรับเพิ่ม Block ใหม่
+  const handleAddBlock = (type) => {
+    console.log("ถั่วต้ม! ปุ่มกดทำงานส่งประเภทมาคือ:", type);
+    // สร้าง Object แทน Block ก้อนใหม่
+    // แนะนำให้ใส่ id ที่ไม่ซ้ำกัน (เช่น ใช้ Date.now() หรือสุ่มขึ้นมา)
+    let newBlock = {
+      id: Date.now(),
+      type: type || "default", // สามารถระบุประเภทได้ เช่น 'text', 'image'
+      content: `บล็อกใหม่ที่ #${blocks.length + 1}`,
+      createdAt: new Date().toLocaleTimeString(),
+    };
+
+    // เพิ่มบล็อกใหม่เข้าไปใน State ของบล็อกทั้งหมด
+    setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+  };
 
   return (
-    <MainLayout>
-      <Navbar />
-      <TopNavbar title="Scene Management" />
-      {/* 🌟 ส่ง State ชั่วคราว และฟังก์ชันจัดการเซฟไปที่ Navbar */}
-      <SceneNavbar
-        currentScene={currentActiveScene}
-        tempStatus={tempStatus}
-        onStatusChange={setTempStatus}
-        onSave={handleSaveSceneChanges}
-      />
+    /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
+    และห้ามเลื่อนหน้าจอรวม overflow-hidden เพื่อให้สัดส่วนตกลงมาใต้ Navbar พอดี
+  */
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
+      {/* ส่วนของแผงเมนูด้านบนทั้งหมด (รวมกลุ่มอยู่ด้วยกันไม่ให้ไปดันหรือเบียดใคร) */}
+      <div className="flex-none bg-white">
+        <Navbar />
+        <TopNavbar title="Scene Management" />
+        {/* 🌟 ส่ง State ชั่วคราว และฟังก์ชันจัดการเซฟไปที่ Navbar */}
+        <SceneNavbar
+          currentScene={currentActiveScene}
+          tempStatus={tempStatus}
+          onStatusChange={setTempStatus}
+          onSave={handleSaveSceneChanges}
+        />
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-80 bg-white border-r border-gray-100 flex flex-col h-full shrink-0 p-4">
+      {/* [จุดแก้ที่ 2] พื้นที่ทำงานด้านล่างทั้งหมดใต้ Navbar ลงมา 
+      กินพื้นที่ความสูงที่เหลือ (flex-1) และเรียงซ้ายไปขวา (flex flex-row) 
+    */}
+      <div className="flex flex-1 overflow-hidden w-full">
+        {/* ฝั่งซ้าย: เมนูรายชื่อฉาก (SCENE LIST) ล็อกความสูงพอดีจอฝั่งซ้าย */}
+        <div className="w-80 bg-white border-r border-gray-100 flex flex-col h-full shrink-0 p-4 overflow-y-auto">
           <div className="pb-1 flex items-center space-x-2 text-gray-500 font-semibold text-sm select-none mb-3">
             <span>📁</span>
             <span className="tracking-wider">SCENE LIST</span>
@@ -178,21 +210,16 @@ const SceneManagementPage = () => {
           />
         </div>
 
-        <WorkspaceContainer currentScene={currentActiveScene}>
-          <div className="border border-dashed border-purple-200 bg-purple-50/10 rounded-xl h-full flex flex-col items-center justify-center text-gray-400 text-xs py-20">
-            <p className="font-semibold text-purple-950 mb-1">
-              {currentActiveScene
-                ? `กำลังทำงาน: ฉาก "${currentActiveScene.name}"`
-                : "กรุณาเลือกฉาก"}
-            </p>
-            <p className="text-gray-400">
-              เมื่อสลับค่าสถานะด้านบน แล้วกด Save
-              แถบรายชื่อฉากฝั่งซ้ายจะปรับสีเปลี่ยนสลักตามทันทีครับ
-            </p>
-          </div>
-        </WorkspaceContainer>
+        {/* [จุดแก้ที่ 3] ฝั่งขวา: ส่งสเตทและฟังก์ชันจัดการบล็อกเข้าไปในคอมโพเนนต์ Workspace ตัวหลักตัวเดียว 
+        ไม่ต้องมีแท็กซ้ำซ้อน และไม่ต้องมีกล่อง absolute bottom มาเบียดบังด้านล่าง
+      */}
+        <WorkspaceContainer
+          currentScene={currentActiveScene}
+          blocks={blocks}
+          onAddBlock={handleAddBlock}
+        />
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

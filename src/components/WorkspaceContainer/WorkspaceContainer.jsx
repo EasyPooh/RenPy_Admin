@@ -1,100 +1,93 @@
-// src/components/SceneList/WorkspaceContainer.jsx
-import React from "react";
+// src/components/WorkspaceContainer/WorkspaceContainer.jsx
+import React, { useState } from "react";
+import StartSection from "./StartSection";
+import WorkspaceToolbar from "./WorkspaceToolbar"; // 👈 1. เช็คว่ามีอิมพอร์ตอันนี้อยู่ด้านบนไหม
+import DialogueSection from "./DialogueSection";
 
-const WorkspaceContainer = ({ currentScene, children }) => {
+// 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (SceneManagementPage)
+const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
+  const [startBg, setStartBg] = useState("");
+  const [startMusic, setStartMusic] = useState("");
+
+  const handleDeleteBlock = (id) => {
+    setBlocks((prevBlocks) => prevBlocks.filter((block) => block.id !== id));
+  };
+
   return (
-    <main className="flex-1 bg-white overflow-y-auto p-6 flex flex-col h-full">
-      {/* 1. ส่วนหัวของ Workspace */}
-      <div className="flex items-center space-x-2 font-semibold text-gray-700 text-sm mb-4 select-none">
-        <span>📝</span>
-        <span>
-          WORKSPACE AREA: ฉาก "{currentScene ? currentScene.name : "..."}"
-        </span>
+    <div className="flex-1 flex flex-col h-full bg-white font-mono text-sm border-l border-gray-200 overflow-hidden">
+      {/* ส่วนกระดานเนื้อหาไทม์ไลน์ (ที่เลื่อน Scrollbar ได้) */}
+      <div className="flex-1 px-6 py-4 overflow-y-auto min-h-0 pb-6 bg-gray-50/30 w-full">
+        {/* ส่วน Header */}
+        <div className="mb-4 text-gray-500 font-semibold flex items-center justify-between select-none w-full">
+          <span>[ 📝 WORKSPACE AREA ]</span>
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-sans">
+            จำนวนบล็อก: {blocks.length}
+          </span>
+        </div>
+
+        {/* 1. ส่วน StartSection */}
+        <div className="w-full">
+          <StartSection
+            startBg={startBg}
+            setStartBg={setStartBg}
+            startMusic={startMusic}
+            setStartMusic={setStartMusic}
+          />
+        </div>
+
+        <div className="border-t border-dashed border-gray-200 my-5"></div>
+
+        {/* 2. พื้นที่กระดานแสดงบล็อกคำสั่ง */}
+        <div className="w-full space-y-4">
+          {blocks.length === 0 ? (
+            /* กล่องแสดงสถานะเมื่อยังไม่มีบล็อก */
+            <div className="border border-dashed border-purple-200 bg-purple-50/10 rounded-xl h-full flex flex-col items-center justify-center text-gray-400 text-xs py-20 w-full">
+              <p className="font-semibold text-purple-950 mb-1">
+                {currentScene
+                  ? `กำลังทำงาน: ฉาก "${currentScene.name}"`
+                  : "กรุณาเลือกฉาก"}
+              </p>
+              <p className="text-gray-400">
+                พื้นที่ตรงนี้ว่างอยู่
+                กดปุ่มแถบเครื่องมือด้านล่างเพื่อเพิ่มบทพูดเพื่อออกแบบเส้นเรื่องได้ทันทีครับ
+              </p>
+            </div>
+          ) : (
+            /* วนลูปโชว์บล็อกบทพูด */
+            <div className="w-full space-y-3">
+              {blocks.map((block, index) => {
+                if (block.type === "dialogue") {
+                  return (
+                    <DialogueSection
+                      key={block.id}
+                      block={block}
+                      index={index}
+                      onDelete={() => handleDeleteBlock(block.id)}
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={block.id}
+                    className="p-3 border rounded-lg w-full bg-white"
+                  >
+                    บล็อกประเภท: {block.type}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="w-full border-t border-gray-100 my-2"></div>
-
-      {/* 2. โซนตั้งค่าเริ่มต้นฉาก (Start Configurations) - สไตล์มินิมอล ขาว-ม่วง */}
-      <div className="space-y-3 text-xs text-gray-700 bg-gray-50/50 p-4 rounded-xl border border-gray-100 mb-6">
-        {/* แถว start scene */}
-        <div className="flex items-center space-x-2">
-          <span className="w-24 text-gray-500 flex items-center gap-1">
-            🎬 start scene
-          </span>
-          <select className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-700 focus:outline-none focus:border-purple-400">
-            <option>เลือกฉากเริ่มต้น...</option>
-          </select>
-          <select className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-500 focus:outline-none focus:border-purple-400">
-            <option>✨ เอฟเฟกต์...</option>
-          </select>
-        </div>
-
-        {/* แถว start music */}
-        <div className="flex items-center space-x-2">
-          <span className="w-24 text-gray-500 flex items-center gap-1">
-            🎵 start music
-          </span>
-          <select className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-700 focus:outline-none focus:border-purple-400">
-            <option>เลือกเพลงพื้นหลังเริ่มต้น...</option>
-          </select>
-          <select className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-500 focus:outline-none focus:border-purple-400">
-            <option>✨ เอฟเฟกต์...</option>
-          </select>
-        </div>
-
-        {/* แถว ตัวละครในฉาก */}
-        <div className="flex items-center space-x-2 pt-1">
-          <span className="w-24 text-gray-500 flex items-center gap-1">
-            👥 ตัวละครในฉาก
-          </span>
-          <div className="flex items-center flex-wrap gap-1.5 flex-1">
-            <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 flex items-center gap-1">
-              nevi{" "}
-              <button className="hover:text-purple-900 font-bold">
-                &times;
-              </button>
-            </span>
-            <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 flex items-center gap-1">
-              main{" "}
-              <button className="hover:text-purple-900 font-bold">
-                &times;
-              </button>
-            </span>
-            <input
-              type="text"
-              placeholder="+ พิมพ์ชื่อเพื่อแอดตัวละคร..."
-              className="bg-transparent border-b border-dashed border-gray-300 px-1 py-0.5 focus:outline-none focus:border-purple-400 text-gray-600 w-44"
-            />
-          </div>
-        </div>
+      {/* ----------------------------------------------------
+          [ 🌟 เติมจุดนี้ ] แถบเครื่องมือปุ่มกดที่หายไป เอามาล็อกไว้ตรงนี้แทนครับ
+          ---------------------------------------------------- */}
+      <div className="p-5 border-t border-gray-100 bg-white w-full flex-none">
+        {/* ส่งฟังก์ชัน onAddBlock ที่ได้มาจากไฟล์แม่ ลงไปให้ปุ่มกดทำงาน */}
+        <WorkspaceToolbar onAddBlock={onAddBlock} />
       </div>
-
-      <div className="w-full border-t border-dashed border-gray-200 mb-6"></div>
-
-      {/* 3. พื้นที่ไทม์ไลน์สำหรับเรนเดอร์บล็อกย่อย (Timeline Content) */}
-      <div className="flex-1 space-y-4">{children}</div>
-
-      {/* 4. โซนแผงปุ่มสำหรับเพิ่มบล็อกเนื้อเรื่องใหม่ด้านท้ายหน้าต่าง */}
-      <div className="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-500 space-y-3 bg-white sticky bottom-0">
-        <div className="font-medium text-purple-800 flex items-center gap-1">
-          ➕ เพิ่มบล็อกใหม่ต่อท้าย (หรือพิมพ์ / เพื่อแทรกคำสั่ง)
-        </div>
-        <div className="flex flex-wrap gap-2 text-gray-700 font-medium">
-          <button className="bg-gray-50 hover:bg-purple-50 hover:text-purple-700 border border-gray-200 rounded px-3 py-1.5 transition-colors">
-            💬 บทพูด
-          </button>
-          <button className="bg-gray-50 hover:bg-purple-50 hover:text-purple-700 border border-gray-200 rounded px-3 py-1.5 transition-colors">
-            🖼️ ภาพ (/image)
-          </button>
-          <button className="bg-gray-50 hover:bg-purple-50 hover:text-purple-700 border border-gray-200 rounded px-3 py-1.5 transition-colors">
-            🔊 เสียง (/audio)
-          </button>
-          <button className="bg-gray-50 hover:bg-purple-50 hover:text-purple-700 border border-gray-200 rounded px-3 py-1.5 transition-colors">
-            🔀 ช้อยส์
-          </button>
-        </div>
-      </div>
-    </main>
+    </div>
   );
 };
 

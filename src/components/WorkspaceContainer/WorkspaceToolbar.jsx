@@ -1,0 +1,36 @@
+import React from "react";
+import DialogueSection from "./DialogueSection";
+
+const WorkspaceToolbar = ({ onAddBlock }) => {
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100 select-none">
+      {/* ส่วนหัวข้อบอกใบ้การกระทำ */}
+      <div className="flex items-center space-x-1.5 text-purple-600 font-semibold text-xs mb-3">
+        <span>➕ เพิ่มบล็อกใหม่ต่อท้าย (หรือพิมพ์ / เพื่อแทรกคำสั่ง)</span>
+      </div>
+
+      {/* แผงปุ่มกดสร้าง Action */}
+      <div className="flex items-center gap-2 flex-wrap text-xs text-gray-600">
+        {/* ผูกปุ่มบทพูดให้ส่งประเภท 'dialogue' */}
+        <button
+          onClick={() => onAddBlock("dialogue")}
+          className="flex items-center space-x-1 bg-gray-50 hover:bg-purple-50 hover:text-purple-600 border border-gray-200 hover:border-purple-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+        >
+          <span>💬 บทพูด</span>
+        </button>
+
+        <button className="flex items-center space-x-1 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg opacity-50 cursor-not-allowed">
+          <span>🖼️ ภาพ (/image)</span>
+        </button>
+        <button className="flex items-center space-x-1 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg opacity-50 cursor-not-allowed">
+          <span>🔊 เสียง (/audio)</span>
+        </button>
+        <button className="flex items-center space-x-1 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg opacity-50 cursor-not-allowed">
+          <span>🔀 ช้อยส์</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default WorkspaceToolbar;
