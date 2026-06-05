@@ -2,26 +2,23 @@ import React from "react";
 import Navbar from "./components/Navbar";
 import Emptystate from "./components/Emptystate";
 import Landingpage from "./pages/Landingpage";
-import { BrowserRouter, Routes, Route } from "react-router";
+import { Routes, Route } from "react-router";
 import Allproject from "./pages/Allproject";
 import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
-import SceneManagementPage from "./pages/SceneManagementPage";
+import SceneManagement from "./pages/SceneManagementPage";
+import AssetPage from "./pages/AssetPage";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landingpage />} />
-        <Route path="/Allproject" element={<Allproject />} />
-        <Route path="/CreateProject" element={<CreateProject />} />
-        <Route path="/EditProject/:id" element={<EditProject />} />
-        <Route
-          path="/SceneManagementPage/:id"
-          element={<SceneManagementPage />}
-        />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Landingpage />} />
+      <Route path="/Allproject" element={<Allproject />} />
+      <Route path="/CreateProject" element={<CreateProject />} />
+      <Route path="/EditProject/:id" element={<EditProject />} />
+      <Route path="/scene_editor/:id" element={<SceneManagement />} />
+      <Route path="/scene_editor/:id/assets" element={<AssetPage />} />
+    </Routes>
   );
 }
 

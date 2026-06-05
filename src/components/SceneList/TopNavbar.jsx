@@ -1,7 +1,16 @@
 // src/components/SceneList/TopNavbar.jsx
 import React from "react";
+import { useNavigate } from "react-router";
 
-const TopNavbar = () => {
+const TopNavbar = ({ id }) => {
+  const navigate = useNavigate();
+
+  const handleAssetPage = () => {
+    // ตรงนี้คุณสามารถใส่เงื่อนไขได้ เช่น ถ้า user ล็อกอินแล้วค่อยไป
+    console.log("กำลังจะไปหน้าasset...");
+    console.log("ID ที่จะส่งไปคือ:", id);
+    navigate(`/scene_editor/${id}/assets`); // สั่งให้เปลี่ยนหน้า
+  };
   return (
     <div className="h-11 border-b border-gray-100 bg-white flex items-center justify-between px-6 select-none shrink-0 text-xs text-gray-500">
       {/* ฝั่งซ้าย: โลโก้และชื่อระบบจัดการสคริปต์ */}
@@ -17,7 +26,10 @@ const TopNavbar = () => {
         <button className="hover:text-purple-600 transition-colors">
           [ download game template ]
         </button>
-        <button className="hover:text-purple-600 transition-colors">
+        <button
+          onClick={handleAssetPage}
+          className="hover:text-purple-600 transition-colors"
+        >
           [ asset library ]
         </button>
         <button className="hover:text-purple-600 transition-colors">

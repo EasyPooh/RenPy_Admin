@@ -12,8 +12,10 @@ import DialogueSection from "../components/WorkspaceContainer/DialogueSection";
 import TextareaField from "../components/TextareaField";
 import StartSection from "../components/WorkspaceContainer/StartSection";
 import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const SceneManagementPage = () => {
+  const { id } = useParams();
   const [scenes, setScenes] = useState([
     {
       id: 1,
@@ -149,20 +151,36 @@ const SceneManagementPage = () => {
   );
   // 1. สร้าง State สำหรับเก็บรายการ Block ทั้งหมด (เริ่มต้นเป็นอาเรย์ว่าง)
   const [blocks, setBlocks] = useState([]);
+  
   // 2. ฟังก์ชัน Logic สำหรับเพิ่ม Block ใหม่
   const handleAddBlock = (type) => {
     console.log("ถั่วต้ม! ปุ่มกดทำงานส่งประเภทมาคือ:", type);
-    // สร้าง Object แทน Block ก้อนใหม่
-    // แนะนำให้ใส่ id ที่ไม่ซ้ำกัน (เช่น ใช้ Date.now() หรือสุ่มขึ้นมา)
     let newBlock = {
       id: Date.now(),
-      type: type || "default", // สามารถระบุประเภทได้ เช่น 'text', 'image'
+      type: type || "default",
+      character: "",
+      expression: "normal",
+      text: "",
       content: `บล็อกใหม่ที่ #${blocks.length + 1}`,
       createdAt: new Date().toLocaleTimeString(),
     };
 
-    // เพิ่มบล็อกใหม่เข้าไปใน State ของบล็อกทั้งหมด
     setBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+  };
+
+  // 3. ฟังก์ชันสำหรับอัปเดต Block properties
+  const handleUpdateBlock = (blockId, field, value) => {
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) => {
+        if (block.id === blockId) {
+          return {
+            ...block,
+            [field]: value,
+          };
+        }
+        return block;
+      })
+    );
   };
 
   return (
@@ -173,7 +191,7 @@ const SceneManagementPage = () => {
       {/* ส่วนของแผงเมนูด้านบนทั้งหมด (รวมกลุ่มอยู่ด้วยกันไม่ให้ไปดันหรือเบียดใคร) */}
       <div className="flex-none bg-white">
         <Navbar />
-        <TopNavbar title="Scene Management" />
+        <TopNavbar title="Scene Management" id={id} />
         {/* 🌟 ส่ง State ชั่วคราว และฟังก์ชันจัดการเซฟไปที่ Navbar */}
         <SceneNavbar
           currentScene={currentActiveScene}
@@ -217,6 +235,7 @@ const SceneManagementPage = () => {
           currentScene={currentActiveScene}
           blocks={blocks}
           onAddBlock={handleAddBlock}
+          onUpdateBlock={handleUpdateBlock}
         />
       </div>
     </div>

@@ -1,16 +1,30 @@
 // src/components/WorkspaceContainer/WorkspaceContainer.jsx
 import React, { useState } from "react";
 import StartSection from "./StartSection";
-import WorkspaceToolbar from "./WorkspaceToolbar"; // 👈 1. เช็คว่ามีอิมพอร์ตอันนี้อยู่ด้านบนไหม
+import WorkspaceToolbar from "./WorkspaceToolbar";
 import DialogueSection from "./DialogueSection";
 
-// 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (SceneManagementPage)
-const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
+const WorkspaceContainer = ({
+  currentScene,
+  blocks = [],
+  onAddBlock,
+  handleAddBlock,
+  onUpdateBlock,
+}) => {
+  const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);
+
   const [startBg, setStartBg] = useState("");
   const [startMusic, setStartMusic] = useState("");
+  const [startChar, setStartChar] = useState("");
 
   const handleDeleteBlock = (id) => {
-    setBlocks((prevBlocks) => prevBlocks.filter((block) => block.id !== id));
+    // Note: blocks state should be managed in parent component
+  };
+
+  const handleUpdateBlock = (blockId, field, value) => {
+    if (onUpdateBlock) {
+      onUpdateBlock(blockId, field, value);
+    }
   };
 
   return (
@@ -32,6 +46,10 @@ const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
             setStartBg={setStartBg}
             startMusic={startMusic}
             setStartMusic={setStartMusic}
+            startChar={startChar}
+            setStartChar={setStartChar}
+            characterList={characterList}
+            setCharacterList={setCharacterList}
           />
         </div>
 
@@ -60,9 +78,13 @@ const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
                   return (
                     <DialogueSection
                       key={block.id}
-                      block={block}
-                      index={index}
-                      onDelete={() => handleDeleteBlock(block.id)}
+                      id={block.id}
+                      character={block.character || ""}
+                      expression={block.expression || "normal"}
+                      text={block.text || ""}
+                      characterList={characterList}
+                      onUpdate={handleUpdateBlock}
+                      onAddBlock={onAddBlock}
                     />
                   );
                 }
@@ -80,9 +102,7 @@ const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
         </div>
       </div>
 
-      {/* ----------------------------------------------------
-          [ 🌟 เติมจุดนี้ ] แถบเครื่องมือปุ่มกดที่หายไป เอามาล็อกไว้ตรงนี้แทนครับ
-          ---------------------------------------------------- */}
+      {/* แถบเครื่องมือปุ่มกดที่หายไป */}
       <div className="p-5 border-t border-gray-100 bg-white w-full flex-none">
         {/* ส่งฟังก์ชัน onAddBlock ที่ได้มาจากไฟล์แม่ ลงไปให้ปุ่มกดทำงาน */}
         <WorkspaceToolbar onAddBlock={onAddBlock} />
