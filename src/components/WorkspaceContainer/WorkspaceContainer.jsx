@@ -5,9 +5,17 @@ import WorkspaceToolbar from "./WorkspaceToolbar"; // 👈 1. เช็คว่
 import DialogueSection from "./DialogueSection";
 
 // 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (SceneManagementPage)
-const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
+const WorkspaceContainer = ({
+  currentScene,
+  blocks = [],
+  onAddBlock,
+  handleAddBlock,
+}) => {
+  const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);
+
   const [startBg, setStartBg] = useState("");
   const [startMusic, setStartMusic] = useState("");
+  const [startChar, setStartChar] = useState("");
 
   const handleDeleteBlock = (id) => {
     setBlocks((prevBlocks) => prevBlocks.filter((block) => block.id !== id));
@@ -32,6 +40,10 @@ const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
             setStartBg={setStartBg}
             startMusic={startMusic}
             setStartMusic={setStartMusic}
+            startChar={startChar}
+            setStartChar={setStartChar}
+            characterList={characterList}
+            setCharacterList={setCharacterList}
           />
         </div>
 
@@ -60,9 +72,11 @@ const WorkspaceContainer = ({ currentScene, blocks = [], onAddBlock }) => {
                   return (
                     <DialogueSection
                       key={block.id}
+                      characterList={characterList}
                       block={block}
                       index={index}
                       onDelete={() => handleDeleteBlock(block.id)}
+                      onAddBlock={onAddBlock}
                     />
                   );
                 }

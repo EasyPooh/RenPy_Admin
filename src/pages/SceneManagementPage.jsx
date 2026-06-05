@@ -12,8 +12,10 @@ import DialogueSection from "../components/WorkspaceContainer/DialogueSection";
 import TextareaField from "../components/TextareaField";
 import StartSection from "../components/WorkspaceContainer/StartSection";
 import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const SceneManagementPage = () => {
+  const { id } = useParams();
   const [scenes, setScenes] = useState([
     {
       id: 1,
@@ -173,7 +175,7 @@ const SceneManagementPage = () => {
       {/* ส่วนของแผงเมนูด้านบนทั้งหมด (รวมกลุ่มอยู่ด้วยกันไม่ให้ไปดันหรือเบียดใคร) */}
       <div className="flex-none bg-white">
         <Navbar />
-        <TopNavbar title="Scene Management" />
+        <TopNavbar title="Scene Management" id={id} />
         {/* 🌟 ส่ง State ชั่วคราว และฟังก์ชันจัดการเซฟไปที่ Navbar */}
         <SceneNavbar
           currentScene={currentActiveScene}

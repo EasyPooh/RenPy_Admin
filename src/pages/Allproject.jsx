@@ -109,7 +109,7 @@ function Allproject() {
                   className="group bg-white rounded-4xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden flex flex-col"
                 >
                   <Link
-                    to={`/SceneManagementPage/${item.id}`}
+                    to={`/scene_editor/${item.id}`}
                     className="block cursor-pointer"
                   >
                     {/* Thumbnail Area */}
