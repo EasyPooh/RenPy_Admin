@@ -6,7 +6,7 @@ import { Routes, Route } from "react-router";
 import Allproject from "./pages/Allproject";
 import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
-import SceneManagement from "./pages/SceneManagementPage";
+import ChapterManagement from "./pages/ChapterManagementPage";
 import AssetPage from "./pages/AssetPage";
 
 function App() {
@@ -16,8 +16,8 @@ function App() {
       <Route path="/Allproject" element={<Allproject />} />
       <Route path="/CreateProject" element={<CreateProject />} />
       <Route path="/EditProject/:id" element={<EditProject />} />
-      <Route path="/scene_editor/:id" element={<SceneManagement />} />
-      <Route path="/scene_editor/:id/assets" element={<AssetPage />} />
+      <Route path="/Chapter_editor/:id" element={<ChapterManagement />} />
+      <Route path="/Chapter_editor/:id/assets" element={<AssetPage />} />
     </Routes>
   );
 }

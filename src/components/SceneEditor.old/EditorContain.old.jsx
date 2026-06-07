@@ -152,7 +152,7 @@ function TimelineNode({
                     id: String(Date.now()),
                     text: "ตัวเลือกที่ 1",
                     mode: "inline",
-                    targetSceneId: "",
+                    targetChapterId: "",
                     isCollapsed: false,
                     subTimeline: [],
                   },
@@ -290,18 +290,18 @@ function TimelineNode({
                       [ 📝 เขียนเนื้อเรื่องย่อยต่อในชอยส์นี้ทันที ]
                     </option>
                     <option value="jump">
-                      → กระโดดข้ามไปที่ Scene ID อื่น (Jump)
+                      → กระโดดข้ามไปที่ Chapter ID อื่น (Jump)
                     </option>
                   </select>
 
                   {choice.mode === "jump" ? (
                     <input
                       type="text"
-                      value={choice.targetSceneId || ""}
+                      value={choice.targetChapterId || ""}
                       onChange={(e) => {
                         const updatedChoices = node.choices.map((c) =>
                           c.id === choice.id
-                            ? { ...c, targetSceneId: e.target.value }
+                            ? { ...c, targetChapterId: e.target.value }
                             : c,
                         );
                         onUpdateNode(path, {
@@ -309,7 +309,7 @@ function TimelineNode({
                           choices: updatedChoices,
                         });
                       }}
-                      placeholder="เป้าหมาย Scene ID"
+                      placeholder="เป้าหมาย Chapter ID"
                       className="w-28 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 font-mono text-xs focus:outline-none"
                     />
                   ) : null}
@@ -412,7 +412,7 @@ function TimelineNode({
                 id: String(Date.now()),
                 text: `ตัวเลือกที่ ${node.choices.length + 1}`,
                 mode: "inline",
-                targetSceneId: "",
+                targetChapterId: "",
                 isCollapsed: false,
                 subTimeline: [],
               };
@@ -448,10 +448,10 @@ function TimelineNode({
 // ========================================================
 // CORE EXPORT COMPONENT (บอร์ดแกนกลางหลักในการทำงานทั้งหมด)
 // ========================================================
-export default function EditorContainer({ selectedScene, onSaveScene }) {
+export default function EditorContainer({ selectedChapter, onSaveChapter }) {
   const [newCharInput, setNewCharInput] = useState("");
 
-  if (!selectedScene) {
+  if (!selectedChapter) {
     return (
       <div className="flex-1 bg-[#fafafa] flex items-center justify-center text-slate-400 italic">
         โปรดเลือกหรือสร้างฉากจากเมนูด้านซ้ายเพื่อเริ่มเขียนบทละครรันระบบจริง
@@ -459,10 +459,10 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
     );
   }
 
-  const background = selectedScene.background || { location: "", image: "" };
-  const audio = selectedScene.audio || { bgm: "", sfx: "" };
-  const characters = selectedScene.characters || [];
-  const timeline = selectedScene.timeline || [
+  const background = selectedChapter.background || { location: "", image: "" };
+  const audio = selectedChapter.audio || { bgm: "", sfx: "" };
+  const characters = selectedChapter.characters || [];
+  const timeline = selectedChapter.timeline || [
     {
       id: "init_row",
       type: "dialogue",
@@ -475,7 +475,7 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
 
   // ฟังก์ชันกลางส่งออกค่า State กลับขึ้นไปหา Parent Component
   const emitUpdate = (updatedFields) => {
-    onSaveScene({ ...selectedScene, ...updatedFields });
+    onSaveChapter({ ...selectedChapter, ...updatedFields });
   };
 
   // เจาะลึกอัปเดตข้อมูล Node Tree ตาม Path อาร์เรย์แบบ Dynamic Deep Update
@@ -545,17 +545,17 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
       <div className="h-14 border-b border-slate-200 flex items-center justify-between px-4 bg-[#f8f9fa] shrink-0">
         <div className="flex items-center gap-2 flex-1">
           <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-0.5 text-xs text-slate-400 font-semibold">
-            ID: {selectedScene.id}
+            ID: {selectedChapter.id}
           </div>
           <input
             type="text"
-            value={selectedScene.title || ""}
+            value={selectedChapter.title || ""}
             onChange={(e) => emitUpdate({ title: e.target.value })}
             className="w-1/3 bg-white border border-slate-200 rounded-lg px-3 py-1 text-sm font-semibold text-slate-700 focus:outline-none focus:border-slate-400 shadow-2xs"
           />
         </div>
         <button
-          onClick={() => onSaveScene(selectedScene)}
+          onClick={() => onSaveChapter(selectedChapter)}
           className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-semibold py-1.5 px-4 rounded-lg shadow-sm transition-colors"
         >
           💾 Save Layout Project
@@ -564,7 +564,7 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
 
       {/* CORE WORKSPACE SCROLL AREA */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* SECTION 2: GLOBAL SCENE SETUP */}
+        {/* SECTION 2: GLOBAL Chapter SETUP */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">
             🎬 ส่วนที่ 2: ตั้งค่าเริ่มต้นของฉาก
@@ -702,7 +702,7 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
           </label>
           <textarea
             rows="3"
-            value={selectedScene.developerNotes || ""}
+            value={selectedChapter.developerNotes || ""}
             onChange={(e) => emitUpdate({ developerNotes: e.target.value })}
             placeholder="เขียนบันทึกช่วยจำสำหรับสคริปต์ส่วนนี้..."
             className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-600 focus:outline-none focus:border-slate-400 shadow-2xs resize-none"

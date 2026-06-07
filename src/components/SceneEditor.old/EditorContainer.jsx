@@ -3,18 +3,18 @@ import BackgroundSection from "./BackgroundSection";
 import AudioSection from "./AudioSection";
 import StorySection from "./StorySection";
 
-export default function EditorContainer({ selectedScene, onSaveScene }) {
+export default function EditorContainer({ selectedChapter, onSaveChapter }) {
   // สร้าง Local State สำหรับรองรับการพิมพ์กรอกข้อมูลภายในฟอร์ม
   const [formData, setFormData] = useState(null);
 
   // เมื่อผู้ใช้เปลี่ยนไปคลิกเลือกฉากอื่น ให้ดึงข้อมูลของฉากใหม่มาลงในฟอร์มทันที
   useEffect(() => {
-    if (selectedScene) {
-      setFormData({ ...selectedScene });
+    if (selectedChapter) {
+      setFormData({ ...selectedChapter });
     } else {
       setFormData(null);
     }
-  }, [selectedScene]);
+  }, [selectedChapter]);
 
   // หากยังไม่ได้เลือกฉาก ให้แสดงหน้าจอว่างตามรูปที่ 1
   if (!formData) {
@@ -26,7 +26,7 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
             เลือกฉากจากรายการด้านซ้าย
           </h3>
           <p className="text-gray-400 text-xs">
-            หรือกด New Scene เพื่อสร้างใหม่
+            หรือกด New Chapter เพื่อสร้างใหม่
           </p>
         </div>
       </main>
@@ -36,7 +36,7 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
   // ฟังก์ชันเมื่อกดเซฟฟอร์ม
   const handleSubmitSave = (e) => {
     e.preventDefault();
-    onSaveScene(formData); // ส่งสเตตที่แก้เสร็จแล้วกลับขึ้นไปเซฟที่หน้าหลัก
+    onSaveChapter(formData); // ส่งสเตตที่แก้เสร็จแล้วกลับขึ้นไปเซฟที่หน้าหลัก
     alert("บันทึกข้อมูลฉากเรียบร้อยแล้ว!");
   };
 
@@ -62,7 +62,7 @@ export default function EditorContainer({ selectedScene, onSaveScene }) {
             </div>
             <div className="flex-1">
               <label className="block text-[10px] uppercase text-gray-400 font-bold mb-1">
-                Scene Name
+                Chapter Name
               </label>
               <input
                 type="text"

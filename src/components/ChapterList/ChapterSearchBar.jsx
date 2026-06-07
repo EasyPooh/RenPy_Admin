@@ -1,15 +1,15 @@
-// src/components/SceneList/SceneSearchBar.jsx
+// src/components/ChapterList/ChapterSearchBar.jsx
 import React from "react";
 
-const SceneSearchBar = ({ onAddScene, onSearchChange, searchQuery }) => {
+const ChapterSearchBar = ({ onAddChapter, onSearchChange, searchQuery }) => {
   return (
     <div className="w-full flex flex-col space-y-2.5">
-      {/* 1. ปุ่มสำหรับสร้าง Scene ใหม่ */}
+      {/* 1. ปุ่มสำหรับสร้าง Chapter ใหม่ */}
       <button
-        onClick={onAddScene}
+        onClick={onAddChapter}
         className="w-full text-left py-2 px-3 text-xs bg-purple-50 text-purple-700 rounded-lg border border-purple-100 hover:bg-purple-100/80 active:bg-purple-200/60 transition-colors font-semibold tracking-wide"
       >
-        + New Scene
+        + New Chapter
       </button>
 
       {/* 2. ช่องสำหรับพิมพ์ค้นหาฉาก */}
@@ -26,4 +26,4 @@ const SceneSearchBar = ({ onAddScene, onSearchChange, searchQuery }) => {
   );
 };
 
-export default SceneSearchBar;
+export default ChapterSearchBar;

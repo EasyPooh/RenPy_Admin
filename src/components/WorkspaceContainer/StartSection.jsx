@@ -75,60 +75,67 @@ const StartSection = ({
             <option value="sizzle.ogg">sizzle.ogg</option>
           </select>
         </div>
+      </div>
 
-        {/* Start Character */}
-        <div className="flex flex-col space-y-2">
-          {/* ส่วนช่องกรอกข้อมูลเดิม */}
-          <div className="flex items-center space-x-2">
-            <span className="w-28 text-gray-600 text-xs font-medium">
-              start character
+      {/* Start Character */}
+      <div className="flex flex-col space-y-2 ">
+        {/* ส่วนช่องกรอกข้อมูลเดิม */}
+        <div className="flex items-center space-x-2 ">
+          <span className="w-28 text-gray-600 text-xs font-medium">
+            start character
+          </span>
+          <input
+            type="text"
+            placeholder="+ เพิ่มตัวละคร (กด Enter เพื่อบันทึก)"
+            value={startChar}
+            onChange={(e) => setStartChar(e.target.value)}
+            onKeyDown={handleKeyDown} // เพิ่ม Event ตรวจจับการกด Enter
+            className="w-108 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
+          />
+          <div className="flex items-center space-x-2 gap-4">
+            <span className="whitespace-nowrap text-gray-600 text-xs font-medium ">
+              {
+                "<--- เพิ่มตัวละครและบันทึกไว้ในส่วนนี้ แล้วจะปรากฏให้เลือกได้ในบล็อกบทสนทนา"
+              }
             </span>
-            <input
-              type="text"
-              placeholder="+ เพิ่มตัวละคร (กด Enter เพื่อบันทึก)"
-              value={startChar}
-              onChange={(e) => setStartChar(e.target.value)}
-              onKeyDown={handleKeyDown} // เพิ่ม Event ตรวจจับการกด Enter
-              className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
-            />
           </div>
+        </div>
 
-          {/* ส่วนแสดงแคปซูลตัวละครที่เคยบันทึกไว้ */}
-          <div
-            className="flex flex-wrap gap-2 pl-30"
-            style={{ paddingLeft: "7rem" }}
-          >
-            {characterList.map((char, index) => {
-              const isSelected = startChar === char;
-              return (
-                <div
-                  key={index}
-                  onClick={() => setStartChar(char)} // คลิกที่ตัวแคปซูลเพื่อเลือก
-                  className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border cursor-pointer transition-colors ${
+        {/* ส่วนแสดงแคปซูลตัวละครที่เคยบันทึกไว้ */}
+        <div
+          className="flex flex-wrap gap-2 pl-30"
+          style={{ paddingLeft: "7rem" }}
+        >
+          {characterList.map((char, index) => {
+            const isSelected = startChar === char;
+            return (
+              <div
+                key={index}
+                onClick={() => setStartChar(char)} // คลิกที่ตัวแคปซูลเพื่อเลือก
+                className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-purple-100 text-purple-700 border-purple-300 font-medium"
+                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                {/* ชื่อตัวละคร */}
+                <span>{char}</span>
+
+                {/* ปุ่มกากบาทสำหรับลบ */}
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteCharacter(e, char)} // เรียกฟังก์ชันลบเมื่อกด (x)
+                  className={`flex items-center justify-center w-3.5 h-3.5 rounded-full text-[10px] font-bold transition-colors ${
                     isSelected
-                      ? "bg-purple-100 text-purple-700 border-purple-300 font-medium"
-                      : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                      ? "text-purple-500 hover:bg-purple-200 hover:text-purple-800"
+                      : "text-gray-400 hover:bg-gray-200 hover:text-gray-600"
                   }`}
                 >
-                  {/* ชื่อตัวละคร */}
-                  <span>{char}</span>
-
-                  {/* ปุ่มกากบาทสำหรับลบ */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteCharacter(e, char)} // เรียกฟังก์ชันลบเมื่อกด (x)
-                    className={`flex items-center justify-center w-3.5 h-3.5 rounded-full text-[10px] font-bold transition-colors ${
-                      isSelected
-                        ? "text-purple-500 hover:bg-purple-200 hover:text-purple-800"
-                        : "text-gray-400 hover:bg-gray-200 hover:text-gray-600"
-                    }`}
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

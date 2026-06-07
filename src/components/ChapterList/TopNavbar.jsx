@@ -1,4 +1,4 @@
-// src/components/SceneList/TopNavbar.jsx
+// src/components/ChapterList/TopNavbar.jsx
 import React from "react";
 import { useNavigate } from "react-router";
 
@@ -9,7 +9,7 @@ const TopNavbar = ({ id }) => {
     // ตรงนี้คุณสามารถใส่เงื่อนไขได้ เช่น ถ้า user ล็อกอินแล้วค่อยไป
     console.log("กำลังจะไปหน้าasset...");
     console.log("ID ที่จะส่งไปคือ:", id);
-    navigate(`/scene_editor/${id}/assets`); // สั่งให้เปลี่ยนหน้า
+    navigate(`/Chapter_editor/${id}/assets`); // สั่งให้เปลี่ยนหน้า
   };
   return (
     <div className="h-11 border-b border-gray-100 bg-white flex items-center justify-between px-6 select-none shrink-0 text-xs text-gray-500">
@@ -18,7 +18,7 @@ const TopNavbar = ({ id }) => {
         <span className="text-sm">🔮</span>
         <span className="font-bold text-gray-700">RenPy Admin</span>
         <span className="text-gray-300">|</span>
-        <span className="text-gray-400">test ระบบ</span>
+        <span className="text-gray-400">ชื่อโปรเจคอยุ่ตรงนี้</span>
       </div>
 
       {/* ฝั่งขวา: ศูนย์รวมปุ่มกด Utilities เครื่องมือจัดการภาพรวมโปรเจกต์ */}

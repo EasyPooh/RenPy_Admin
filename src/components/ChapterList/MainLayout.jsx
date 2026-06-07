@@ -1,4 +1,4 @@
-// src/components/SceneList/MainLayout.jsx
+// src/components/ChapterList/MainLayout.jsx
 import React from "react";
 
 const MainLayout = ({ children }) => {

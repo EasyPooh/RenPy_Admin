@@ -1,7 +1,12 @@
-// src/components/SceneList/SceneNavbar.jsx
+// src/components/ChapterList/ChapterNavbar.jsx
 import React, { useState, useRef, useEffect } from "react";
 
-const SceneNavbar = ({ currentScene, tempStatus, onStatusChange, onSave }) => {
+const ChapterNavbar = ({
+  currentChapter,
+  tempStatus,
+  onStatusChange,
+  onSave,
+}) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -15,7 +20,7 @@ const SceneNavbar = ({ currentScene, tempStatus, onStatusChange, onSave }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!currentScene) {
+  if (!currentChapter) {
     return (
       <div className="h-16 border-b border-gray-100 bg-white flex items-center px-6 text-sm text-gray-400">
         กรุณาเลือกฉากเพื่อเริ่มทำงาน...
@@ -28,7 +33,7 @@ const SceneNavbar = ({ currentScene, tempStatus, onStatusChange, onSave }) => {
       <div className="flex items-center space-x-3 text-sm">
         <span className="text-gray-400 font-medium">ตำแหน่งในเรื่อง:</span>
         <span className="font-bold text-gray-800 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
-          {currentScene.name}
+          {currentChapter.name}
         </span>
         <span className="text-gray-300 font-bold">&rarr;</span>
         <span className="bg-purple-50 text-purple-700 font-bold px-3 py-1 rounded-lg border border-purple-100">
@@ -40,7 +45,7 @@ const SceneNavbar = ({ currentScene, tempStatus, onStatusChange, onSave }) => {
 
       <div className="flex items-center space-x-4">
         <span className="text-xs font-bold text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
-          [ ID: {currentScene.id.toString().padStart(3, "0")} ]
+          [ ID: {currentChapter.id.toString().padStart(3, "0")} ]
         </span>
 
         {/* Dropdown แสดงค่าสถานะที่แมปตามตัวแปรผันผวนชั่วคราว tempStatus */}
@@ -105,4 +110,4 @@ const SceneNavbar = ({ currentScene, tempStatus, onStatusChange, onSave }) => {
   );
 };
 
-export default SceneNavbar;
+export default ChapterNavbar;

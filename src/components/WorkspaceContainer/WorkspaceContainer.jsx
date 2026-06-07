@@ -3,23 +3,30 @@ import React, { useState } from "react";
 import StartSection from "./StartSection";
 import WorkspaceToolbar from "./WorkspaceToolbar"; // 👈 1. เช็คว่ามีอิมพอร์ตอันนี้อยู่ด้านบนไหม
 import DialogueSection from "./DialogueSection";
+import SceneSection from "./SceneSection";
+import SpriteSection from "./SpriteSection";
+import AudioSection from "./AudioSection";
+import ChoiceSection from "./ChoiceSection";
+import ChapterManagementPage from "../../pages/ChapterManagementPage";
 
-// 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (SceneManagementPage)
+// 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (ChapterManagementPage)
 const WorkspaceContainer = ({
-  currentScene,
+  currentChapter,
   blocks = [],
   onAddBlock,
-  handleAddBlock,
+  handleUpdateBlock,
+  handleDeleteBlock,
+  focusedBlockId,
+  setFocusedBlockId,
+  inputRef,
+  allChapters,
 }) => {
+  console.log("รายชื่อบทที่เดินทางมาถึง Workspace:", allChapters);
   const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);
 
   const [startBg, setStartBg] = useState("");
   const [startMusic, setStartMusic] = useState("");
   const [startChar, setStartChar] = useState("");
-
-  const handleDeleteBlock = (id) => {
-    setBlocks((prevBlocks) => prevBlocks.filter((block) => block.id !== id));
-  };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white font-mono text-sm border-l border-gray-200 overflow-hidden">
@@ -27,7 +34,11 @@ const WorkspaceContainer = ({
       <div className="flex-1 px-6 py-4 overflow-y-auto min-h-0 pb-6 bg-gray-50/30 w-full">
         {/* ส่วน Header */}
         <div className="mb-4 text-gray-500 font-semibold flex items-center justify-between select-none w-full">
-          <span>[ 📝 WORKSPACE AREA ]</span>
+          {currentChapter ? (
+            <span>[ 📝 WORKSPACE AREA ] : {currentChapter.name}</span>
+          ) : (
+            <span>[ 📝 WORKSPACE AREA ] : กรุณาเลือกบททางซ้าย</span>
+          )}
           <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-sans">
             จำนวนบล็อก: {blocks.length}
           </span>
@@ -55,13 +66,13 @@ const WorkspaceContainer = ({
             /* กล่องแสดงสถานะเมื่อยังไม่มีบล็อก */
             <div className="border border-dashed border-purple-200 bg-purple-50/10 rounded-xl h-full flex flex-col items-center justify-center text-gray-400 text-xs py-20 w-full">
               <p className="font-semibold text-purple-950 mb-1">
-                {currentScene
-                  ? `กำลังทำงาน: ฉาก "${currentScene.name}"`
-                  : "กรุณาเลือกฉาก"}
+                {currentChapter
+                  ? `กำลังทำงาน: บท "${currentChapter.name}"`
+                  : "กรุณาเลือกบทเพื่อเริ่มทำงาน..."}
               </p>
               <p className="text-gray-400">
                 พื้นที่ตรงนี้ว่างอยู่
-                กดปุ่มแถบเครื่องมือด้านล่างเพื่อเพิ่มบทพูดเพื่อออกแบบเส้นเรื่องได้ทันทีครับ
+                กดปุ่มแถบเครื่องมือด้านล่างเพื่อเพิ่มบทพูดเพื่อออกแบบเนื้อเรื่องได้ทันทีครับ
               </p>
             </div>
           ) : (
@@ -72,14 +83,91 @@ const WorkspaceContainer = ({
                   return (
                     <DialogueSection
                       key={block.id}
+                      id={block.id}
+                      character={block.character}
+                      expression={block.expression}
+                      text={block.text}
                       characterList={characterList}
                       block={block}
                       index={index}
-                      onDelete={() => handleDeleteBlock(block.id)}
-                      onAddBlock={onAddBlock}
+                      handleDeleteBlock={handleDeleteBlock}
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกบทพูดด้วย
+                      handleUpdateBlock={handleUpdateBlock}
+                      focusedBlockId={focusedBlockId}
+                      setFocusedBlockId={setFocusedBlockId}
                     />
                   );
                 }
+                if (block.type === "scene") {
+                  return (
+                    <SceneSection
+                      key={block.id}
+                      id={block.id}
+                      background={block.background}
+                      backgroundEffect={block.backgroundEffect}
+                      backgroundEffectSpeed={block.backgroundEffectSpeed}
+                      block={block}
+                      handleDeleteBlock={handleDeleteBlock}
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      handleUpdateBlock={handleUpdateBlock}
+                      focusedBlockId={focusedBlockId}
+                      setFocusedBlockId={setFocusedBlockId}
+                    />
+                  );
+                }
+
+                if (block.type === "sprite") {
+                  return (
+                    <SpriteSection
+                      key={block.id}
+                      id={block.id}
+                      sprite={block.sprite}
+                      spritecommand={block.spritecommand}
+                      spriteposition={block.spriteposition}
+                      spriteSpeed={block.spriteSpeed}
+                      block={block}
+                      handleDeleteBlock={handleDeleteBlock}
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      handleUpdateBlock={handleUpdateBlock}
+                      focusedBlockId={focusedBlockId}
+                      setFocusedBlockId={setFocusedBlockId}
+                    />
+                  );
+                }
+
+                if (block.type === "audio") {
+                  return (
+                    <AudioSection
+                      key={block.id}
+                      id={block.id}
+                      audio={block.audio}
+                      audiocommand={block.audiocommand}
+                      audiotype={block.audiotype}
+                      block={block}
+                      handleDeleteBlock={handleDeleteBlock}
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      handleUpdateBlock={handleUpdateBlock}
+                      focusedBlockId={focusedBlockId}
+                      setFocusedBlockId={setFocusedBlockId}
+                    />
+                  );
+                }
+
+                if (block.type === "choice") {
+                  return (
+                    <ChoiceSection
+                      key={block.id}
+                      id={block.id}
+                      choice={block.choice}
+                      block={block}
+                      handleDeleteBlock={handleDeleteBlock}
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      handleUpdateBlock={handleUpdateBlock}
+                      allchapter={allChapters}
+                    />
+                  );
+                }
+
                 return (
                   <div
                     key={block.id}
@@ -97,7 +185,7 @@ const WorkspaceContainer = ({
       {/* ----------------------------------------------------
           [ 🌟 เติมจุดนี้ ] แถบเครื่องมือปุ่มกดที่หายไป เอามาล็อกไว้ตรงนี้แทนครับ
           ---------------------------------------------------- */}
-      <div className="p-5 border-t border-gray-100 bg-white w-full flex-none">
+      <div className="p-5  w-full flex-none -mt-10 ">
         {/* ส่งฟังก์ชัน onAddBlock ที่ได้มาจากไฟล์แม่ ลงไปให้ปุ่มกดทำงาน */}
         <WorkspaceToolbar onAddBlock={onAddBlock} />
       </div>

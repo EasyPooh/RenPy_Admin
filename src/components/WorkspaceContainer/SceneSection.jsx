@@ -1,11 +1,10 @@
-import { audio } from "framer-motion/client";
 import React, { useState, useEffect, useRef, forwardRef } from "react";
 
-const AudioSection = ({
+const SceneSection = ({
   id,
-  audio,
-  audiocommand,
-  audiotype,
+  background,
+  backgroundEffect,
+  backgroundEffectSpeed,
   handleUpdateBlock,
   handleDeleteBlock,
   onAddBlock,
@@ -19,12 +18,11 @@ const AudioSection = ({
       inputRef.current?.focus();
     }
   }, [focusedBlockId, id]);
-
   return (
     <div className="relative flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-3">
       <div className="flex items-center justify-between mb-2">
         <label className="text-xs font-bold text-gray-400 tracking-wider">
-          ช่องเลือกเสียง
+          ช่องจัดการฉากพื้นหลัง
         </label>
         <button
           onClick={() => handleDeleteBlock(id)}
@@ -49,53 +47,58 @@ const AudioSection = ({
       <div className="flex gap-3">
         <div className="w-1/4 min-w-30">
           <label className="text-xs font-bold text-gray-400 tracking-wider">
-            คำสั่งเสียง
+            ฉากพื้นหลัง
           </label>
           <select
-            value={audiocommand}
+            value={background}
             onChange={(e) =>
-              handleUpdateBlock(id, "audiocommand", e.target.value)
+              handleUpdateBlock(id, "background", e.target.value)
             }
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
           >
-            <option value="stop">stop</option>
-            <option value="play">play</option>
+            <option value="bg_bedroom">ห้องนอน (bg_bedroom)</option>
+            <option value="bg_kitchen">ห้องครัว (bg_kitchen)</option>
           </select>
         </div>
         <div className="w-1/4 min-w-30">
           <label className="text-xs font-bold text-gray-400 tracking-wider">
-            ประเภทเสียง
+            เอฟเฟกต์พื้นหลัง
           </label>
           <select
-            value={audiotype}
-            onChange={(e) => handleUpdateBlock(id, "audiotype", e.target.value)}
+            value={backgroundEffect}
+            onChange={(e) =>
+              handleUpdateBlock(id, "backgroundEffect", e.target.value)
+            }
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
           >
-            <option value="bgm">background music</option>
-            <option value="sfx">sound effects</option>
+            <option value="none">(ไม่มีเอฟเฟกต์)</option>
+            <option value="dissolve">dissolve</option>
+            <option value="fade">fade</option>
+            <option value="vpunch">vpunch</option>
+            <option value="hpunch">hpunch</option>
           </select>
         </div>
-        {audiocommand === "play" && (
-          <div className="w-1/4 min-w-30">
-            <label className="text-xs font-bold text-gray-400 tracking-wider">
-              เลือกไฟล์เสียง
-            </label>
-
-            <select
-              value={audio}
-              onChange={(e) => handleUpdateBlock(id, "audio", e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
-            >
-              <option value="bgm_01">bgm_happy.mp4</option>
-              <option value="sfx-01">doorknock_sound.wav</option>
-            </select>
-          </div>
-        )}
+        <div className="w-1/4 min-w-30">
+          <label className="text-xs font-bold text-gray-400 tracking-wider">
+            ความเร็วเอฟเฟกต์
+          </label>
+          <select
+            value={backgroundEffectSpeed}
+            onChange={(e) =>
+              handleUpdateBlock(id, "backgroundEffectSpeed", e.target.value)
+            }
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+          >
+            <option value="none">none</option>
+            <option value="slow">slow (0.2)</option>
+            <option value="normal">normal (0.5)</option>
+            <option value="fast">fast (1.0)</option>
+          </select>
+        </div>
       </div>
-
       <div ref={inputRef} tabIndex="0"></div>
     </div>
   );
 };
 
-export default AudioSection;
+export default SceneSection;
