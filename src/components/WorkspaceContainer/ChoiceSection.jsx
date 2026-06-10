@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import Select from "react-select";
 
 const ChoiceSection = ({
   id,
@@ -7,6 +8,7 @@ const ChoiceSection = ({
   handleDeleteBlock,
   focusedBlockId,
   allchapter,
+  currentChapterBlocks = [],
   // เพิ่ม Mock Data สำหรับค้นหาฉากย่อย (สามารถส่งผ่าน Props เข้ามาแทนได้)
   allScenes = [
     { id: "scene-0", name: "chapter นี้" },
@@ -17,24 +19,51 @@ const ChoiceSection = ({
   ],
 }) => {
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const dialogueInputsRef = useRef({});
+  const [lastAddedDialogueId, setLastAddedDialogueId] = useState(null);
+  // กรองบล็อกพูด พร้อมใส่เลขลำดับกำกับแบบคนเขียน Ren'Py
+  const dialogueBlocks = currentChapterBlocks
+    .filter((b) => b.type === "dialogue")
+    .map((b, index) => ({
+      ...b,
+      blockNumber: index + 1, // เก็บเลขลำดับไว้ (เช่น บล็อกที่ 1, บล็อกที่ 2)
+    }));
 
   // Auto-focus เมื่อ Block นี้ถูกเลือก
+  // เปลี่ยนจากของเดิมที่เคยมี เป็นอันนี้ครับ
   useEffect(() => {
     if (id === focusedBlockId) {
-      inputRef.current?.focus();
+      // ใช้ setTimeout เพื่อดีเลย์ให้ DOM โหลดเสร็จก่อน
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50); // 50ms เพียงพอที่จะทำให้ React วาด Component เสร็จและ Cursor เด้งไปที่ช่องพิมพ์ครับ
+
+      return () => clearTimeout(timer);
     }
   }, [focusedBlockId, id]);
 
   // ปิด Dropdown เมื่อคลิกพื้นที่อื่นข้างนอก
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setOpenDropdownId(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (lastAddedDialogueId && dialogueInputsRef.current[lastAddedDialogueId]) {
+      dialogueInputsRef.current[lastAddedDialogueId].focus();
+      setLastAddedDialogueId(null); // โฟกัสแล้วล้างค่ารอรอบถัดไป
+    }
+  }, [lastAddedDialogueId]);
 
   // State สำหรับควบคุมการเปิด/ปิด Dropdown ค้นหา และคำค้นหาของแต่ละ Choice
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -49,7 +78,17 @@ const ChoiceSection = ({
 
   // ฟังก์ชันเพิ่มตัวเลือกใหม่
   const handleAddChoice = () => {
-    const newChoice = { id: Date.now().toString(), text: "", target: "" };
+    const newChoice = {
+      id: Date.now().toString(),
+      text: "",
+      dialoguesList: [{ id: Date.now() + 1, text: "" }],
+      target_destination: {
+        // 🌟 เปลี่ยนโครงสร้างเป้าหมายให้เป็น Object
+        type: "SAME_CHAPTER",
+        chapter_id: "",
+        block_id: "",
+      },
+    };
     handleUpdateBlock(id, "choice", [...choicesList, newChoice]);
   };
 
@@ -58,6 +97,31 @@ const ChoiceSection = ({
     const updatedChoices = choicesList.map((c) =>
       c.id === choiceId ? { ...c, [field]: value } : c,
     );
+    handleUpdateBlock(id, "choice", updatedChoices);
+  };
+
+  // 2. ซ่อมฟังก์ชันที่พัง: ปิดปีกกาและ Return ค่าให้เรียบร้อย (ตามรูปภาพที่ 2)
+  const handleDestinationChange = (choiceId, field, value) => {
+    const updatedChoices = choicesList.map((c) => {
+      if (c.id === choiceId) {
+        const currentDest = c.target_destination || {
+          type: "SAME_CHAPTER",
+          chapter_id: "",
+          block_id: "",
+        };
+        let updatedDest = { ...currentDest, [field]: value };
+
+        // Logic เคลียร์ค่า
+        if (field === "type" && value === "NEW_CHAPTER") {
+          updatedDest.block_id = "";
+        } else if (field === "type" && value === "SAME_CHAPTER") {
+          updatedDest.chapter_id = "";
+        }
+
+        return { ...c, target_destination: updatedDest };
+      }
+      return c;
+    });
     handleUpdateBlock(id, "choice", updatedChoices);
   };
 
@@ -71,6 +135,53 @@ const ChoiceSection = ({
   const filteredScenes = allchapter.filter((scene) =>
     scene.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  // ฟังก์ชันจัดการบทสนทนาย่อยภายในช้อยส์
+  const handleAddDialogueItem = (choiceId) => {
+    const newDialogueId = Date.now();
+    const updatedChoices = choicesList.map((c) => {
+      if (c.id === choiceId) {
+        const currentDialogues = c.dialoguesList || [];
+        return {
+          ...c,
+          dialoguesList: [...currentDialogues, { id: newDialogueId, text: "" }],
+        };
+      }
+      return c;
+    });
+    setLastAddedDialogueId(newDialogueId);
+    handleUpdateBlock(id, "choice", updatedChoices);
+  };
+
+  const handleRemoveDialogueItem = (choiceId, dialogueId) => {
+    const updatedChoices = choicesList.map((c) => {
+      if (c.id === choiceId) {
+        return {
+          ...c,
+          dialoguesList: (c.dialoguesList || []).filter(
+            (d) => d.id !== dialogueId,
+          ),
+        };
+      }
+      return c;
+    });
+    handleUpdateBlock(id, "choice", updatedChoices);
+  };
+
+  const handleDialogueTextChange = (choiceId, dialogueId, value) => {
+    const updatedChoices = choicesList.map((c) => {
+      if (c.id === choiceId) {
+        return {
+          ...c,
+          dialoguesList: (c.dialoguesList || []).map((d) =>
+            d.id === dialogueId ? { ...d, text: value } : d,
+          ),
+        };
+      }
+      return c;
+    });
+    handleUpdateBlock(id, "choice", updatedChoices);
+  };
 
   return (
     <div className="relative flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-3">
@@ -121,6 +232,7 @@ const ChoiceSection = ({
                   ตัวเลือกที่ {index + 1}:
                 </span>
                 <input
+                  ref={inputRef}
                   ref={index === 0 ? inputRef : null}
                   type="text"
                   value={item.text || ""}
@@ -154,6 +266,80 @@ const ChoiceSection = ({
                   </button>
                 )}
               </div>
+              <div className="flex flex-col gap-2 mt-2 w-full">
+                {(
+                  item.dialoguesList || [{ id: item.id + "_d1", text: "" }]
+                ).map((dialogueItem, dIndex) => (
+                  <div
+                    key={dialogueItem.id}
+                    className="flex items-center gap-2"
+                  >
+                    <span className="text-sm font-medium text-gray-400 min-w-17.5 whitespace-nowrap text-right pr-1">
+                      บทสนทนา {dIndex + 1} :
+                    </span>
+                    <input
+                      ref={(el) => {
+                        if (el) dialogueInputsRef.current[dialogueItem.id] = el;
+                      }}
+                      type="text"
+                      placeholder="พิมพ์บทสนทนาที่คำตอบจะต่างไป..."
+                      value={dialogueItem.text || ""}
+                      onChange={(e) =>
+                        handleDialogueTextChange(
+                          item.id,
+                          dialogueItem.id,
+                          e.target.value,
+                        )
+                      }
+                      className="w-full bg-white text-gray-700 placeholder-gray-300 text-xs md:text-sm border border-gray-200 rounded-lg py-2 px-3 focus:outline-none focus:border-purple-400"
+                    />
+                    <button
+                      onClick={() =>
+                        handleRemoveDialogueItem(item.id, dialogueItem.id)
+                      }
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                      title="ลบตัวเลือกนี้"
+                    >
+                      {/* ไอคอนกากบาท (X) เรียบง่าย */}
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                {/* ปุ่มสำหรับกดเพิ่มช่องบทสนทนาในตัวเลือกนี้โดยเฉพาะ */}
+                <div className="flex justify-start pl-18">
+                  <button
+                    onClick={() => handleAddDialogueItem(item.id)}
+                    className="flex items-center gap-1 text-xs font-medium text-purple-500 hover:text-purple-600 transition-colors py-1 px-2 rounded border border-dashed border-purple-200 bg-purple-50/30"
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    เพิ่มบทสนทนาเฉพาะช้อยส์นี้
+                  </button>
+                </div>
+              </div>
 
               {/* บรรทัดที่ 2: เลือกเส้นทางฉากย่อย */}
               <div
@@ -164,65 +350,83 @@ const ChoiceSection = ({
                 <span className="text-sm text-gray-600 whitespace-nowrap">
                   เส้นทางเนื้อเรื่องที่จะไป:
                 </span>
-
-                <div className="flex-1 relative">
-                  {/* ช่องสำหรับพิมพ์และเปิด Dropdown ค้นหา (ใช้ ClassName เดิมของคุณทั้งหมด) */}
-                  <input
-                    type="text"
-                    value={
-                      openDropdownId === item.id ? searchQuery : displayLabel
+                <div className="flex-1 flex gap-2">
+                  {/* Dropdown 1: เลือกรูปแบบการกระโดด */}
+                  <select
+                    value={item.target_destination?.type || "SAME_CHAPTER"}
+                    onChange={(e) =>
+                      handleDestinationChange(item.id, "type", e.target.value)
                     }
-                    placeholder="[ เลือก Chapter / Scene ▼ ]"
-                    onFocus={() => {
-                      setOpenDropdownId(item.id);
-                      setSearchQuery(displayLabel);
-                    }}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer text-gray-600 pr-8"
-                  />
-                  {/* สัญลักษณ์ลูกศรชี้ลงด้านขวา */}
-                  <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400 text-xs">
-                    ▼
-                  </span>
+                    className="w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer text-gray-600"
+                  >
+                    <option value="SAME_CHAPTER">
+                      🔄 ไม่เปลี่ยน chapter (อยู่ chapter เดิม)
+                    </option>
+                    <option value="NEW_CHAPTER">
+                      ⏩ เปลี่ยน Chapter (Jump ข้ามบท)
+                    </option>
+                  </select>
 
-                  {/* กล่องแสดงผลลัพธ์การค้นหาเมื่อผู้ใช้ Focus ที่ช่องทางเลือกนี้ */}
-                  {openDropdownId === item.id && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      <div
-                        onClick={() => {
-                          handleChoiceChange(item.id, "target", "same-chapter"); // เซ็ตค่า target เป็น "same-chapter" เข้า State หลัก
-                          setOpenDropdownId(null); // เลือกเสร็จให้ปิดตลับลงไป
+                  {/* Dropdown 2: เด้งเปลี่ยนไปตามเงื่อนไขของ Dropdown 1 */}
+                  {item.target_destination?.type === "NEW_CHAPTER" ? (
+                    <div className="w-1/2">
+                      <Select
+                        // 1. แปลงข้อมูลจาก allchapter ให้เป็นรูปแบบ { value, label }
+                        options={allchapter.map((ch) => ({
+                          value: ch.id,
+                          label: ch.name,
+                        }))}
+                        // 2. กำหนดค่าปัจจุบันที่ถูกเลือก
+                        value={
+                          item.target_destination?.chapter_id
+                            ? {
+                                value: item.target_destination.chapter_id,
+                                label:
+                                  allchapter.find(
+                                    (ch) =>
+                                      ch.id ===
+                                      item.target_destination.chapter_id,
+                                  )?.name || "",
+                              }
+                            : null
+                        }
+                        // 3. จัดการตอนเปลี่ยนค่า (ล้อตามโครงสร้าง handleDestinationChange เดิม)
+                        onChange={(selectedOption) => {
+                          handleDestinationChange(
+                            item.id,
+                            "chapter_id",
+                            selectedOption ? selectedOption.value : "",
+                          );
                         }}
-                        className={`px-3 py-2 text-sm font-sans cursor-pointer transition-colors border-b border-gray-100 ${
-                          item.target === "same-chapter"
-                            ? "bg-purple-50 text-purple-600 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        ไม่เปลี่ยน chapter (อยู่ chapter เดิม)
-                      </div>
-                      {filteredScenes.length > 0 ? (
-                        filteredScenes.map((scene) => (
-                          <div
-                            key={scene.id}
-                            onClick={() => {
-                              handleChoiceChange(item.id, "target", scene.id);
-                              setOpenDropdownId(null);
-                            }}
-                            className={`px-3 py-2 text-sm font-sans cursor-pointer transition-colors ${
-                              item.target === scene.id
-                                ? "bg-purple-50 text-purple-600 font-medium"
-                                : "text-gray-700 hover:bg-gray-50"
-                            }`}
-                          >
-                            {scene.name}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm font-sans text-gray-400 italic text-center">
-                          ไม่พบข้อมูลที่ค้นหา
-                        </div>
-                      )}
+                        // 4. การตั้งค่าเพิ่มเติมอื่นๆ
+                        placeholder="-- เลือกบทปลายทาง --"
+                        isClearable={true} // เพิ่มปุ่มกากบาทเพื่อล้างค่าได้ (ถ้าต้องการ)
+                        isSearchable={true} // เปิดใช้งานการค้นหา
+                        // 5. ปรับแต่งสไตล์ให้ใกล้เคียงกับ Tailwind ของเดิม
+                        styles={{
+                          control: (baseStyles, state) => ({
+                            ...baseStyles,
+                            borderColor: state.isFocused
+                              ? "#a855f7"
+                              : "#e5e7eb", // focus:border-purple-500 และ border-gray-200
+                            boxShadow: "none",
+                            "&:hover": {
+                              borderColor: state.isFocused
+                                ? "#a855f7"
+                                : "#d1d5db",
+                            },
+                            borderRadius: "0.5rem", // rounded-lg
+                            paddingTop: "2px", // ปรับระดับความสูง px-3 py-2 ให้ใกล้เคียงของเดิม
+                            paddingBottom: "2px",
+                          }),
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 gap-4">
+                      <span className="text-sm text-gray-600 whitespace-nowrap">
+                        {" <--- เนื้อเรื่องจะเชื่อมกับบล้อกถัดไปในบทนี้ "}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -241,6 +445,8 @@ const ChoiceSection = ({
           [ + เพิ่มตัวเลือกใหม่ ]
         </button>
       </div>
+      <div ref={inputRef}></div>
+      <div ref={inputRef} tabIndex="0"></div>
     </div>
   );
 };

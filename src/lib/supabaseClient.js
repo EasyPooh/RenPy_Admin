@@ -8,4 +8,4 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // เรา Export ออกไปเพื่อให้ไฟล์อื่นๆ (เช่น App.jsx) เรียกใช้ได้ทันที
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export const MOCK_USER_ID = "62ba56e6-8e6b-4f30-a4da-a001ce73502d" // ตัวนี้เป็นแค่ Mock ID สำหรับการทดสอบเท่านั้น ในโปรเจคจริงควรใช้ระบบ Authentication ของ Supabase เพื่อจัดการผู้ใช้และ Session อย่างถูกต้อง
+export const MOCK_USER_ID = "62ba56e6-8e6b-4f30-a4da-a001ce73502d" 

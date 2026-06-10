@@ -13,6 +13,14 @@ const TopNavbar = ({ id }) => {
   };
   return (
     <div className="h-11 border-b border-gray-100 bg-white flex items-center justify-between px-6 select-none shrink-0 text-xs text-gray-500">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+        >
+          ← กลับ
+        </button>
+      </div>
       {/* ฝั่งซ้าย: โลโก้และชื่อระบบจัดการสคริปต์ */}
       <div className="flex items-center space-x-2 font-medium tracking-wide">
         <span className="text-sm">🔮</span>

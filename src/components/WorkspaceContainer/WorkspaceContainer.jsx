@@ -24,6 +24,23 @@ const WorkspaceContainer = ({
   console.log("รายชื่อบทที่เดินทางมาถึง Workspace:", allChapters);
   const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);
 
+  const dialogueBlocks = blocks.filter((b) => b.type === "dialogue");
+  const mappedDialogueOptions = dialogueBlocks.map((block, index) => {
+    // ตัดข้อความบทสนทนาสั้น ๆ เพื่อเอาไปโชว์ใน Dropdown (ไม่ให้ยาวล้นจอ)
+    const shortText = block.text
+      ? block.text.length > 20
+        ? block.text.substring(0, 20) + "..."
+        : block.text
+      : "(บล็อกว่างเปล่า)";
+
+    return {
+      id: block.id,
+      // รูปแบบการแสดงผล: "บล็อกที่ 1: [ชื่อตัวละคร] ข้อความ..."
+      displayName: `บล็อกที่ ${index + 1}: [${block.character || "ไม่มีชื่อ"}] ${shortText}`,
+      pureText: block.text || "",
+    };
+  });
+
   const [startBg, setStartBg] = useState("");
   const [startMusic, setStartMusic] = useState("");
   const [startChar, setStartChar] = useState("");
@@ -164,6 +181,7 @@ const WorkspaceContainer = ({
                       onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
                       allchapter={allChapters}
+                      currentChapterBlocks={mappedDialogueOptions}
                     />
                   );
                 }
