@@ -58,7 +58,7 @@ const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
   const handleDelete = async (asset) => {
     console.log("🔎 ตรวจสอบข้อมูล asset ที่ส่งเข้ามา:", asset);
     if (!asset || !asset.id) {
-      alert("ไม่พบข้อมูลสินทรัพย์ที่ต้องการลบ");
+      alert("ไม่พบข้อมูล asset ที่ต้องการลบ");
       return;
     }
     // TODO: ใส่ Logic การลบไฟล์จาก Supabase ตรงนี้เพิ่มเติมตามต้องการ
@@ -68,7 +68,7 @@ const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
     <div className="w-full p-4">
       {assets.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <p className="text-gray-400">ยังไม่มีสินทรัพย์ในโปรเจกต์นี้</p>
+          <p className="text-gray-400">ยังไม่มี Assets ในโปรเจกต์นี้</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -86,12 +86,13 @@ const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
                 className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden group"
               >
                 {/*ส่วนแสดงตัวอย่าง (Thumbnail) */}
-                <div className="w-full h-44 bg-gray-50 flex items-center justify-center border-b border-gray-100 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                <div className="w-full h-44 bg-gray-50 flex items-center justify-center border-b border-gray-100 relative overflow-hidden bg-linear-to-br from-gray-50 to-gray-100">
                   {isImageAsset && previewUrl ? (
                     <img
                       src={previewUrl}
                       alt={asset.file_name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className={`"w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      ${asset.file_type === "sprite" ? "object-top" : "object-center"}`}
                     />
                   ) : isImageAsset ? (
                     <div className="text-4xl select-none">🖼️</div>
@@ -116,7 +117,7 @@ const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
                       className="font-medium text-gray-900 truncate mb-2"
                       title={asset.file_name}
                     >
-                      {asset.file_name || "ไม่มีชื่อสินทรัพย์"}
+                      {asset.file_name || "ไม่มีชื่อ Asset"}
                     </h3>
 
                     <div className="flex items-center justify-between gap-2 mt-3">
@@ -126,7 +127,7 @@ const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
                         {badge.text}
                       </span>
                       <span className="text-xs text-gray-400 font-medium">
-                        {formatFileSize(asset.size_kb || asset.file_size)}
+                        {formatFileSize(asset.size_kb || asset.file_size_kb)}
                       </span>
                     </div>
                   </div>
