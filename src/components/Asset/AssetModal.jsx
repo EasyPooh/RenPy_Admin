@@ -118,7 +118,7 @@ const AssetModal = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ชื่อสินทรัพย์
+              ชื่อ Asset ที่ต้องการ
             </label>
             <input
               type="text"
@@ -131,7 +131,7 @@ const AssetModal = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ประเภทสินทรัพย์
+              ประเภท Assets
             </label>
             <select
               value={assetType}
@@ -147,7 +147,7 @@ const AssetModal = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ไฟล์ชิ้นงาน{" "}
+              อัปโหลดไฟล์{" "}
               {mode === "edit" && "(อัปโหลดไฟล์ใหม่หากต้องการเปลี่ยนชิ้นเดิม)"}
             </label>
             <input

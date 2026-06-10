@@ -16,9 +16,7 @@ const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
           ← กลับ
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            คลังจัดการทรัพย์สินระบบ
-          </h1>
+          <h1 className="text-xl font-bold text-gray-900">คลังจัดการ Assets</h1>
           <p className="text-xs text-gray-500">
             อัปโหลด ค้นหา และแก้ไขไฟล์ต่าง ๆ ภายในโปรเจกต์
           </p>
@@ -32,7 +30,7 @@ const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ค้นหาชื่อสินทรัพย์..."
+            placeholder="ค้นหาชื่อ Assets..."
             className="w-full pl-3 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50"
           />
         </div>

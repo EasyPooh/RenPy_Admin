@@ -66,7 +66,7 @@ const AssetPage = () => {
         .length,
       sprite: currentAssets.filter((a) => a.file_type === "sprite").length,
       music: currentAssets.filter((a) => a.file_type === "music").length,
-      soundEffect: currentAssets.filter((a) => a.file_type === "sound_effect")
+      sound_effect: currentAssets.filter((a) => a.file_type === "sound_effect")
         .length, // เปลี่ยนจาก sound เป็น soundEffect
     };
   }, [assetsList]);

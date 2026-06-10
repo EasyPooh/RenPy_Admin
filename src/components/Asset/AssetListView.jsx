@@ -1,131 +1,49 @@
-// src/components/Asset/AssetListView.jsx
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 
 const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
-  // ฟังก์ชันดึง URL รูปภาพจาก Storage จริงมาแสดงผลตามต้องการ
+  // ฟังก์ชันดึง URL รูปภาพจาก Storage จริงมาแสดงผล
   const getAssetPreviewUrl = (filePath) => {
     if (!filePath || typeof filePath !== "string") return null;
-    const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
+    const { data } = supabase.storage
+      .from("game-assets")
+      .getPublicUrl(filePath);
     return data?.publicUrl || null;
   };
 
+  // ฟังก์ชันกำหนดสีและข้อความของ Badge ตามประเภท
   const getTypeBadge = (type) => {
     switch (type) {
       case "background":
         return {
           text: "ภาพพื้นหลัง",
-          bg: "bg-blue-50 text-blue-600 border-blue-100",
+          bg: "bg-blue-50 text-blue-600 border border-blue-100",
         };
       case "sprite":
         return {
           text: "ภาพตัวละคร",
-          bg: "bg-emerald-50 text-emerald-600 border-emerald-100",
+          bg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
         };
       case "music":
         return {
           text: "เพลงประกอบ",
-          bg: "bg-amber-50 text-amber-600 border-amber-100",
+          bg: "bg-amber-50 text-amber-600 border border-amber-100",
         };
       case "sound_effect":
         return {
           text: "เอฟเฟกต์เสียง",
-          bg: "bg-purple-50 text-purple-600 border-purple-100",
+          bg: "bg-purple-50 text-purple-600 border border-purple-100",
         };
       default:
         return {
           text: "ทั่วไป",
-          bg: "bg-gray-50 text-gray-600 border-gray-100",
+          bg: "bg-gray-50 text-gray-600 border border-gray-100",
         };
     }
   };
 
-  const renderThumbnail = (asset) => {
-    if (asset.file_type === "background" || asset.file_type === "sprite") {
-      const previewUrl = getAssetPreviewUrl(asset.storage_path);
-      return previewUrl ? (
-        <img
-          src={previewUrl}
-          alt={asset.name}
-          className="w-12 h-12 object-cover rounded-lg border border-gray-100"
-        />
-      ) : (
-        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
-          🖼️
-        </div>
-      );
-    }
-    if (asset.file_type === "music" || asset.file_type === "sound_effect") {
-      return (
-        <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center text-lg">
-          🎵
-        </div>
-      );
-    }
-    return (
-      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
-        📁
-      </div>
-    );
-  };
-
-  const handleDelete = async (asset) => {
-    console.log("🔎 ตรวจสอบข้อมูล asset ที่ส่งเข้ามา:", asset);
-    if (!asset || !asset.id) {
-      alert("ไม่พบข้อมูลสินทรัพย์ที่ต้องการลบ");
-      return;
-    }
-
-    // กำหนดชื่อที่จะแสดงในตารางยืนยันการลบ
-    const displayName = asset.name || asset.file_name || "ชิ้นงานนี้";
-    const isConfirm = window.confirm(
-      `คุณแน่ใจหรือไม่ว่าต้องการลบ "${displayName}"?`,
-    );
-    if (!isConfirm) return;
-
-    try {
-      // 1. ลบไฟล์จริงใน Supabase Storage โดยใช้พาธตรงๆ จากตารางในฐานข้อมูล
-      if (asset.storage_path) {
-        console.log(
-          "👉 กำลังส่งคำสั่งลบไปที่ Storage Path:",
-          asset.storage_path,
-        );
-
-        const { data: storageData, error: storageError } =
-          await supabase.storage
-            .from("game-assets") // ⚠️ เช็กให้มั่นใจว่าชื่อ Bucket ใน Supabase สะกดแบบนี้เป๊ะๆ
-            .remove([asset.storage_path]);
-
-        if (storageError) {
-          console.error("❌ Storage Error:", storageError.message);
-          alert(
-            `[Storage Error] ไม่สามารถลบไฟล์ในคลังได้: ${storageError.message}\n(ระบบจะระงับการลบข้อมูลในตารางไว้ชั่วคราว)`,
-          );
-          return; // 🛑 บล็อกไว้ ไม่ให้ไปลบแถวข้อมูลในตารางเด็ดขาด
-        }
-      }
-
-      // 2. เมื่อลบไฟล์ใน Storage ผ่านแล้ว ค่อยสั่งลบข้อมูลแถวนี้ใน Database
-      console.log("👉 กำลังลบข้อมูลในตาราง Database ID:", asset.id);
-      const { error: dbError } = await supabase
-        .from("assets")
-        .delete()
-        .eq("id", asset.id);
-
-      if (dbError) {
-        console.error("❌ Database Error:", dbError.message);
-        alert("เกิดข้อผิดพลาดในการลบฐานข้อมูล: " + dbError.message);
-      } else {
-        alert("ลบสินทรัพย์สำเร็จเรียบร้อยทั้งในคลังและฐานข้อมูล!");
-        if (onRefresh) onRefresh(); // รีเฟรชหน้าจอแสดงผลใหม่
-      }
-    } catch (err) {
-      console.error("❌ System Error:", err);
-      alert("เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง");
-    }
-  };
-
+  // ฟังก์ชันคำนวณขนาดไฟล์
   const formatFileSize = (sizeInKb) => {
     if (sizeInKb === undefined || sizeInKb === null || isNaN(sizeInKb)) {
       return "0 KB";
@@ -136,61 +54,104 @@ const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
     return `${(parseFloat(sizeInKb) / 1024).toFixed(1)} MB`;
   };
 
+  // ฟังก์ชันจัดการการลบสินทรัพย์
+  const handleDelete = async (asset) => {
+    console.log("🔎 ตรวจสอบข้อมูล asset ที่ส่งเข้ามา:", asset);
+    if (!asset || !asset.id) {
+      alert("ไม่พบข้อมูลสินทรัพย์ที่ต้องการลบ");
+      return;
+    }
+    // TODO: ใส่ Logic การลบไฟล์จาก Supabase ตรงนี้เพิ่มเติมตามต้องการ
+  };
+
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              <th className="py-4 px-6">สื่อตัวอย่าง</th>
-              <th className="py-4 px-6">ชื่อสินทรัพย์</th>
-              <th className="py-4 px-6">ประเภท</th>
-              <th className="py-4 px-6">ขนาดไฟล์</th>
-              <th className="py-4 px-6 text-right">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
-            {assets.map((asset) => {
-              const badge = getTypeBadge(asset.file_type);
-              return (
-                <tr
-                  key={asset.id}
-                  className="hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="py-4 px-6">{renderThumbnail(asset)}</td>
-                  <td className="py-4 px-6 font-medium text-gray-900">
-                    {asset.name}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span
-                      className={`px-2.5 py-1 text-xs font-medium rounded-full border ${badge.bg}`}
+    <div className="w-full p-4">
+      {assets.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+          <p className="text-gray-400">ยังไม่มีสินทรัพย์ในโปรเจกต์นี้</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {assets.map((asset) => {
+            const badge = getTypeBadge(asset.file_type);
+            const previewUrl = getAssetPreviewUrl(asset.storage_path);
+            const isImageAsset =
+              asset.file_type === "background" || asset.file_type === "sprite";
+            const isAudioAsset =
+              asset.file_type === "music" || asset.file_type === "sound_effect";
+
+            return (
+              <div
+                key={asset.id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden group"
+              >
+                {/*ส่วนแสดงตัวอย่าง (Thumbnail) */}
+                <div className="w-full h-44 bg-gray-50 flex items-center justify-center border-b border-gray-100 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                  {isImageAsset && previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt={asset.file_name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : isImageAsset ? (
+                    <div className="text-4xl select-none">🖼️</div>
+                  ) : isAudioAsset ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-xl text-amber-600 animate-pulse-slow">
+                        🎵
+                      </div>
+                      <span className="text-xs text-gray-400 font-medium tracking-wide">
+                        AUDIO FILE
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-4xl select-none">📁</div>
+                  )}
+                </div>
+
+                {/*ส่วนข้อมูลสินทรัพย์ (Content) */}
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3
+                      className="font-medium text-gray-900 truncate mb-2"
+                      title={asset.file_name}
                     >
-                      {badge.text}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-gray-500">
-                    {formatFileSize(asset.file_size_kb)}
-                  </td>
-                  <td className="py-4 px-6 text-right space-x-2">
+                      {asset.file_name || "ไม่มีชื่อสินทรัพย์"}
+                    </h3>
+
+                    <div className="flex items-center justify-between gap-2 mt-3">
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-md font-medium ${badge.bg}`}
+                      >
+                        {badge.text}
+                      </span>
+                      <span className="text-xs text-gray-400 font-medium">
+                        {formatFileSize(asset.size_kb || asset.file_size)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/*ปุ่มจัดการ (Actions) */}
+                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-gray-100">
                     <button
-                      onClick={() => onOpenEdit(asset)}
-                      className="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1.5 rounded-md hover:bg-indigo-100 transition-colors"
+                      onClick={() => onOpenEdit && onOpenEdit(asset)}
+                      className="flex items-center justify-center gap-1 py-2 px-3 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors active:bg-gray-200"
                     >
-                      แก้ไข
+                      ✏️ แก้ไข
                     </button>
                     <button
                       onClick={() => handleDelete(asset)}
-                      className="text-rose-600 hover:text-rose-900 font-medium text-xs bg-rose-50 px-2.5 py-1.5 rounded-md hover:bg-rose-100 transition-colors"
+                      className="flex items-center justify-center gap-1 py-2 px-3 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg transition-colors active:bg-red-200"
                     >
-                      ลบ
+                      🗑️ ลบ
                     </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
