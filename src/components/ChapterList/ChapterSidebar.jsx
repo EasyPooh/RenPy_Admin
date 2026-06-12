@@ -18,6 +18,7 @@ const ChapterSidebar = ({
   onDragEnd,
   handleDeleteChapter, // รับฟังก์ชันลบบทจากไฟล์แม่ใหญ่ (ChapterManagementPage)
   inputRef,
+  handleAddTagAction,
 }) => {
   return (
     <div className="flex flex-col h-full w-full">
@@ -45,6 +46,7 @@ const ChapterSidebar = ({
             onDragEnd={onDragEnd}
             handleDeleteChapter={handleDeleteChapter} // ส่งฟังก์ชันลบบทลงไปที่แต่ละไอเท็มด้วย
             ref={Chapter.id === activeChapterId ? inputRef : null}
+            handleAddTagAction={handleAddTagAction}
           />
         ))}
       </div>

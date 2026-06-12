@@ -1,9 +1,35 @@
 // src/components/ChapterList/TopNavbar.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { supabase } from "../../lib/supabaseClient";
 
 const TopNavbar = ({ id }) => {
   const navigate = useNavigate();
+  const [projectName, setProjectName] = useState("กำลังโหลด...");
+
+  // 🎯 ดึงชื่อโปรเจกต์จากฐานข้อมูลเมื่อ id เปลี่ยนแปลง
+  useEffect(() => {
+    const fetchProjectName = async () => {
+      if (!id) return;
+      try {
+        const { data, error } = await supabase
+          .from("Projects") // ชื่อตารางโปรเจกต์ของคุณ
+          .select("titles") // สมมติว่าในเบสคุณเก็บชื่อด้วยฟิลด์ project_name (ถ้าเป็น name ให้เปลี่ยนตรงนี้ครับ)
+          .eq("id", id)
+          .single(); // ดึงข้อมูลมาแค่แถวเดียว
+
+        if (error) throw error;
+        if (data) {
+          setProjectName(data.titles || "ไม่มีชื่อโปรเจกต์");
+        }
+      } catch (error) {
+        console.error("Error fetching project name:", error.message);
+        setProjectName("ไม่สามารถดึงชื่อได้");
+      }
+    };
+
+    fetchProjectName();
+  }, [id]);
 
   const handleAssetPage = () => {
     // ตรงนี้คุณสามารถใส่เงื่อนไขได้ เช่น ถ้า user ล็อกอินแล้วค่อยไป
@@ -13,20 +39,21 @@ const TopNavbar = ({ id }) => {
   };
   return (
     <div className="h-11 border-b border-gray-100 bg-white flex items-center justify-between px-6 select-none shrink-0 text-xs text-gray-500">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-10">
         <button
           onClick={() => navigate(-1)}
           className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
         >
           ← กลับ
         </button>
-      </div>
-      {/* ฝั่งซ้าย: โลโก้และชื่อระบบจัดการสคริปต์ */}
-      <div className="flex items-center space-x-2 font-medium tracking-wide">
-        <span className="text-sm">🔮</span>
-        <span className="font-bold text-gray-700">RenPy Admin</span>
-        <span className="text-gray-300">|</span>
-        <span className="text-gray-400">ชื่อโปรเจคอยุ่ตรงนี้</span>
+
+        {/* ฝั่งซ้าย: โลโก้และชื่อระบบจัดการสคริปต์ */}
+        <div className="flex items-center space-x-2 font-medium tracking-wide">
+          <span className="text-sm">🔮</span>
+          <span className="font-bold text-gray-700">RenPy Admin</span>
+          <span className="text-gray-300">|</span>
+          <span className="text-gray-400">ชื่อโปรเจค : {projectName}</span>
+        </div>
       </div>
 
       {/* ฝั่งขวา: ศูนย์รวมปุ่มกด Utilities เครื่องมือจัดการภาพรวมโปรเจกต์ */}

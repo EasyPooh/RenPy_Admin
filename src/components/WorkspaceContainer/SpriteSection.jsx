@@ -20,6 +20,8 @@ const SpriteSection = ({
       inputRef.current?.focus();
     }
   }, [focusedBlockId, id]);
+
+  const spriteAssets = assets.filter((asset) => asset.file_type === "sprite");
   return (
     <div className="relative flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-3">
       <div className="flex items-center justify-between mb-2">
@@ -56,13 +58,21 @@ const SpriteSection = ({
             onChange={(e) => handleUpdateBlock(id, "sprite", e.target.value)}
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
           >
-            {assets
-              .filter((asset) => asset.file_type === "sprite") // กรองเอาเฉพาะภาพพื้นหลัง
-              .map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
-                </option>
-              ))}
+            {/* 🎯 จัดการ Placeholder ตามจำนวนภาพตัวละครจริงในระบบ */}
+            {spriteAssets.length === 0 ? (
+              <option value="">
+                ❌ ยังไม่มีภาพตัวละครใน asset library
+                (กรุณาอัปโหลดไฟล์ภาพตัวละครก่อน)
+              </option>
+            ) : (
+              <option value="">[ เลือกภาพพื้นหลังเริ่มต้น ]</option>
+            )}
+            {/* วนลูปเฉพาะเพลงที่มีอยู่จริงเข้ามาแสดงผล */}
+            {spriteAssets.map((asset) => (
+              <option key={asset.id} value={asset.id}>
+                {asset.file_name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="w-1/4 min-w-30">

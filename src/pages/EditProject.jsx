@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { supabase } from "../lib/supabaseClient";
 import Navbar from "../components/Navbar";
-// ตรวจสอบว่ามี ArrowLeft, Gamepad2 และ Save ครบถ้วน
 import { Save, ArrowLeft, Gamepad2, ChevronDown } from "lucide-react";
 
 function EditProject() {
@@ -10,6 +9,11 @@ function EditProject() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+
+  // 💾 สเตตกลุ่มควบคุมรูปภาพ (แยกออกจาก formData ชัดเจน)
+  const [oldImageUrl, setOldImageUrl] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
 
   const [formData, setFormData] = useState({
     titles: "",
@@ -28,7 +32,10 @@ function EditProject() {
           .eq("id", id)
           .single();
         if (error) throw error;
-        if (data) setFormData(data);
+        if (data) {
+          setFormData(data);
+          setOldImageUrl(data.image_url || ""); // 👈 จำ URL รูปเดิมไว้ตอนดึงข้อมูลมาครั้งแรก
+        }
       } catch (error) {
         alert("ไม่พบข้อมูลโปรเจกต์นี้");
         navigate("/Allproject");
@@ -39,10 +46,58 @@ function EditProject() {
     fetchProjectData();
   }, [id, navigate]);
 
+  // 👈 1. ฟังก์ชันสำหรับลบรูปเดิมออกจาก Storage
+  const deleteImageFromStorage = async (imageUrl) => {
+    if (!imageUrl || imageUrl.startsWith("blob:")) return; // ดักจับถ้าไม่มีรูปเดิม หรือเป็นค่า blob หลุดมา
+
+    try {
+      const fileName = imageUrl.split("/").pop();
+      await supabase.storage.from("Project-Thumbnail").remove([fileName]);
+      console.log("ลบรูปเก่าจาก Storage สำเร็จ");
+    } catch (err) {
+      console.error("ลบรูปเก่าล้มเหลว:", err);
+    }
+  };
+
+  // 👈 2. ฟังก์ชันอัปโหลดรูปภาพใหม่ขึ้น Storage
+  const uploadImage = async (file) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error } = await supabase.storage
+      .from("Project-Thumbnail")
+      .upload(filePath, file);
+
+    if (error) throw error;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("Project-Thumbnail").getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      let finalImageUrl = formData.image_url;
+
+      // เคสที่ 1: มีการเลือกรูปภาพใหม่เข้ามาเปลี่ยน
+      if (imageFile) {
+        // ลบรูปภาพเก่าออกจาก Storage ทันที (เพราะเราล็อคค่า URL เก่าไว้ใน oldImageUrl แล้ว)
+        if (oldImageUrl) {
+          await deleteImageFromStorage(oldImageUrl);
+        }
+        // อัปโหลดรูปใหม่ขึ้นไปแทน
+        finalImageUrl = await uploadImage(imageFile);
+      }
+      // เคสที่ 2: ไม่ได้เลือกรูปใหม่ แต่กดเอารูปเดิมออกจนเกลี้ยง
+      else if (formData.image_url === "" && oldImageUrl) {
+        await deleteImageFromStorage(oldImageUrl);
+      }
+
       const { error } = await supabase
         .from("Projects")
         .update({
@@ -50,9 +105,10 @@ function EditProject() {
           description: formData.description,
           game_type: formData.game_type,
           status: formData.status,
-          image_url: formData.image_url,
+          image_url: finalImageUrl, // มั่นใจได้ว่าเป็น URL จริงแน่นอน
         })
         .eq("id", id);
+
       if (error) throw error;
       alert("แก้ไขโปรเจกต์สำเร็จ!");
       navigate("/Allproject");
@@ -63,36 +119,37 @@ function EditProject() {
     }
   };
 
-  // 1. สร้าง reference สำหรับชี้ไปที่แท็กอินพุตไฟล์
   const fileInputRef = React.useRef(null);
 
-  // 2. ฟังก์ชันเมื่อผู้ใช้ทำการคลิกเลือกไฟล์ภาพใหม่จากเครื่อง
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // แนะนำสร้าง Object URL ชั่วคราวเพื่อแสดงภาพตัวอย่างทันทีบนหน้าเว็บ
-      const previewUrl = URL.createObjectURL(file);
-
-      // อัปเดตข้อมูลลง state `formData` ของคุณ เพื่อให้หน้าเว็บเปลี่ยนรูปทันที (และเก็บไฟล์จริงแยกไว้ส่งอัปโหลดถ้าจำเป็น)
-      setFormData((prev) => ({
-        ...prev,
-        image_url: previewUrl,
-        image_file: file, // เก็บไฟล์ดิบไว้สำหรับยิงขึ้น Storage ตอนกดบันทึก
-      }));
+      // สร้าง blob ชั่วคราวเก็บไว้ที่ previewUrl แยกต่างหาก
+      const blobUrl = URL.createObjectURL(file);
+      setPreviewUrl(blobUrl);
+      setImageFile(file); // เก็บไฟล์ดิบไว้เตรียมอัพโหลด
     }
   };
 
-  // 3. ฟังก์ชันสำหรับกดเอารูปออก
   const handleRemoveImage = () => {
-    setFormData((prev) => ({
-      ...prev,
-      image_url: "", // สั่งเคลียร์ค่า URL ให้เป็นค่าว่าง
-      image_file: null,
-    }));
+    setPreviewUrl("");
+    setImageFile(null);
+    // ถ้าต้องการลบรูปภาพที่มีอยู่เดิมออกด้วยเมื่อเซฟ ให้ล้างค่าใน formData
+    setFormData((prev) => ({ ...prev, image_url: "" }));
+
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // รีเซ็ตค่าในอินพุตไฟล์เดิมด้วย
+      fileInputRef.current.value = "";
     }
   };
+
+  // ล้างหน่วยความจำ Blob เมื่อ 컴โพเนนต์ ถูกถอดออก (Best Practice)
+  useEffect(() => {
+    return () => {
+      if (formData.image_url && formData.image_url.startsWith("blob:")) {
+        URL.revokeObjectURL(formData.image_url);
+      }
+    };
+  }, [formData.image_url]);
 
   if (fetching)
     return (
@@ -105,9 +162,7 @@ function EditProject() {
 
       <main className="flex-1 py-10 px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
-          {/* --- New Header Section (เลียนแบบ CreateProjectHeader) --- */}
           <div className="flex items-center justify-start gap-4 mb-8">
-            {/* ปุ่มย้อนกลับ แบบเรียบง่ายตามตัวอย่าง */}
             <button
               onClick={() => navigate(-1)}
               className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -115,12 +170,10 @@ function EditProject() {
               <ArrowLeft size={24} />
             </button>
 
-            {/* ไอคอนโปรเจกต์ (สีม่วงพร้อม Shadow) */}
             <div className="bg-purple-600 p-3 rounded-2xl shadow-lg shadow-purple-200">
               <Gamepad2 className="text-white" size={28} />
             </div>
 
-            {/* หัวข้อและคำอธิบาย */}
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
                 แก้ไขโปรเจกต์
@@ -131,7 +184,6 @@ function EditProject() {
             </div>
           </div>
 
-          {/* --- Form Section --- */}
           <form
             onSubmit={handleUpdate}
             className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-12"
@@ -139,7 +191,7 @@ function EditProject() {
             <div className="space-y-8">
               {/* ชื่อโปรเจกต์ */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="block text-slate-700 font-bold mb-2">
                   ชื่อโปรเจกต์ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -156,7 +208,7 @@ function EditProject() {
 
               {/* คำอธิบาย */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="block text-slate-700 font-bold mb-2">
                   คำอธิบาย
                 </label>
                 <textarea
@@ -173,7 +225,7 @@ function EditProject() {
               {/* แถว Genre และ Status */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="block text-slate-700 font-bold mb-2">
                     แนวเกม
                   </label>
                   <input
@@ -188,7 +240,7 @@ function EditProject() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="block text-slate-700 font-bold mb-2">
                     สถานะ
                   </label>
                   <div className="relative">
@@ -209,11 +261,10 @@ function EditProject() {
 
               {/* ภาพปกปัจจุบัน */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 block">
-                  ภาพปกปัจจุบัน
+                <label className="block text-slate-700 font-bold mb-2">
+                  ภาพปกโปรเจกต์
                 </label>
 
-                {/* อินพุตลับสำหรับรับไฟล์ภาพ (คงเดิมไว้) */}
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -223,15 +274,13 @@ function EditProject() {
                 />
 
                 <div className="relative w-full h-52 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group transition-all duration-300">
-                  {formData.image_url ? (
-                    /* === เคสที่ 1: มีรูปภาพปก === */
+                  {previewUrl || formData.image_url ? (
                     <>
                       <img
-                        src={formData.image_url}
+                        src={previewUrl || formData.image_url}
                         alt="Current"
                         className="w-full h-full object-cover"
                       />
-                      {/* Overlay แสดงปุ่มตอน Hover */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                         <button
                           type="button"
@@ -250,12 +299,10 @@ function EditProject() {
                       </div>
                     </>
                   ) : (
-                    /* === เคสที่ 2: ไม่มีรูปภาพปก (ปรับโฉมให้สวยงามมินิมอล) === */
                     <div
                       onClick={() => fileInputRef.current?.click()}
                       className="w-full h-full flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gray-100/70 transition-colors border-2 border-dashed border-gray-200 rounded-2xl"
                     >
-                      {/* ไอคอนรูปภาพ SVG มินิมอล */}
                       <svg
                         className="w-10 h-10 text-gray-400"
                         fill="none"

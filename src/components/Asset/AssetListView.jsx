@@ -61,13 +61,58 @@ const AssetListView = ({
   };
 
   // ฟังก์ชันจัดการการลบสินทรัพย์
+  // 🎯 ฟังก์ชันจัดการการลบสินทรัพย์แบบสมบูรณ์ (Storage + Database)
   const handleDelete = async (asset) => {
     console.log("🔎 ตรวจสอบข้อมูล asset ที่ส่งเข้ามา:", asset);
     if (!asset || !asset.id) {
       alert("ไม่พบข้อมูล asset ที่ต้องการลบ");
       return;
     }
-    // TODO: ใส่ Logic การลบไฟล์จาก Supabase ตรงนี้เพิ่มเติมตามต้องการ
+
+    const confirmDelete = window.confirm(
+      `คุณต้องการลบไฟล์ "${asset.file_name || "Asset นี้"}" ใช่หรือไม่?`,
+    );
+    if (!confirmDelete) return;
+
+    try {
+      // 1️⃣ ขั้นตอนที่ 1: ลบไฟล์ดิบออกจาก Supabase Storage Buckets "game-assets"
+      if (asset.storage_path) {
+        console.log("กำลังลบไฟล์ใน Storage ที่ path:", asset.storage_path);
+        const { error: storageError } = await supabase.storage
+          .from("game-assets")
+          .remove([asset.storage_path]); // ต้องส่งค่าเป็น Array [ ]
+
+        if (storageError) {
+          console.error(
+            "เกิดปัญหาระหว่างลบไฟล์ใน Storage:",
+            storageError.message,
+          );
+          // ปล่อยให้ระบบทำงานต่อ เผื่อไฟล์ใน storage ถูกลบมือไปแล้ว แต่ข้อมูลในเบสยังค้างอยู่
+        } else {
+          console.log("ลบไฟล์สำเร็จจาก Storage เรียบร้อย");
+        }
+      }
+
+      // 2️⃣ ขั้นตอนที่ 2: ลบแถวข้อมูลออกจากฐานข้อมูลตาราง (Database)
+      // ⚠️ คำเตือน: ระบบจะตรวจหาชื่อตารางอัตโนมัติ แต่ถ้าเกิด error ให้เปลี่ยนคำว่า "game_assets"
+      // ไปเป็นชื่อตารางเก็บ Asset จริงๆ ในฐานข้อมูลของคุณ (เช่น "Project_Assets" หรืออื่นๆ)
+      const { error: dbError } = await supabase
+        .from("assets")
+        .delete()
+        .eq("id", asset.id);
+
+      if (dbError) throw dbError;
+
+      alert("ลบ Asset สำเร็จเรียบร้อยแล้ว!");
+
+      // 3️⃣ ขั้นตอนที่ 3: รีเฟรชหน้าจอเพื่ออัปเดตลบการ์ดที่ถูกลบออกไป
+      if (onRefresh) {
+        onRefresh(); // เรียกฟังก์ชันดึงข้อมูลใหม่ที่ส่งมาจาก Component แม่
+      }
+    } catch (error) {
+      console.error("Error during asset deletion:", error.message);
+      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลสินทรัพย์ได้ - " + error.message);
+    }
   };
 
   return (

@@ -33,30 +33,102 @@ function Allproject() {
   }, []);
 
   const handleDeleteProject = async (projectId) => {
-    // ยืนยันกับผู้ใช้ก่อนลบ (Best Practice)
-    const confirmDelete = window.confirm("คุณแน่ใจหรือไม่ที่จะลบโปรเจกต์นี้?");
+    const confirmDelete = window.confirm(
+      "คุณแน่ใจหรือไม่ที่จะลบโปรเจกต์นี้และ Assets ทั้งหมดในเกม?",
+    );
     if (!confirmDelete) return;
 
     try {
-      // --- STEP 1: ลบข้อมูลใน Supabase ---
-      // ใช้ชื่อตาราง 'Projects' และ column 'id' ตามที่คุณระบุไว้
+      // 1. ดึงข้อมูลโปรเจกต์ตัวที่จะลบออกมาก่อนเพื่อเอา image_url ปกเกม
+      const targetProject = projects.find((p) => p.id === projectId);
+
+      // 2. 🚀 เพิ่มเติม: ดึงรายการ Assets ทั้งหมดของโปรเจกต์นี้จากฐานข้อมูลมาลบออกจาก Storage
+      // ⚠️ หมายเหตุ: ให้เปลี่ยนชื่อตาราง "Project_Assets" เป็นชื่อตารางเก็บ Asset จริงๆ ในเบสของคุณ
+      const { data: relatedAssets, error: assetFetchError } = await supabase
+        .from("Project_Assets")
+        .select("storage_path")
+        .eq("project_id", projectId); // ค้นหา Asset ที่ผูกกับไอดีเกมนี้
+
+      if (!assetFetchError && relatedAssets && relatedAssets.length > 0) {
+        // แกะเอาอาเรย์เฉพาะ storage_path ทั้งหมดออกมา เช่น ["folder/pic.png", "folder/sound.mp3"]
+        const filesToDelete = relatedAssets.map((asset) => asset.storage_path);
+
+        // สั่งลบ Assets เกมทั้งหมดออกจาก Bucket "game-assets" พร้อมกันในครั้งเดียว
+        const { error: storageDeleteError } = await supabase.storage
+          .from("game-assets")
+          .remove(filesToDelete);
+
+        if (storageDeleteError) {
+          console.error(
+            "ลบไฟล์ assets ใน storage ไม่สำเร็จ:",
+            storageDeleteError.message,
+          );
+        }
+      }
+
+      // 3. สั่งลบภาพปกเกมออกจาก Bucket "Project-Thumbnail"
+      if (targetProject && targetProject.image_url) {
+        await deleteImageFromStorage(targetProject.image_url);
+      }
+
+      // 4. ลบข้อมูลโปรเจกต์ออกจากฐานข้อมูลตาราง Projects
       const { error } = await supabase
         .from("Projects")
         .delete()
         .eq("id", projectId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
+      // อัปเดต State บนหน้าจอแสดงผล
       setProjects((prevProjects) =>
-        prevProjects.filter((project) => project.id !== projectId),
+        prevProjects.filter((item) => item.id !== projectId),
       );
 
-      alert("ลบโปรเจกต์สำเร็จแล้ว!");
+      alert("ลบโปรเจกต์และเคลียร์ Assets ขยะสำเร็จเรียบร้อยแล้ว!");
     } catch (error) {
       console.error("Error deleting project:", error.message);
-      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลในฐานข้อมูลได้");
+      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลโปรเจกต์ได้ - " + error.message);
+    }
+  };
+
+  // ปรับปรุงฟังก์ชันลบรูปภาพจาก URL ให้รอบคอบและสกัด Path ได้ถูกต้อง 100%
+  const deleteImageFromStorage = async (imageUrl) => {
+    if (!imageUrl) return;
+
+    // 🛑 ตรวจสอบและข้ามการทำงานทันทีหากเจอ URL ที่บันทึกผิดพลาดเป็นชนิด 'blob:' นำหน้า
+    if (imageUrl.startsWith("blob:")) {
+      console.warn(
+        "ข้ามการลบ: เนื่องจากที่อยู่รูปภาพในเบสเป็นสตริง blob ชั่วคราว:",
+        imageUrl,
+      );
+      return;
+    }
+
+    try {
+      const bucketName = "Project-Thumbnail";
+      const keyword = `/${bucketName}/`;
+      let storagePath = "";
+
+      // ตัดข้อความหลังจากชื่อคลังเก็บไฟล์ เพื่อเอาโครงสร้าง Path ด้านในทั้งหมดไปสั่งลบ
+      if (imageUrl.includes(keyword)) {
+        storagePath = imageUrl.split(keyword)[1];
+      } else {
+        storagePath = imageUrl.split("/").pop();
+      }
+
+      console.log("กำลังลบไฟล์ภาพปกที่ตำแหน่ง:", storagePath);
+
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .remove([storagePath]);
+
+      if (error) {
+        console.error("ไม่สามารถลบภาพปกจาก Storage ได้:", error.message);
+      } else {
+        console.log("ลบภาพปกจากคลัง Storage สำเร็จ:", data);
+      }
+    } catch (err) {
+      console.error("เกิดข้อผิดพลาดในการตรวจสอบ URL โครงสร้างภาพ:", err);
     }
   };
 

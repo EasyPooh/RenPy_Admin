@@ -21,6 +21,16 @@ const AudioSection = ({
     }
   }, [focusedBlockId, id]);
 
+  // 🎯 1. กรองไฟล์เสียงแยกตามประเภทแบบปลอดภัย (สวม || [] ครอบไว้เสมอ)
+  const filteredAudioAssets = (assets || []).filter((asset) => {
+    if (audiotype === "bgm") {
+      return asset.file_type === "music";
+    } else if (audiotype === "sfx") {
+      return asset.file_type === "sound_effect";
+    }
+    return false;
+  });
+
   return (
     <div className="relative flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-3">
       <div className="flex items-center justify-between mb-2">
@@ -87,20 +97,22 @@ const AudioSection = ({
               onChange={(e) => handleUpdateBlock(id, "audio", e.target.value)}
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
             >
-              {assets
-                ?.filter((asset) => {
-                  if (audiotype === "bgm") {
-                    return asset.file_type === "music";
-                  } else if (audiotype === "sfx") {
-                    return asset.file_type === "sound_effect";
-                  }
-                  return false;
-                })
-                .map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
-                  </option>
-                ))}
+              {/* 🎯 2. แสดง Placeholder ตามสถานะเพลงในคลังจริง */}
+              {filteredAudioAssets.length === 0 ? (
+                <option value="">
+                  ❌ ไม่มีไฟล์{" "}
+                  {audiotype === "bgm" ? "เพลงประกอบ" : "เอฟเฟกต์เสียง"} ในระบบ
+                  (กรุณาอัปโหลดไฟล์ใน asset library ก่อน)
+                </option>
+              ) : (
+                <option value="">[ เลือกเสียงที่ต้องการ ]</option>
+              )}
+
+              {filteredAudioAssets.map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.file_name}
+                </option>
+              ))}
             </select>
           </div>
         )}

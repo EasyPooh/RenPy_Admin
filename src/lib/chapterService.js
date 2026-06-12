@@ -4,37 +4,57 @@ import { supabase } from "./supabaseClient";
 // 🛠️ ฟังก์ชันภายในสำหรับแปลง Title เป็น Label ที่ปลอดภัยสำหรับ Ren'Py
 const generateLabelFromTitle = (title, currentCount) => {
   if (!title) return `chapter_${currentCount + 1}`;
-
+  
   let label = title
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '_')          // เปลี่ยนเว้นวรรคเป็น _
-    .replace(/[^a-z0-9_]/g, '');   // ลบภาษาไทยและอักขระพิเศษออกทั้งหมด
+    .replace(/\s+/g, '_')           // เปลี่ยนเว้นวรรคเป็น _
+    .replace(/[^a-z0-9_]/g, '');    // ลบภาษาไทยและอักขระพิเศษออกทั้งหมด
 
-  // หากเป็นภาษาไทยล้วน พอโดนลบหมดแล้วจะกลายเป็นค่าว่าง ให้ตั้งชื่อทดแทนอัตโนมัติ
-  if (!label || label === '_') {
+  // หากชื่อบทเป็นภาษาไทยล้วน พอโดนลบแล้วจะกลายเป็นค่าว่าง ให้ตั้งชื่อทดแทนอัตโนมัติ
+  if (!label || label === '') {
     label = `chapter_${currentCount + 1}`;
   }
-
   return label;
 };
 
 export const chapterService = {
-  // ดึงข้อมูลบทเรียนทั้งหมด
+  
+  // 1. ดึงข้อมูลบทเรียนทั้งหมด (แยกตาม project_id และเรียงตามลำดับ)
   async getChapters(projectId) {
     const { data, error } = await supabase
       .from("chapters")
       .select("*")
       .eq("project_id", projectId)
-      .order("order_index", { ascending: true });
+      .order("sort_order", { ascending: true });
 
     if (error) throw error;
     return data;
   },
 
-  // ➕ ปรับปรุงการสร้าง Chapter ใหม่ให้เจน Label อัตโนมัติภายในนี้เลย
+  // 2. 🌟 ฟังก์ชันพิเศษ: สำหรับสร้างบทเริ่มต้น (Start Chapter) อัตโนมัติทันทีที่สร้างโปรเจกต์ใหม่
+  async createStartChapter(projectId) {
+    const { data, error } = await supabase
+      .from("chapters")
+      .insert([
+        {
+          project_id: projectId,
+          chapter_titles: "เริ่มเกม (Start)",
+          label_name: "start", // ล็อกตายตัวสำหรับ Ren'Py เสมอ
+          sort_order: 0,      // เป็นบทแรกสุด
+          chapter_status: "draft"
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // 3. ฟังก์ชันสร้างบทเรียนทั่วไป (ปุ่มกดเพิ่มบทเองในหน้าจัดการเนื้อเรื่อง)
   async createChapter(projectId, title, currentCount) {
-    // เสก label_name ที่ปลอดภัยขึ้นมาตรงนี้
+    // เสก label_name ที่ปลอดภัยผ่านฟังก์ชันที่เราทำไว้ด้านบน
     const automaticallyGeneratedLabel = generateLabelFromTitle(title, currentCount);
 
     const { data, error } = await supabase
@@ -43,24 +63,23 @@ export const chapterService = {
         {
           project_id: projectId,
           chapter_titles: title,
-          label_name: automaticallyGeneratedLabel, // ส่งค่าที่เซฟรันจากระบบเข้าไป
-          sort_order: currentCount,
-          chapter_status: "draft",
-          chapter_tags: ["จุดเริ่มต้น"] // หรือเซ็ตเป็นหมวดหมู่เริ่มต้นตามที่คุณต้องการ
+          label_name: automaticallyGeneratedLabel,
+          sort_order: currentCount, // ลำดับต่อจากจำนวนที่มีอยู่เดิม
+          status: "draft"
         }
       ])
       .select()
       .single();
 
     if (error) throw error;
-    return data; // ส่งข้อมูลแถวใหม่กลับไปให้ไฟล์แม่ใช้งานต่อ
+    return data;
   },
 
-  // อัปเดตเฉพาะชื่อบท (Title) เท่านั้น ล็อก label_name ไว้ไม่ให้ขยับ
+  // 4. อัปเดตเฉพาะชื่อบท (Title) เท่านั้น (ล็อก label_name ไว้ไม่ให้ขยับเพื่อความปลอดภัย)
   async updateChapterName(chapterId, newTitle) {
     const { data, error } = await supabase
       .from("chapters")
-      .update({ title: newTitle }) // อัปเดตแค่คอลัมน์ title
+      .update({ title: newTitle })
       .eq("id", chapterId)
       .select()
       .single();
@@ -69,7 +88,7 @@ export const chapterService = {
     return data;
   },
 
-  // ลบบทเรียน
+  // 5. ลบบทเรียน
   async deleteChapter(chapterId) {
     const { error } = await supabase
       .from("chapters")
@@ -78,5 +97,16 @@ export const chapterService = {
 
     if (error) throw error;
     return true;
+  },
+// ➕ เพิ่มฟังก์ชันสำหรับอัปเดต Tags โดยเฉพาะ
+  async updateChapterTags(chapterId, newTags) {
+    const { data, error } = await supabase
+      .from("chapters")
+      .update({ chapter_tags: newTags }) // ส่ง Array ของแท็กใหม่ไปเซฟ (เช่น ['จุดเริ่มต้น', 'ดราม่า'])
+      .eq("id", chapterId)
+      .select();
+
+    if (error) throw error;
+    return data[0];
   }
 };

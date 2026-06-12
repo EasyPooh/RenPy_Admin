@@ -40,6 +40,12 @@ const StartSection = ({
       setStartChar("");
     }
   };
+
+  const musicAssets = assets.filter((asset) => asset.file_type === "music");
+  const backgroundAssets = assets.filter(
+    (asset) => asset.file_type === "background",
+  );
+
   return (
     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3 select-none">
       <div className="text-xs font-bold text-gray-400 tracking-wider">
@@ -54,17 +60,25 @@ const StartSection = ({
           </span>
           <select
             value={startBg}
+            disabled={backgroundAssets.length === 0}
             onChange={(e) => setStartBg(e.target.value)}
             className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           >
-            <option value="">[ เลือกฉากหลังเริ่มต้น ]</option>
-            {assets
-              .filter((asset) => asset.file_type === "background") // กรองเอาเฉพาะภาพพื้นหลัง
-              .map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
-                </option>
-              ))}
+            {/* 🎯 จัดการ Placeholder ตามจำนวนภาพพื้นหลังจริงในระบบ */}
+            {backgroundAssets.length === 0 ? (
+              <option value="">
+                ❌ ยังไม่มีภาพพื้นหลังใน asset library
+                (กรุณาอัปโหลดไฟล์ภาพพื้นหลังก่อน)
+              </option>
+            ) : (
+              <option value="">[ เลือกภาพพื้นหลังเริ่มต้น ]</option>
+            )}
+            {/* วนลูปเฉพาะเพลงที่มีอยู่จริงเข้ามาแสดงผล */}
+            {backgroundAssets.map((asset) => (
+              <option key={asset.id} value={asset.id}>
+                {asset.file_name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -75,17 +89,24 @@ const StartSection = ({
           </span>
           <select
             value={startMusic}
+            disabled={musicAssets.length === 0}
             onChange={(e) => setStartMusic(e.target.value)}
             className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           >
-            <option value="">[ เลือกเพลงพื้นหลังเริ่มต้น ]</option>
-            {assets
-              .filter((asset) => asset.file_type === "music") // กรองเอาเฉพาะภาพพื้นหลัง
-              .map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
-                </option>
-              ))}
+            {/* 🎯 จัดการ Placeholder ตามจำนวนเพลงจริงในระบบ */}
+            {musicAssets.length === 0 ? (
+              <option value="">
+                ❌ ยังไม่มีเพลงใน asset library (กรุณาอัปโหลดไฟล์เสียงก่อน)
+              </option>
+            ) : (
+              <option value="">[ เลือกเพลงพื้นหลังเริ่มต้น ]</option>
+            )}
+            {/* วนลูปเฉพาะเพลงที่มีอยู่จริงเข้ามาแสดงผล */}
+            {musicAssets.map((asset) => (
+              <option key={asset.id} value={asset.id}>
+                {asset.file_name}
+              </option>
+            ))}
           </select>
         </div>
       </div>

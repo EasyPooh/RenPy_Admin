@@ -49,12 +49,23 @@ const AssetModal = ({
 
       // 1. เคสอัปโหลดไฟล์ใหม่เข้า Storage (ถ้ามี)
       if (selectedFile) {
+        // 🎯 [แก้ไขเพิ่มเติม]: หากเป็นการแก้ไขและมีการเลือกไฟล์ใหม่ ให้ลบไฟล์เก่าออกจาก Storage ก่อนเพื่อป้องกันไฟล์ค้าง
+        if (mode === "edit" && selectedAsset?.storage_path) {
+          console.log(
+            "กำลังเคลียร์ไฟล์เก่าออกจาก Storage:",
+            selectedAsset.storage_path,
+          );
+          await supabase.storage
+            .from("game-assets")
+            .remove([selectedAsset.storage_path]);
+        }
+
         const fileExt = selectedFile.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`; // ใช้ตรรกะเวลาพ่วงสุ่มเพื่อไม่ให้ชื่อไฟล์ซ้ำกัน
         const customPath = `${projectId}/${fileName}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("game-assets") // ตรวจสอบให้มั่นใจว่าชื่อ Bucket บนระบบตรงกัน
+          .from("game-assets")
           .upload(customPath, selectedFile);
 
         if (uploadError) throw uploadError;
@@ -89,9 +100,11 @@ const AssetModal = ({
         if (updateError) throw updateError;
       }
 
+      alert("บันทึกข้อมูลและอัปเดตไฟล์สินทรัพย์สำเร็จ!");
       onRefresh();
       onClose();
     } catch (err) {
+      console.error("Error submitting asset modal:", err);
       alert("เกิดข้อผิดพลาด: " + err.message);
     } finally {
       setIsSubmitting(false);

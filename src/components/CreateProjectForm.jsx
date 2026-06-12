@@ -5,12 +5,14 @@ import Button from "./Button";
 import { Save } from "lucide-react";
 import { supabase, MOCK_USER_ID } from "../lib/supabaseClient";
 import { useNavigate } from "react-router";
-import { useState, useRef } from "react"; // 👈 เพิ่มการ import useRef เข้ามาจัดการการล้างค่าอินพุต
+import { useState, useRef, useEffect } from "react"; // 👈 เพิ่มการ import useRef เข้ามาจัดการการล้างค่าอินพุต
+import { chapterService } from "../lib/chapterService";
 
 const CreateProjectForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [formData, setFormData] = useState({
     titles: "",
     description: "",
@@ -21,6 +23,20 @@ const CreateProjectForm = () => {
 
   // 👈 เพิ่ม ref สำหรับอ้างอิงและล้างค่ากล่องเลือกไฟล์ของเบราว์เซอร์
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl("");
+      return;
+    }
+
+    // สร้าง Object URL สำหรับพรีวิวรูป
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setPreviewUrl(objectUrl);
+
+    // ล้างหน่วยความจำ (Revoke) เมื่อปิดฟอร์มหรือเปลี่ยนรูปใหม่
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
 
   // 👈 เพิ่มฟังก์ชันจัดการลบรูปภาพพรีวิวออก
   const handleRemoveImage = () => {
@@ -51,27 +67,52 @@ const CreateProjectForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.titles || formData.titles.trim() === "") {
+      alert("กรุณากรอกชื่อโปรเจกต์ด้วยครับ!");
+      return; // สั่งหยุดทำงานทันที ไม่ให้วิ่งไปหา Supabase
+    }
     setLoading(true);
 
     try {
-      let finalImageUrl = formData.image_url;
+      let finalImageUrl = "";
 
       if (selectedFile) {
         finalImageUrl = await uploadImage(selectedFile);
       }
 
-      const { error } = await supabase.from("Projects").insert([
-        {
-          titles: formData.titles,
-          description: formData.description,
-          game_type: formData.game_type,
-          status: formData.status,
-          image_url: finalImageUrl,
-          user_id: MOCK_USER_ID, // ใช้ Mock User ID ที่เรากำหนดไว้ใน supabaseClient.js
-        },
-      ]);
+      const { data, error } = await supabase
+        .from("Projects")
+        .insert([
+          {
+            titles: formData.titles.trim(),
+            description: formData.description,
+            game_type: formData.game_type,
+            status: formData.status,
+            image_url: finalImageUrl,
+            user_id: MOCK_USER_ID, // ใช้ Mock User ID ที่เรากำหนดไว้ใน supabaseClient.js
+          },
+        ])
+        .select();
 
       if (error) throw error;
+
+      if (data && data.length > 0) {
+        const newProject = data[0]; // ดึงข้อมูลโปรเจกต์แถวแรกที่เพิ่งสร้าง
+        const projectId = newProject.id; // สมมติว่าคอลัมน์ ID ของคุณชื่อ 'id' (ถ้าชื่อ project_id ให้เปลี่ยนตามนะครับ)
+
+        // เรียกใช้ฟังก์ชันจาก chapterService เพื่อสร้างบทแรกอัตโนมัติ
+        // (อย่าลืม import createStartChapter มาจาก chapterService.js ที่ด้านบนสุดของไฟล์นี้นะครับ)
+        await chapterService.createStartChapter(projectId);
+      }
+
+      alert("สร้างโปรเจกต์สำเร็จแล้ว!");
+
+      // 🧹 [จุดแก้ไขที่ 2] เคลียร์หน่วยความจำ Blob และไฟล์ออกให้หมดจดก่อนย้ายหน้า
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setSelectedFile(null);
+
       navigate(-1);
     } catch (error) {
       alert("Error: " + error.message);
@@ -102,7 +143,9 @@ const CreateProjectForm = () => {
             required
             placeholder="ชื่อเกม..."
           />
-
+          <label className="block text-slate-700 font-bold mb-2">
+            คำอธิบาย
+          </label>
           <TextareaField
             label="คำอธิบาย"
             name="description"
@@ -132,8 +175,7 @@ const CreateProjectForm = () => {
 
           {/* === ส่วนอัปโหลดรูปภาพดีไซน์ใหม่ ปรับขนาดฟอนต์หัวข้อให้เท่ากันเป๊ะ === */}
           <div className="space-y-2">
-            {/* 👈 ปรับคลาสเป็น text-sm font-medium text-gray-700 block เพื่อให้เท่ากับ InputField ตัวอื่น */}
-            <label className="text-sm font-medium text-gray-700 block">
+            <label className="block text-slate-700 font-bold mb-2">
               ภาพปกโปรเจกต์
             </label>
 
@@ -155,7 +197,7 @@ const CreateProjectForm = () => {
                 /* เคสที่ 1: เลือกรูปภาพแล้ว -> แสดงรูปภาพพรีวิวพร้อม Overlay ปุ่มควบคุมตอน Hover */
                 <>
                   <img
-                    src={URL.createObjectURL(selectedFile)}
+                    src={previewUrl}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />

@@ -32,6 +32,19 @@ const ChapterManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
+  // ซ่อน/แสดงหน้าต่างเลือกแท็ก
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  // รายการแท็กที่มีให้เลือกในระบบ (สามารถเพิ่มหรือดึงมาจากฐานข้อมูลในอนาคตได้)
+  const [suggestedTags, setSuggestedTags] = useState([
+    "เนื้อเรื่องหลัก",
+    "เนื้อเรื่องรอง",
+    "ฉากต่อสู้",
+    "ฉากดราม่า",
+    "ย้อนอดีต",
+    "ห้องเรียน",
+  ]);
+  const [tagInput, setTagInput] = useState("");
+  const [tempTags, setTempTags] = useState([]);
 
   // 🌟 1. เพิ่ม State บัฟเฟอร์สำหรับจำค่าสลับบนฟอร์มชั่วคราวก่อนกดเซฟ
   const [tempStatus, setTempStatus] = useState("draft");
@@ -368,6 +381,30 @@ const ChapterManagementPage = () => {
     fetchChapters();
   }, [id]);
 
+  const handleAddTagAction = async (tagName) => {
+    const cleanTagName = tagName.trim();
+    if (!cleanTagName) return;
+
+    // ตรวจสอบไม่ให้มีแท็กซ้ำในบทนี้
+    if (!tempTags.includes(cleanTagName)) {
+      const updatedTags = [...tempTags, cleanTagName];
+      setTempTags(updatedTags);
+      setTagInput(""); // ล้างช่องพิมพ์
+
+      // บันทึกลง Supabase ทันที
+      try {
+        await chapterService.updateChapterTags(activeChapterId, updatedTags);
+        setChapters((prev) =>
+          prev.map((ch) =>
+            ch.id === activeChapterId ? { ...ch, tags: updatedTags } : ch,
+          ),
+        );
+      } catch (err) {
+        alert("ไม่สามารถบันทึกแท็กได้ครับ");
+      }
+    }
+  };
+
   return (
     /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
     และห้ามเลื่อนหน้าจอรวม overflow-hidden เพื่อให้สัดส่วนตกลงมาใต้ Navbar พอดี
@@ -412,6 +449,7 @@ const ChapterManagementPage = () => {
               onDragEnd={handleDragEnd}
               handleDeleteChapter={handleDeleteChapter} // ส่งฟังก์ชันลบบทลงไปที่ Sidebar ด้วย
               inputRef={inputRef}
+              handleAddTagAction={handleAddTagAction}
             />
           </div>
         </div>
