@@ -10,6 +10,7 @@ const SceneSection = ({
   onAddBlock,
   focusedBlockId,
   setFocusedBlockId,
+  assets,
 }) => {
   const inputRef = useRef(null);
 
@@ -56,8 +57,13 @@ const SceneSection = ({
             }
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
           >
-            <option value="bg_bedroom">ห้องนอน (bg_bedroom)</option>
-            <option value="bg_kitchen">ห้องครัว (bg_kitchen)</option>
+            {assets
+              .filter((asset) => asset.file_type === "background") // กรองเอาเฉพาะภาพพื้นหลัง
+              .map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
+                </option>
+              ))}
           </select>
         </div>
         <div className="w-1/4 min-w-30">

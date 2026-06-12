@@ -13,6 +13,8 @@ import TextareaField from "../components/TextareaField";
 import StartSection from "../components/WorkspaceContainer/StartSection";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import { chapterService } from "../lib/chapterService";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
@@ -310,6 +312,62 @@ const ChapterManagementPage = () => {
     }
   }, [focusedBlockId, id]);
 
+  const [assetsList, setAssetsList] = useState([]);
+  const [isAssetsLoading, setIsAssetsLoading] = useState(true);
+
+  // --- เพิ่มฟังก์ชันนี้ลงไปในตัว ChapterManagementPage ---
+  const fetchProjectAssets = async () => {
+    try {
+      setIsAssetsLoading(true);
+      const { data, error } = await supabase
+        .from("assets")
+        .select("*")
+        .eq("project_id", id); // id ตัวนี้มาจาก useParams() ที่มีอยู่แล้วด้านบน
+
+      if (error) throw error;
+      if (data) {
+        setAssetsList(data);
+      }
+    } catch (error) {
+      console.error(
+        "เกิดข้อผิดพลาดในการดึงข้อมูล Asset ไปยัง Dropdown:",
+        error.message,
+      );
+    } finally {
+      setIsAssetsLoading(false);
+    }
+  };
+
+  // เรียกใช้งานฟังก์ชันดึงข้อมูลเมื่อโปรเจกต์ id มีการเปลี่ยนแปลง
+  useEffect(() => {
+    if (id) {
+      fetchProjectAssets();
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const fetchChapters = async () => {
+      if (!id) return;
+      setIsLoading(true);
+      try {
+        const data = await chapterService.getChapters(id);
+        setChapters(data);
+
+        // ถ้ามีบทเรียนอยู่แล้ว ให้เลือกบทแรกเป็น Active อัตโนมัติ
+        if (data && data.length > 0) {
+          setActiveChapterId(data[0].id);
+        }
+      } catch (error) {
+        console.error("โหลดข้อมูลบทเรียนไม่สำเร็จ:", error);
+        alert("ไม่สามารถโหลดข้อมูล Chapter ได้");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChapters();
+  }, [id]);
+
   return (
     /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
     และห้ามเลื่อนหน้าจอรวม overflow-hidden เพื่อให้สัดส่วนตกลงมาใต้ Navbar พอดี
@@ -371,6 +429,7 @@ const ChapterManagementPage = () => {
           setFocusedBlockId={setFocusedBlockId}
           inputRef={inputRef}
           allChapters={Chapters}
+          assets={assetsList}
         />
       </div>
     </div>

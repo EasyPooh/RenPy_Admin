@@ -2,7 +2,13 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 
-const AssetListView = ({ assets = [], onOpenEdit, onRefresh, projectId }) => {
+const AssetListView = ({
+  assets = [],
+  searchQuery = "",
+  onOpenEdit,
+  onRefresh,
+  projectId,
+}) => {
   // ฟังก์ชันดึง URL รูปภาพจาก Storage จริงมาแสดงผล
   const getAssetPreviewUrl = (filePath) => {
     if (!filePath || typeof filePath !== "string") return null;

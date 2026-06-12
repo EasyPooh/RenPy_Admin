@@ -11,6 +11,7 @@ const AudioSection = ({
   onAddBlock,
   focusedBlockId,
   setFocusedBlockId,
+  assets,
 }) => {
   const inputRef = useRef(null);
 
@@ -86,8 +87,20 @@ const AudioSection = ({
               onChange={(e) => handleUpdateBlock(id, "audio", e.target.value)}
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
             >
-              <option value="bgm_01">bgm_happy.mp4</option>
-              <option value="sfx-01">doorknock_sound.wav</option>
+              {assets
+                ?.filter((asset) => {
+                  if (audiotype === "bgm") {
+                    return asset.file_type === "music";
+                  } else if (audiotype === "sfx") {
+                    return asset.file_type === "sound_effect";
+                  }
+                  return false;
+                })
+                .map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
+                  </option>
+                ))}
             </select>
           </div>
         )}

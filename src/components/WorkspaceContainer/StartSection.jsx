@@ -11,6 +11,7 @@ const StartSection = ({
   setStartChar,
   characterList,
   setCharacterList,
+  assets,
 }) => {
   // 2. เพิ่ม State นี้เข้าไปเพื่อเก็บอาร์เรย์ของตัวละครทั้งหมดที่เคยบันทึก
   // สามารถใส่ค่าเริ่มต้นไว้ก่อนได้
@@ -57,7 +58,13 @@ const StartSection = ({
             className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           >
             <option value="">[ เลือกฉากหลังเริ่มต้น ]</option>
-            <option value="bg_room">ห้องนอน (bg_room)</option>
+            {assets
+              .filter((asset) => asset.file_type === "background") // กรองเอาเฉพาะภาพพื้นหลัง
+              .map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
+                </option>
+              ))}
           </select>
         </div>
 
@@ -72,7 +79,13 @@ const StartSection = ({
             className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           >
             <option value="">[ เลือกเพลงพื้นหลังเริ่มต้น ]</option>
-            <option value="sizzle.ogg">sizzle.ogg</option>
+            {assets
+              .filter((asset) => asset.file_type === "music") // กรองเอาเฉพาะภาพพื้นหลัง
+              .map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.file_name} {/* แสดงชื่อไฟล์ที่ผู้ใช้ตั้งไว้ */}
+                </option>
+              ))}
           </select>
         </div>
       </div>

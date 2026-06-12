@@ -20,6 +20,7 @@ const WorkspaceContainer = ({
   setFocusedBlockId,
   inputRef,
   allChapters,
+  assets,
 }) => {
   console.log("รายชื่อบทที่เดินทางมาถึง Workspace:", allChapters);
   const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);
@@ -72,6 +73,7 @@ const WorkspaceContainer = ({
             setStartChar={setStartChar}
             characterList={characterList}
             setCharacterList={setCharacterList}
+            assets={assets}
           />
         </div>
 
@@ -129,6 +131,7 @@ const WorkspaceContainer = ({
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
+                      assets={assets}
                     />
                   );
                 }
@@ -148,6 +151,7 @@ const WorkspaceContainer = ({
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
+                      assets={assets}
                     />
                   );
                 }
@@ -166,6 +170,7 @@ const WorkspaceContainer = ({
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
+                      assets={assets}
                     />
                   );
                 }

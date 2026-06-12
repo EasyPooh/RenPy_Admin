@@ -75,8 +75,8 @@ const AssetPage = () => {
   const filteredAssets = useMemo(() => {
     return (assetsList || []).filter((asset) => {
       const matchesTab = activeTab === "all" || asset.file_type === activeTab;
-      const matchesSearch = asset.name
-        ? asset.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = asset.file_name
+        ? asset.file_name.toLowerCase().includes(searchQuery.toLowerCase())
         : true;
       return matchesTab && matchesSearch;
     });
@@ -115,6 +115,7 @@ const AssetPage = () => {
               onOpenEdit={handleOpenEdit}
               onRefresh={fetchProjectAssets}
               projectId={id}
+              searchQuery={searchQuery}
             />
           ) : (
             <AssetEmptyState onUploadClick={handleOpenUpload} />

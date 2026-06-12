@@ -80,7 +80,7 @@ const AssetModal = ({
         const { error: updateError } = await supabase
           .from("assets")
           .update({
-            name: assetName,
+            file_name: assetName,
             file_type: assetType,
             storage_path: filePath,
             file_size_kb: fileSize,
