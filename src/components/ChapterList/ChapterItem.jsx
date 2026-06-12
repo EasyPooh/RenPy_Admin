@@ -1,5 +1,6 @@
 // src/components/ChapterList/ChapterItem.jsx
 import React, { useState, useRef, forwardRef } from "react";
+import TagPopover from "./TagPopover";
 
 const ChapterItem = React.forwardRef(
   (
@@ -18,11 +19,16 @@ const ChapterItem = React.forwardRef(
       onDragEnd,
       index,
       handleDeleteChapter,
+      suggestedTags, // รับชุดแท็กตัวเลือกส่วนกลางจากหน้าหลัก
+      onAddTagToChapter, // ฟังก์ชันเพิ่มแท็กที่สร้างไว้ในหน้าหลัก
+      onRemoveTagFromChapter, // ฟังก์ชันลบแท็กที่สร้างไว้ในหน้าหลัก
     },
     ref,
   ) => {
     // ฉากที่ 1 (เริ่มเกม) ไม่สามารถลากได้อยู่แล้วตามกฎหลัก
     const isBaseDraggable = id !== 1;
+
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     // 🌟 เพิ่ม State ภายในไอเท็มเพื่อสลับโหมดการลากย้ายวัตถุ
     // ถ้าพิมพ์อยู่จะเซตเป็น false เพื่อคืนสิทธิ์ให้เมาส์ทำหน้าที่เลือกข้อความ (Text Selection)
@@ -112,15 +118,57 @@ const ChapterItem = React.forwardRef(
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-1 items-center pl-3.5">
-            {tags.map((tag, idx) => (
+          <div className="flex flex-wrap items-center gap-1.5 mt-2 relative">
+            {/* 1. แสดงรายการแท็กที่มีอยู่เดิมของบทนี้ */}
+            {tags.map((tag, tagIdx) => (
               <span
-                key={idx}
-                className="bg-gray-100 text-gray-500 text-[10px] px-1.5 py-0.5 rounded"
+                key={tagIdx}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded"
               >
                 {tag}
+                {/* ปุ่มกากบาทจิ๋วสำหรับกดเอาแท็กออก */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveTagFromChapter(id, tag);
+                  }}
+                  className="hover:text-amber-900 font-bold ml-0.5"
+                >
+                  ×
+                </button>
               </span>
             ))}
+
+            {/* 2. ปุ่มเพิ่มแท็ก หรือแสดงสถานะระบุชนิดประเภทตามรูป */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPopoverOpen(!isPopoverOpen);
+              }}
+              className="text-xs text-purple-600 hover:text-purple-800 font-medium px-2 py-0.5 bg-purple-50 hover:bg-purple-100 rounded border border-purple-200"
+            >
+              {isPopoverOpen ? "ปิดหน้าต่าง" : "+ เพิ่มแท็ก"}
+            </button>
+
+            {/* 3. เรียกใช้ Popover แบบวางเงื่อนไข Absolute ลอยเหนือ Layout ด้านล่าง */}
+            {isPopoverOpen && (
+              <div className="absolute left-0 top-full mt-1 w-full z-50">
+                <TagPopover
+                  suggestedTags={suggestedTags}
+                  onSelectTag={(tagName) => {
+                    onAddTagToChapter(id, tagName);
+                    setIsPopoverOpen(false); // เลือกเสร็จให้ปิดหน้าต่างอัตโนมัติ
+                  }}
+                  onAddCustomTag={(tagName) => {
+                    onAddTagToChapter(id, tagName);
+                    setIsPopoverOpen(false); // พิมพ์เพิ่มเสร็จให้ปิดหน้าต่างอัตโนมัติ
+                  }}
+                  onClose={() => setIsPopoverOpen(false)}
+                />
+              </div>
+            )}
 
             {status === "done" ? (
               <span className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-medium">

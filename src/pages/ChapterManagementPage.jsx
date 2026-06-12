@@ -147,11 +147,23 @@ const ChapterManagementPage = () => {
     setActiveChapterId(nextId);
   };
 
-  const filteredChapters = Chapters.filter(
-    (Chapter) =>
-      Chapter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      Chapter.id.toString().includes(searchQuery),
-  );
+  const filteredChapters = Chapters.filter((chapter) => {
+    // 1. ทำคำค้นหาให้เป็นพิมพ์เล็กเพื่อป้องกัน Case-sensitive
+    const query = searchQuery.toLowerCase().trim();
+
+    // ถ้าไม่ได้พิมพ์อะไรในช่องค้นหา ให้ผ่านเงื่อนไขแสดงผลทั้งหมดทันที
+    if (!query) return true;
+
+    // 2. ตรวจสอบว่าตรงกับชื่อ Chapter ไหม
+    const matchesName = chapter.name?.toLowerCase().includes(query);
+
+    // 3. ตรวจสอบว่าตรงกับ Tags ด้านในไหม (ป้องกันกรณี tags เป็น undefined ด้วยการใช้ || [])
+    const matchesTags =
+      chapter.tags?.some((tag) => tag.toLowerCase().includes(query)) || false;
+
+    // คืนค่ากลับไปถ้าตรงกับ "ชื่อบท" หรือ ตรงกับ "แท็กใดแท็กหนึ่งในบทนั้น"
+    return matchesName || matchesTags;
+  });
   // 1. สร้าง State สำหรับเก็บรายการ Block ทั้งหมด (เริ่มต้นเป็นอาเรย์ว่าง)
   const [blocks, setBlocks] = useState([]);
   const [focusedBlockId, setFocusedBlockId] = useState(null);
@@ -381,28 +393,33 @@ const ChapterManagementPage = () => {
     fetchChapters();
   }, [id]);
 
-  const handleAddTagAction = async (tagName) => {
+  const handleAddTagToChapter = (chapterId, tagName) => {
     const cleanTagName = tagName.trim();
     if (!cleanTagName) return;
 
-    // ตรวจสอบไม่ให้มีแท็กซ้ำในบทนี้
-    if (!tempTags.includes(cleanTagName)) {
-      const updatedTags = [...tempTags, cleanTagName];
-      setTempTags(updatedTags);
-      setTagInput(""); // ล้างช่องพิมพ์
+    setChapters((prevChapters) =>
+      prevChapters.map((chapter) => {
+        if (chapter.id === chapterId) {
+          // ตรวจสอบไม่ให้ใส่แท็กที่ซ้ำกันเดิมในบทนั้นๆ (Security & Data Integrity)
+          const currentTags = chapter.tags || [];
+          if (currentTags.includes(cleanTagName)) return chapter;
+          return { ...chapter, tags: [...currentTags, cleanTagName] };
+        }
+        return chapter;
+      }),
+    );
+  };
 
-      // บันทึกลง Supabase ทันที
-      try {
-        await chapterService.updateChapterTags(activeChapterId, updatedTags);
-        setChapters((prev) =>
-          prev.map((ch) =>
-            ch.id === activeChapterId ? { ...ch, tags: updatedTags } : ch,
-          ),
-        );
-      } catch (err) {
-        alert("ไม่สามารถบันทึกแท็กได้ครับ");
-      }
-    }
+  const handleRemoveTagFromChapter = (chapterId, tagName) => {
+    setChapters((prevChapters) =>
+      prevChapters.map((chapter) => {
+        if (chapter.id === chapterId) {
+          const currentTags = chapter.tags || [];
+          return { ...chapter, tags: currentTags.filter((t) => t !== tagName) };
+        }
+        return chapter;
+      }),
+    );
   };
 
   return (
@@ -449,7 +466,9 @@ const ChapterManagementPage = () => {
               onDragEnd={handleDragEnd}
               handleDeleteChapter={handleDeleteChapter} // ส่งฟังก์ชันลบบทลงไปที่ Sidebar ด้วย
               inputRef={inputRef}
-              handleAddTagAction={handleAddTagAction}
+              suggestedTags={suggestedTags}
+              onAddTagToChapter={handleAddTagToChapter}
+              onRemoveTagFromChapter={handleRemoveTagFromChapter}
             />
           </div>
         </div>
