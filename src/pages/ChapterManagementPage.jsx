@@ -18,17 +18,9 @@ import { chapterService } from "../lib/chapterService";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
-  const [Chapters, setChapters] = useState([
-    {
-      id: 1,
-      name: "เริ่มเกม (Start)",
-      labelName: "start",
-      status: "draft",
-      tags: ["จุดเริ่มต้น"],
-    },
-  ]);
+  const [Chapters, setChapters] = useState([]);
 
-  const [activeChapterId, setActiveChapterId] = useState(1);
+  const [activeChapterId, setActiveChapterId] = useState();
   const [searchQuery, setSearchQuery] = useState("");
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
@@ -117,34 +109,33 @@ const ChapterManagementPage = () => {
       .replace(/^_+|_+$/g, "");
   };
 
-  const handleUpdateChapterName = (id, newName) => {
+  const handleUpdateChapterName = (chapterId, newTitle) => {
     setChapters((prevChapters) =>
-      prevChapters.map((Chapter) => {
-        if (Chapter.id === id) {
-          const rawLabel = convertToRenPyLabel(newName);
-          return {
-            ...Chapter,
-            name: newName,
-            labelName: rawLabel.length > 0 ? rawLabel : `ch${id}`,
-          };
-        }
-        return Chapter;
-      }),
+      prevChapters.map((chapter) =>
+        chapter.id === chapterId
+          ? { ...chapter, chapter_titles: newTitle }
+          : chapter,
+      ),
     );
+    setIsDataChanged(true);
   };
 
   const handleAddChapter = () => {
-    const nextId =
-      Chapters.length > 0 ? Math.max(...Chapters.map((s) => s.id)) + 1 : 1;
+    const nextId = `temp-${Date.now()}`; // ใช้ไอดีชั่วคราวขึ้นต้นด้วย temp-
+    const shortId = Chapters.length; // ลำดับจำนวนบทปัจจุบัน
+
     const newChapter = {
       id: nextId,
-      name: `บทใหม่ที่ ${nextId}`,
-      labelName: `ch${nextId}`,
-      status: "draft",
-      tags: [],
-    }; // Default ตอนสร้างบทใหม่คือ draft
+      project_id: id, // id โปรเจกต์จาก useParams()
+      chapter_titles: `บทใหม่ ${shortId + 1}`, // ใช้ chapter_titles แทน name
+      label_name: `ch_${shortId + 1}`,
+      chapter_status: "draft",
+      chapter_tags: ["จุดเริ่มต้น"], // 🌟 ข้อ 2: บังคับให้มีแท็กนี้ตั้งแต่เริ่มสร้าง
+    };
+
     setChapters([...Chapters, newChapter]);
     setActiveChapterId(nextId);
+    setIsDataChanged(true); // ปลุกปุ่มเซฟให้ทำงาน
   };
 
   const filteredChapters = Chapters.filter((chapter) => {
@@ -277,8 +268,11 @@ const ChapterManagementPage = () => {
   };
 
   const handleDeleteChapter = (chapterId) => {
-    // 1. บล็อกห้ามลบ Chapter แรก (id: 1) เพราะเป็นจุดเริ่มเกม
-    if (chapterId === 1) {
+    // ค้นหาบทเรียนที่จะลบก่อน
+    const chapterToDelete = Chapters.find((c) => c.id === chapterId);
+
+    // ดักห้ามลบ Chapter แรก (จุดเริ่มเกม) โดยเช็กจาก label_name
+    if (chapterToDelete && chapterToDelete.label_name === "start") {
       alert("ไม่สามารถลบบทเริ่มต้นเกม (Start) ได้ครับ");
       return;
     }
@@ -373,25 +367,40 @@ const ChapterManagementPage = () => {
   useEffect(() => {
     const fetchChapters = async () => {
       if (!id) return;
-      setIsLoading(true);
+
       try {
         const data = await chapterService.getChapters(id);
-        setChapters(data);
 
-        // ถ้ามีบทเรียนอยู่แล้ว ให้เลือกบทแรกเป็น Active อัตโนมัติ
         if (data && data.length > 0) {
+          // กรณีมีข้อมูลใน Database อยู่แล้ว
+          setChapters(data);
           setActiveChapterId(data[0].id);
+        } else {
+          // กรณีโปรเจกต์ใหม่เอี่ยม ไม่มีข้อมูลเลย -> สร้างฉาก Start จำลองขึ้นมาทันที!
+          const startId = crypto.randomUUID(); // ใช้ UUID แทนเลข 1
+          const initialStartChapter = {
+            id: startId,
+            name: "เริ่มเกม (Start)",
+            labelName: "start", // เราจะใช้คำนี้เป็นตัวล็อคห้ามลบ
+            status: "draft",
+            tags: ["จุดเริ่มต้น"],
+          };
+
+          setChapters([initialStartChapter]);
+          setActiveChapterId(startId);
         }
       } catch (error) {
-        console.error("โหลดข้อมูลบทเรียนไม่สำเร็จ:", error);
-        alert("ไม่สามารถโหลดข้อมูล Chapter ได้");
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching chapters:", error);
       }
     };
 
     fetchChapters();
   }, [id]);
+
+  const [isDataChanged, setIsDataChanged] = useState(false);
+  useEffect(() => {
+    console.log("🔄 [หน้าหลัก] ค่า isDataChanged เปลี่ยนเป็น:", isDataChanged);
+  }, [isDataChanged]);
 
   const handleAddTagToChapter = (chapterId, tagName) => {
     const cleanTagName = tagName.trim();
@@ -400,10 +409,15 @@ const ChapterManagementPage = () => {
     setChapters((prevChapters) =>
       prevChapters.map((chapter) => {
         if (chapter.id === chapterId) {
-          // ตรวจสอบไม่ให้ใส่แท็กที่ซ้ำกันเดิมในบทนั้นๆ (Security & Data Integrity)
-          const currentTags = chapter.tags || [];
+          const currentTags = chapter.chapter_tags || [];
+          // ป้องกันการใส่แท็กซ้ำ
           if (currentTags.includes(cleanTagName)) return chapter;
-          return { ...chapter, tags: [...currentTags, cleanTagName] };
+
+          setIsDataChanged(true);
+          return {
+            ...chapter,
+            chapter_tags: [...currentTags, cleanTagName], // ใช้ chapter_tags
+          };
         }
         return chapter;
       }),
@@ -411,15 +425,78 @@ const ChapterManagementPage = () => {
   };
 
   const handleRemoveTagFromChapter = (chapterId, tagName) => {
+    // 🌟 ข้อ 2: บังคับไม่ให้ผู้ใช้ลบแท็ก "จุดเริ่มต้น" เด็ดขาด!
+    if (tagName === "จุดเริ่มต้น") {
+      alert("ไม่สามารถลบแท็ก 'จุดเริ่มต้น' ได้ เนื่องจากเป็นแท็กบังคับของระบบ");
+      return;
+    }
+
     setChapters((prevChapters) =>
       prevChapters.map((chapter) => {
         if (chapter.id === chapterId) {
-          const currentTags = chapter.tags || [];
-          return { ...chapter, tags: currentTags.filter((t) => t !== tagName) };
+          const currentTags = chapter.chapter_tags || [];
+          setIsDataChanged(true);
+          return {
+            ...chapter,
+            chapter_tags: currentTags.filter((t) => t !== tagName), // ใช้ chapter_tags
+          };
         }
         return chapter;
       }),
     );
+  };
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveAll = async () => {
+    console.log("กำลังสั่งเซฟข้อมูลทั้งหมดลง Supabase...");
+    setIsSaving(true);
+    try {
+      for (let i = 0; i < Chapters.length; i++) {
+        const chapter = Chapters[i];
+
+        // ดึงแท็กปัจจุบันขึ้นมา ตรวจสอบเพื่อความปลอดภัยอีกชั้นว่าต้องมี "จุดเริ่มต้น"
+        let tags = chapter.chapter_tags || [];
+        if (!tags.includes("จุดเริ่มต้น")) {
+          tags = ["จุดเริ่มต้น", ...tags];
+        }
+
+        if (String(chapter.id).startsWith("temp-")) {
+          // ➕ กรณีเป็นบทเรียนใหม่ (ID ชั่วคราว) ให้ใช้คำสั่งสร้าง (Insert)
+          await chapterService.createChapter(
+            id, // project_id
+            chapter.chapter_titles,
+            i, // sort_order ตามตำแหน่งในแถวปัจจุบัน
+            tags,
+            chapter.chapter_status,
+          );
+        } else {
+          // 🔄 กรณีเป็นบทเรียนเดิมที่มีในฐานข้อมูลอยู่แล้ว ให้ใช้คำสั่งอัปเดต (Update)
+          await chapterService.updateExistingChapter(
+            chapter.id,
+            chapter.chapter_titles,
+            i, // sort_order อัปเดตเรียงตามการลากวาง
+            tags,
+            chapter.chapter_status,
+          );
+        }
+      }
+
+      // 🌟 ข้อ 3: ดึงข้อมูลล่าสุดที่พึ่งเซฟจาก Supabase มาอัปเดตลง State หน้าเว็บอีกครั้ง
+      // เพื่อเปลี่ยนไอดีชั่วคราว (temp-xxx) ให้กลายเป็นไอดีจริงจากฐานข้อมูล
+      const freshChapters = await chapterService.getChapters(id);
+      if (freshChapters) {
+        setChapters(freshChapters);
+      }
+
+      setIsDataChanged(false); // ปิดสวิตช์ปุ่มเซฟ (กลับเป็นสถานะเซฟแล้ว)
+      alert("บันทึกข้อมูลและอัปเดตสถานะฉากเรียบร้อยแล้วครับ! 🎉");
+    } catch (catchError) {
+      console.error("เกิดข้อผิดพลาดในการเซฟข้อมูล:", catchError);
+      alert("เกิดข้อผิดพลาดในการเซฟข้อมูล กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -437,6 +514,10 @@ const ChapterManagementPage = () => {
           tempStatus={tempStatus}
           onStatusChange={setTempStatus}
           onSave={handleSaveChapterChanges}
+          isDataChanged={isDataChanged}
+          setIsDataChanged={setIsDataChanged}
+          onSaveAll={handleSaveAll}
+          isSaving={isSaving}
         />
       </div>
 
@@ -469,6 +550,7 @@ const ChapterManagementPage = () => {
               suggestedTags={suggestedTags}
               onAddTagToChapter={handleAddTagToChapter}
               onRemoveTagFromChapter={handleRemoveTagFromChapter}
+              setIsDataChanged={setIsDataChanged}
             />
           </div>
         </div>
@@ -487,6 +569,7 @@ const ChapterManagementPage = () => {
           inputRef={inputRef}
           allChapters={Chapters}
           assets={assetsList}
+          setIsDataChanged={setIsDataChanged}
         />
       </div>
     </div>

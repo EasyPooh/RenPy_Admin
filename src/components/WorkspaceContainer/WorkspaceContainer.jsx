@@ -21,6 +21,7 @@ const WorkspaceContainer = ({
   inputRef,
   allChapters,
   assets,
+  setIsDataChanged,
 }) => {
   console.log("รายชื่อบทที่เดินทางมาถึง Workspace:", allChapters);
   const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);

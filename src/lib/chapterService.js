@@ -42,7 +42,8 @@ export const chapterService = {
           chapter_titles: "เริ่มเกม (Start)",
           label_name: "start", // ล็อกตายตัวสำหรับ Ren'Py เสมอ
           sort_order: 0,      // เป็นบทแรกสุด
-          chapter_status: "draft"
+          chapter_status: "draft",
+          chapter_tags: ["จุดเริ่มต้น"],
         }
       ])
       .select()
@@ -53,25 +54,27 @@ export const chapterService = {
   },
 
   // 3. ฟังก์ชันสร้างบทเรียนทั่วไป (ปุ่มกดเพิ่มบทเองในหน้าจัดการเนื้อเรื่อง)
-  async createChapter(projectId, title, currentCount) {
-    // เสก label_name ที่ปลอดภัยผ่านฟังก์ชันที่เราทำไว้ด้านบน
-    const automaticallyGeneratedLabel = generateLabelFromTitle(title, currentCount);
-
+  async createChapter(projectId, title, sortOrder, tags, status) {
+    const automaticallyGeneratedLabel = generateLabelFromTitle(title, sortOrder);
     const { data, error } = await supabase
       .from("chapters")
       .insert([
         {
           project_id: projectId,
-          chapter_titles: title,
+          chapter_titles: title || `บทที่ ${sortOrder + 1}`,
           label_name: automaticallyGeneratedLabel,
-          sort_order: currentCount, // ลำดับต่อจากจำนวนที่มีอยู่เดิม
-          status: "draft"
+          sort_order: sortOrder, // ใช้ลำดับที่ส่งมาจากหน้าจอ
+          chapter_status: status || "draft",
+          chapter_tags: tags || [], // ลบฮาร์ดโค้ด "จุดเริ่มต้น" ทิ้ง!
         }
       ])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error inside createChapter:", error);
+      throw error;
+    }
     return data;
   },
 
@@ -79,7 +82,7 @@ export const chapterService = {
   async updateChapterName(chapterId, newTitle) {
     const { data, error } = await supabase
       .from("chapters")
-      .update({ title: newTitle })
+      .update({ chapter_titles: newTitle })
       .eq("id", chapterId)
       .select()
       .single();
@@ -108,5 +111,22 @@ export const chapterService = {
 
     if (error) throw error;
     return data[0];
-  }
+  },
+
+  async updateExistingChapter(chapterId, title, sortOrder, tags, status) {
+    const { data, error } = await supabase
+      .from("chapters")
+      .update({
+        chapter_titles: title,
+        sort_order: sortOrder, // บังคับอัปเดตลำดับแถวให้ตรงกับที่ลากบนหน้าจอ
+        chapter_status: status || "draft",
+        chapter_tags: tags || []
+      })
+      .eq("id", chapterId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
 };

@@ -1,11 +1,14 @@
 // src/components/ChapterList/ChapterNavbar.jsx
 import React, { useState, useRef, useEffect } from "react";
+import GlobalSaveButton from "../WorkspaceContainer/GlobalSaveButton";
 
 const ChapterNavbar = ({
   currentChapter,
   tempStatus,
   onStatusChange,
   onSave,
+  isDataChanged,
+  onSaveAll,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -97,14 +100,16 @@ const ChapterNavbar = ({
           )}
         </div>
 
-        {/* 🌟 เชื่อมปุ่มบันทึกใหญ่เข้าฟังก์ชัน Commit ข้อมูลลงแถบรายชื่อด้านซ้าย */}
+        <GlobalSaveButton isDataChanged={isDataChanged} onSaveAll={onSaveAll} />
+
+        {/* 🌟 เชื่อมปุ่มบันทึกใหญ่เข้าฟังก์ชัน Commit ข้อมูลลงแถบรายชื่อด้านซ้าย 
         <button
           onClick={onSave}
           className="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all"
         >
           <span>💾</span>
           <span>Save</span>
-        </button>
+        </button>*/}
       </div>
     </div>
   );

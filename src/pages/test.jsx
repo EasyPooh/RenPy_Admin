@@ -16,7 +16,7 @@ const handleAddChapter = async () => {
         {
           project_id: insertedData.project_id,
           chapter_name: insertedData.chapter_titles,
-          labelName: insertedData.label_name, // ระบบส่งคืนมาเป็นค่าที่ปลอดภัยแล้ว เช่น "chapter_2"
+          label_name: insertedData.label_name, // ระบบส่งคืนมาเป็นค่าที่ปลอดภัยแล้ว เช่น "chapter_2"
           chapter_status: insertedData.chapter_status,
           chapter_tags: insertedData.chapter_tags,
         },

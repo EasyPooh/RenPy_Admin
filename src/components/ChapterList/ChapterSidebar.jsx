@@ -21,6 +21,8 @@ const ChapterSidebar = ({
   suggestedTags,
   onAddTagToChapter,
   onRemoveTagFromChapter,
+  setIsDataChanged,
+  Chapter,
 }) => {
   return (
     <div className="flex flex-col h-full w-full">
@@ -35,9 +37,9 @@ const ChapterSidebar = ({
             key={Chapter.id}
             id={Chapter.id}
             index={index}
-            name={Chapter.name}
-            status={Chapter.status}
-            tags={Chapter.tags}
+            chapter_titles={Chapter.chapter_titles}
+            chapter_status={Chapter.chapter_status}
+            chapter_tags={Chapter.chapter_tags}
             isActive={Chapter.id === activeChapterId}
             isDragging={Chapter.id === draggingId} // ตรวจสอบสถานะการลากทึบ
             onClick={() => onSelectChapter(Chapter.id)}
@@ -51,6 +53,7 @@ const ChapterSidebar = ({
             suggestedTags={suggestedTags}
             onAddTagToChapter={onAddTagToChapter}
             onRemoveTagFromChapter={onRemoveTagFromChapter}
+            setIsDataChanged={setIsDataChanged}
           />
         ))}
       </div>
