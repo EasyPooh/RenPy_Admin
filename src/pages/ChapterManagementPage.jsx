@@ -267,7 +267,7 @@ const ChapterManagementPage = () => {
     }
   };
 
-  const handleDeleteChapter = (chapterId) => {
+  const handleDeleteChapter = async (chapterId) => {
     // ค้นหาบทเรียนที่จะลบก่อน
     const chapterToDelete = Chapters.find((c) => c.id === chapterId);
 
@@ -282,6 +282,21 @@ const ChapterManagementPage = () => {
       "คุณแน่ใจหรือไม่ที่จะลบบทนี้? ข้อมูลภายในจะหายไปทั้งหมด",
     );
     if (!isConfirmed) return;
+
+    // --- เริ่มจุดที่ต้องแทรก (ลบจาก Supabase ก่อน) ---
+    try {
+      const { error } = await supabase
+        .from("chapters")
+        .delete()
+        .eq("id", chapterId);
+
+      if (error) throw error; // ถ้ามี error ให้กระโดดไป catch ทันที
+    } catch (err) {
+      console.error("Database Error:", err);
+      alert("ไม่สามารถลบข้อมูลจากฐานข้อมูลได้");
+      return; // จบการทำงาน ไม่ต้องลบ UI
+    }
+    // --- จบจุดที่แทรก ---
 
     // 3. หาตำแหน่ง Index ปัจจุบันของบทที่กำลังจะลบ
     const currentIndex = Chapters.findIndex(
