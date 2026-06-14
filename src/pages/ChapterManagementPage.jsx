@@ -283,18 +283,25 @@ const ChapterManagementPage = () => {
     );
     if (!isConfirmed) return;
 
-    // --- เริ่มจุดที่ต้องแทรก (ลบจาก Supabase ก่อน) ---
-    try {
-      const { error } = await supabase
-        .from("chapters")
-        .delete()
-        .eq("id", chapterId);
+    const isNewChapter =
+      typeof chapterId === "string" && chapterId.startsWith("temp-");
 
-      if (error) throw error; // ถ้ามี error ให้กระโดดไป catch ทันที
-    } catch (err) {
-      console.error("Database Error:", err);
-      alert("ไม่สามารถลบข้อมูลจากฐานข้อมูลได้");
-      return; // จบการทำงาน ไม่ต้องลบ UI
+    // --- เริ่มจุดที่ต้องแทรก (ลบจาก Supabase ก่อน) ---
+    if (!isNewChapter) {
+      try {
+        const { error } = await supabase
+          .from("chapters")
+          .delete()
+          .eq("id", chapterId);
+
+        if (error) throw error; // ถ้ามี error ให้กระโดดไป catch ทันที
+      } catch (err) {
+        console.error("Database Error:", err);
+        alert("ไม่สามารถลบข้อมูลจากฐานข้อมูลได้");
+        return; // จบการทำงาน ไม่ต้องลบ UI
+      }
+    } else {
+      console.log("ลบเฉพาะใน State เพราะเป็นบทเรียนใหม่");
     }
     // --- จบจุดที่แทรก ---
 
