@@ -15,10 +15,12 @@ import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { chapterService } from "../lib/chapterService";
+import { useAssets } from "../hooks/useAssets";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
   const [Chapters, setChapters] = useState([]);
+  const { assetsList, isAssetsLoading } = useAssets(id);
 
   const [activeChapterId, setActiveChapterId] = useState();
   const [searchQuery, setSearchQuery] = useState("");
@@ -352,39 +354,6 @@ const ChapterManagementPage = () => {
       inputRef.current?.focus();
     }
   }, [focusedBlockId, id]);
-
-  const [assetsList, setAssetsList] = useState([]);
-  const [isAssetsLoading, setIsAssetsLoading] = useState(true);
-
-  // --- เพิ่มฟังก์ชันนี้ลงไปในตัว ChapterManagementPage ---
-  const fetchProjectAssets = async () => {
-    try {
-      setIsAssetsLoading(true);
-      const { data, error } = await supabase
-        .from("assets")
-        .select("*")
-        .eq("project_id", id); // id ตัวนี้มาจาก useParams() ที่มีอยู่แล้วด้านบน
-
-      if (error) throw error;
-      if (data) {
-        setAssetsList(data);
-      }
-    } catch (error) {
-      console.error(
-        "เกิดข้อผิดพลาดในการดึงข้อมูล Asset ไปยัง Dropdown:",
-        error.message,
-      );
-    } finally {
-      setIsAssetsLoading(false);
-    }
-  };
-
-  // เรียกใช้งานฟังก์ชันดึงข้อมูลเมื่อโปรเจกต์ id มีการเปลี่ยนแปลง
-  useEffect(() => {
-    if (id) {
-      fetchProjectAssets();
-    }
-  }, [id]);
 
   useEffect(() => {
     const fetchChapters = async () => {

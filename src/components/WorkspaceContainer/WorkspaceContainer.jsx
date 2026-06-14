@@ -8,6 +8,7 @@ import SpriteSection from "./SpriteSection";
 import AudioSection from "./AudioSection";
 import ChoiceSection from "./ChoiceSection";
 import ChapterManagementPage from "../../pages/ChapterManagementPage";
+import { useWorkspace } from "../../hooks/useWorkspace";
 
 // 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (ChapterManagementPage)
 const WorkspaceContainer = ({
