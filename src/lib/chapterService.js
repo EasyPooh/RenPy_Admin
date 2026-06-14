@@ -55,17 +55,19 @@ export const chapterService = {
 
   // 3. ฟังก์ชันสร้างบทเรียนทั่วไป (ปุ่มกดเพิ่มบทเองในหน้าจัดการเนื้อเรื่อง)
   async createChapter(projectId, title, sortOrder, tags, status) {
-    const automaticallyGeneratedLabel = generateLabelFromTitle(title, sortOrder);
+    //const automaticallyGeneratedLabel = generateLabelFromTitle(title, sortOrder);
+    const autoLabelName = `chapter_${Date.now()}`;
+    const isFirstChapter = sortOrder === 0;
     const { data, error } = await supabase
       .from("chapters")
       .insert([
         {
           project_id: projectId,
           chapter_titles: title || `บทที่ ${sortOrder + 1}`,
-          label_name: automaticallyGeneratedLabel,
+          label_name: autoLabelName,
           sort_order: sortOrder, // ใช้ลำดับที่ส่งมาจากหน้าจอ
           chapter_status: status || "draft",
-          chapter_tags: tags || [], // ลบฮาร์ดโค้ด "จุดเริ่มต้น" ทิ้ง!
+          chapter_tags: isFirstChapter ? ["จุดเริ่มต้น"] : [], // ลบฮาร์ดโค้ด "จุดเริ่มต้น" ทิ้ง!
         }
       ])
       .select()

@@ -150,7 +150,16 @@ const ChapterItem = React.forwardRef(
               </div>
             )}
 
-            <span className="bg-amber-50 text-amber-600 text-[10px] px-1.5 py-0.5 rounded font-medium">
+            <span
+              className={`
+  ${
+    chapter_status === "done"
+      ? "bg-green-100 text-green-700"
+      : "bg-amber-100 text-amber-700"
+  } 
+  text-[10px] px-1.5 py-0.5 rounded font-medium
+`}
+            >
               [{chapter_status || "draft"}]
             </span>
           </div>

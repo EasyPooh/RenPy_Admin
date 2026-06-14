@@ -9,6 +9,7 @@ const ChapterNavbar = ({
   onSave,
   isDataChanged,
   onSaveAll,
+  handleStatusChange,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -56,12 +57,14 @@ const ChapterNavbar = ({
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`flex items-center space-x-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border transition-all ${
-              tempStatus === "done"
+              currentChapter.chapter_status === "done"
                 ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100/70"
                 : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/70"
             }`}
           >
-            <span>{tempStatus === "done" ? "✓ Done" : "⚙ Draft"}</span>
+            <span>
+              {currentChapter.chapter_status === "done" ? "✓ Done" : "⚙ Draft"}
+            </span>
             <span className="text-[10px] opacity-60">▼</span>
           </button>
 
@@ -71,9 +74,10 @@ const ChapterNavbar = ({
                 onClick={() => {
                   onStatusChange("draft"); // เปลี่ยนค่าสถานะบนหน้าจอชั่วคราว
                   setIsDropdownOpen(false);
+                  handleStatusChange(currentChapter.id, "draft");
                 }}
                 className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center space-x-2 hover:bg-gray-50 ${
-                  tempStatus === "draft"
+                  currentChapter.chapter_status === "draft"
                     ? "text-amber-600 bg-amber-50/40"
                     : "text-gray-600"
                 }`}
@@ -86,9 +90,10 @@ const ChapterNavbar = ({
                 onClick={() => {
                   onStatusChange("done"); // เปลี่ยนค่าสถานะบนหน้าจอชั่วคราว
                   setIsDropdownOpen(false);
+                  handleStatusChange(currentChapter.id, "done");
                 }}
                 className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center space-x-2 hover:bg-gray-50 ${
-                  tempStatus === "done"
+                  currentChapter.chapter_status === "done"
                     ? "text-green-600 bg-green-50/40"
                     : "text-gray-600"
                 }`}

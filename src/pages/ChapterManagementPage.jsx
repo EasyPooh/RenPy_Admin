@@ -121,7 +121,7 @@ const ChapterManagementPage = () => {
   };
 
   const handleAddChapter = () => {
-    const nextId = `temp-${Date.now()}`; // ใช้ไอดีชั่วคราวขึ้นต้นด้วย temp-
+    const nextId = `temp_${Date.now()}`; // ใช้ไอดีชั่วคราวขึ้นต้นด้วย temp_
     const shortId = Chapters.length; // ลำดับจำนวนบทปัจจุบัน
 
     const newChapter = {
@@ -130,7 +130,7 @@ const ChapterManagementPage = () => {
       chapter_titles: `บทใหม่ ${shortId + 1}`, // ใช้ chapter_titles แทน name
       label_name: `ch_${shortId + 1}`,
       chapter_status: "draft",
-      chapter_tags: ["จุดเริ่มต้น"], // 🌟 ข้อ 2: บังคับให้มีแท็กนี้ตั้งแต่เริ่มสร้าง
+      chapter_tags: [],
     };
 
     setChapters([...Chapters, newChapter]);
@@ -284,7 +284,7 @@ const ChapterManagementPage = () => {
     if (!isConfirmed) return;
 
     const isNewChapter =
-      typeof chapterId === "string" && chapterId.startsWith("temp-");
+      typeof chapterId === "string" && chapterId.startsWith("temp_");
 
     // --- เริ่มจุดที่ต้องแทรก (ลบจาก Supabase ก่อน) ---
     if (!isNewChapter) {
@@ -480,10 +480,12 @@ const ChapterManagementPage = () => {
         // ดึงแท็กปัจจุบันขึ้นมา ตรวจสอบเพื่อความปลอดภัยอีกชั้นว่าต้องมี "จุดเริ่มต้น"
         let tags = chapter.chapter_tags || [];
         if (!tags.includes("จุดเริ่มต้น")) {
-          tags = ["จุดเริ่มต้น", ...tags];
+          tags = chapter.chapter_tags || [];
         }
 
-        if (String(chapter.id).startsWith("temp-")) {
+        const statusToSave = chapter.chapter_status || "draft";
+
+        if (String(chapter.id).startsWith("temp_")) {
           // ➕ กรณีเป็นบทเรียนใหม่ (ID ชั่วคราว) ให้ใช้คำสั่งสร้าง (Insert)
           await chapterService.createChapter(
             id, // project_id
@@ -500,12 +502,13 @@ const ChapterManagementPage = () => {
             i, // sort_order อัปเดตเรียงตามการลากวาง
             tags,
             chapter.chapter_status,
+            statusToSave,
           );
         }
       }
 
       // 🌟 ข้อ 3: ดึงข้อมูลล่าสุดที่พึ่งเซฟจาก Supabase มาอัปเดตลง State หน้าเว็บอีกครั้ง
-      // เพื่อเปลี่ยนไอดีชั่วคราว (temp-xxx) ให้กลายเป็นไอดีจริงจากฐานข้อมูล
+      // เพื่อเปลี่ยนไอดีชั่วคราว (temp_xxx) ให้กลายเป็นไอดีจริงจากฐานข้อมูล
       const freshChapters = await chapterService.getChapters(id);
       if (freshChapters) {
         setChapters(freshChapters);
@@ -519,6 +522,14 @@ const ChapterManagementPage = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleStatusChange = (id, newStatus) => {
+    const updatedChapters = Chapters.map((ch) =>
+      ch.id === id ? { ...ch, chapter_status: newStatus } : ch,
+    );
+    setChapters(updatedChapters);
+    setIsDataChanged(true);
   };
 
   return (
@@ -540,6 +551,7 @@ const ChapterManagementPage = () => {
           setIsDataChanged={setIsDataChanged}
           onSaveAll={handleSaveAll}
           isSaving={isSaving}
+          handleStatusChange={handleStatusChange}
         />
       </div>
 
