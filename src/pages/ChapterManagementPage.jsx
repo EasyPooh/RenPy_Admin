@@ -16,14 +16,53 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { chapterService } from "../lib/chapterService";
 import { useAssets } from "../hooks/useAssets";
+import { useWorkspace } from "../hooks/useWorkspace";
+import { useSaveManager } from "../hooks/useSaveManager";
+import { useChapters } from "../hooks/useChapters";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
-  const [Chapters, setChapters] = useState([]);
-  const { assetsList, isAssetsLoading } = useAssets(id);
 
-  const [activeChapterId, setActiveChapterId] = useState();
-  const [searchQuery, setSearchQuery] = useState("");
+  // hook useAsset
+  const { assetsList, isAssetsLoading } = useAssets(id);
+  // hook useSaveManager ปุ่มเซฟ
+  const { handleSaveAll, isSaving } = useSaveManager();
+  // hook useChapter
+  const {
+    Chapters,
+    setChapters,
+    activeChapterId,
+    setActiveChapterId,
+    searchQuery,
+    setSearchQuery,
+    tempStatus,
+    setTempStatus,
+    currentActiveChapter,
+    filteredChapters,
+    isLoading,
+    handleSaveChapterChanges,
+    handleUpdateChapterName,
+    handleAddChapter,
+    handleAddTagToChapter,
+    handleRemoveTagFromChapter,
+    isDataChanged,
+    setIsDataChanged,
+    handleStatusChange,
+    handleDeleteChapter,
+  } = useChapters(id);
+
+  const {
+    workspace,
+    blocks,
+    loading,
+    updateConfig,
+    saveToDb,
+    // ส่งฟังก์ชันชื่อเดิมออกไปให้ UI ใช้งาน
+    handleAddBlock,
+    handleUpdateBlock,
+    handleDeleteBlock,
+  } = useWorkspace();
+
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   // ซ่อน/แสดงหน้าต่างเลือกแท็ก
@@ -40,41 +79,12 @@ const ChapterManagementPage = () => {
   const [tagInput, setTagInput] = useState("");
   const [tempTags, setTempTags] = useState([]);
 
-  // 🌟 1. เพิ่ม State บัฟเฟอร์สำหรับจำค่าสลับบนฟอร์มชั่วคราวก่อนกดเซฟ
-  const [tempStatus, setTempStatus] = useState("draft");
-
-  const currentActiveChapter = Chapters.find(
-    (Chapter) => Chapter.id === activeChapterId,
-  );
-
   // 🌟 2. ดึงสถานะตั้งต้นมาลงฟอร์มชั่วคราว ทุกครั้งที่ผู้ใช้สลับเปลี่ยนคลิกเลือกฉากฝั่งซ้าย
   useEffect(() => {
     if (currentActiveChapter) {
       setTempStatus(currentActiveChapter.status);
     }
   }, [activeChapterId, Chapters]);
-
-  // 🌟 3. ฟังก์ชันเซฟใหญ่ (เมื่อกดปุ่ม Save ใน Navbar)
-  const handleSaveChapterChanges = () => {
-    if (!activeChapterId) return;
-
-    setChapters((prevChapters) =>
-      prevChapters.map((Chapter) => {
-        if (Chapter.id === activeChapterId) {
-          return {
-            ...Chapter,
-            status: tempStatus, // นำค่าที่เลือกค้างไว้มาบันทึกจริงลงฝั่งซ้ายตัว Chapter List
-          };
-        }
-        return Chapter;
-      }),
-    );
-
-    // TODO: จุดนี้สามารถใส่ฟังก์ชันเขียนคำสั่งอัปเดตลงฐานข้อมูล Supabase ต่อไปได้เลยครับ!
-    console.log(
-      `บันทึกบท ID: ${activeChapterId} สู่สถานะ: ${tempStatus} สำเร็จ`,
-    );
-  };
 
   const handleDragStart = (e, index, id) => {
     setDraggedIndex(index);
@@ -111,233 +121,9 @@ const ChapterManagementPage = () => {
       .replace(/^_+|_+$/g, "");
   };
 
-  const handleUpdateChapterName = (chapterId, newTitle) => {
-    setChapters((prevChapters) =>
-      prevChapters.map((chapter) =>
-        chapter.id === chapterId
-          ? { ...chapter, chapter_titles: newTitle }
-          : chapter,
-      ),
-    );
-    setIsDataChanged(true);
-  };
-
-  const handleAddChapter = () => {
-    const nextId = `temp_${Date.now()}`; // ใช้ไอดีชั่วคราวขึ้นต้นด้วย temp_
-    const shortId = Chapters.length; // ลำดับจำนวนบทปัจจุบัน
-
-    const newChapter = {
-      id: nextId,
-      project_id: id, // id โปรเจกต์จาก useParams()
-      chapter_titles: `บทใหม่ ${shortId + 1}`, // ใช้ chapter_titles แทน name
-      label_name: `ch_${shortId + 1}`,
-      chapter_status: "draft",
-      chapter_tags: [],
-    };
-
-    setChapters([...Chapters, newChapter]);
-    setActiveChapterId(nextId);
-    setIsDataChanged(true); // ปลุกปุ่มเซฟให้ทำงาน
-  };
-
-  const filteredChapters = Chapters.filter((chapter) => {
-    // 1. ทำคำค้นหาให้เป็นพิมพ์เล็กเพื่อป้องกัน Case-sensitive
-    const query = searchQuery.toLowerCase().trim();
-
-    // ถ้าไม่ได้พิมพ์อะไรในช่องค้นหา ให้ผ่านเงื่อนไขแสดงผลทั้งหมดทันที
-    if (!query) return true;
-
-    // 2. ตรวจสอบว่าตรงกับชื่อ Chapter ไหม
-    const matchesName = chapter.name?.toLowerCase().includes(query);
-
-    // 3. ตรวจสอบว่าตรงกับ Tags ด้านในไหม (ป้องกันกรณี tags เป็น undefined ด้วยการใช้ || [])
-    const matchesTags =
-      chapter.tags?.some((tag) => tag.toLowerCase().includes(query)) || false;
-
-    // คืนค่ากลับไปถ้าตรงกับ "ชื่อบท" หรือ ตรงกับ "แท็กใดแท็กหนึ่งในบทนั้น"
-    return matchesName || matchesTags;
-  });
-  // 1. สร้าง State สำหรับเก็บรายการ Block ทั้งหมด (เริ่มต้นเป็นอาเรย์ว่าง)
-  const [blocks, setBlocks] = useState([]);
   const [focusedBlockId, setFocusedBlockId] = useState(null);
 
   const currentBlocks = blocks[activeChapterId] || [];
-
-  // 2. ฟังก์ชัน Logic สำหรับเพิ่ม Block ใหม่
-  const handleAddBlock = (type) => {
-    console.log("ถั่วต้ม! ปุ่มกดทำงานส่งประเภทมาคือ:", type);
-    const newId = Date.now();
-    let newBlock = {
-      id: Date.now(),
-      type: type || "default",
-      content: `บล็อกใหม่ที่ #${(blocks[activeChapterId] || []).length + 1}`,
-      createdAt: new Date().toLocaleTimeString(),
-    };
-    // ใช้ switch เพื่อเติมค่าเฉพาะตามประเภท
-    switch (type) {
-      case "dialogue":
-        newBlock = {
-          ...newBlock,
-          character: "",
-          expression: "normal",
-          text: "",
-        };
-        break;
-      case "scene":
-        newBlock = {
-          ...newBlock,
-          background: "",
-          backgroundEffect: "",
-          backgroundEffectSpeed: "normal",
-        };
-        break;
-      case "sprite":
-        newBlock = {
-          ...newBlock,
-          sprite: "",
-          spritecommand: "show",
-          spriteposition: "center",
-          spriteSpeed: "normal",
-        };
-        break;
-      case "audio":
-        newBlock = {
-          ...newBlock,
-          audio: "",
-          audiotype: "bgm",
-          audioCommand: "stop",
-        };
-        break;
-      case "choice":
-        newBlock = {
-          ...newBlock,
-          choice: "",
-        };
-        break;
-    }
-
-    setBlocks((prevBlocks) => ({
-      ...prevBlocks,
-      [activeChapterId]: [...(prevBlocks[activeChapterId] || []), newBlock],
-    }));
-    setFocusedBlockId(newId);
-
-    const handleScroll = (id) => {
-      const element = document.getElementById(`block-${id}`);
-
-      if (element) {
-        console.log("✅ พบ Element แล้ว กำลังสั่งให้เลื่อนไปที่:", id);
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else {
-        console.warn("❌ ไม่พบ Element ที่มี ID:", `block-${id}`);
-      }
-    };
-  };
-
-  // 3. ฟังก์ชันสำหรับอัปเดต Block properties
-  const handleUpdateBlock = (blockId, field, value) => {
-    if (!activeChapterId) return;
-    setBlocks((prevBlocks) => ({
-      ...prevBlocks,
-      [activeChapterId]: (prevBlocks[activeChapterId] || []).map((block) => {
-        if (block.id === blockId) {
-          return {
-            ...block,
-            [field]: value,
-          };
-        }
-        return block;
-      }),
-    }));
-  };
-
-  const handleDeleteBlock = (blockId) => {
-    const isConfirmed = window.confirm(
-      "คุณแน่ใจหรือไม่ที่จะลบบล็อกนี้? ข้อมูลนี้ไม่สามารถกู้คืนได้",
-    );
-
-    // 2. ถ้าผู้ใช้กด "ตกลง" ถึงจะให้ทำงานต่อ
-    if (isConfirmed) {
-      if (!activeChapterId) return;
-      setBlocks((prevBlocks) => ({
-        ...prevBlocks,
-        [activeChapterId]: (prevBlocks[activeChapterId] || []).filter(
-          (block) => block.id !== blockId,
-        ),
-      }));
-      alert("ลบบล็อกสำเร็จแล้ว!");
-    }
-  };
-
-  const handleDeleteChapter = async (chapterId) => {
-    // ค้นหาบทเรียนที่จะลบก่อน
-    const chapterToDelete = Chapters.find((c) => c.id === chapterId);
-
-    // ดักห้ามลบ Chapter แรก (จุดเริ่มเกม) โดยเช็กจาก label_name
-    if (chapterToDelete && chapterToDelete.label_name === "start") {
-      alert("ไม่สามารถลบบทเริ่มต้นเกม (Start) ได้ครับ");
-      return;
-    }
-
-    // 2. แจ้งเตือนยืนยันการลบ
-    const isConfirmed = window.confirm(
-      "คุณแน่ใจหรือไม่ที่จะลบบทนี้? ข้อมูลภายในจะหายไปทั้งหมด",
-    );
-    if (!isConfirmed) return;
-
-    const isNewChapter =
-      typeof chapterId === "string" && chapterId.startsWith("temp_");
-
-    // --- เริ่มจุดที่ต้องแทรก (ลบจาก Supabase ก่อน) ---
-    if (!isNewChapter) {
-      try {
-        const { error } = await supabase
-          .from("chapters")
-          .delete()
-          .eq("id", chapterId);
-
-        if (error) throw error; // ถ้ามี error ให้กระโดดไป catch ทันที
-      } catch (err) {
-        console.error("Database Error:", err);
-        alert("ไม่สามารถลบข้อมูลจากฐานข้อมูลได้");
-        return; // จบการทำงาน ไม่ต้องลบ UI
-      }
-    } else {
-      console.log("ลบเฉพาะใน State เพราะเป็นบทเรียนใหม่");
-    }
-    // --- จบจุดที่แทรก ---
-
-    // 3. หาตำแหน่ง Index ปัจจุบันของบทที่กำลังจะลบ
-    const currentIndex = Chapters.findIndex(
-      (chapter) => chapter.id === chapterId,
-    );
-
-    // 4. คำนวณหา Chapter ก่อนหน้าเพื่อสลับโฟกัส (ถ้าบทที่ลบคือบทที่กำลังเปิดดูอยู่)
-    if (activeChapterId === chapterId) {
-      // ถ้ามีบทก่อนหน้า ให้เอา ID ของบทก่อนหน้ามาใช้
-      if (currentIndex > 0) {
-        const previousChapterId = Chapters[currentIndex - 1].id;
-        setActiveChapterId(previousChapterId);
-      } else {
-        // Safe-case เผื่อกรณีฉุกเฉิน ให้กลับไปที่ ID 1
-        setActiveChapterId(1);
-      }
-    }
-
-    // 5. ลบ Chapter ออกจาก State หลัก
-    const updatedChapters = Chapters.filter(
-      (chapter) => chapter.id !== chapterId,
-    );
-    setChapters(updatedChapters);
-
-    // 6. ล้างข้อมูล Blocks ของบทที่ถูกลบทิ้ง เพื่อคืนพื้นที่หน่วยความจำ
-    setBlocks((prevBlocks) => {
-      const newBlocks = { ...prevBlocks };
-      delete newBlocks[chapterId];
-      return newBlocks;
-    });
-    alert("ลบบทและข้อมูลภายในทั้งหมดสำเร็จแล้ว!");
-  };
 
   const inputRef = React.useRef(null);
 
@@ -355,7 +141,7 @@ const ChapterManagementPage = () => {
     }
   }, [focusedBlockId, id]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     const fetchChapters = async () => {
       if (!id) return;
 
@@ -386,120 +172,11 @@ const ChapterManagementPage = () => {
     };
 
     fetchChapters();
-  }, [id]);
+  }, [id]);*/
 
-  const [isDataChanged, setIsDataChanged] = useState(false);
   useEffect(() => {
     console.log("🔄 [หน้าหลัก] ค่า isDataChanged เปลี่ยนเป็น:", isDataChanged);
   }, [isDataChanged]);
-
-  const handleAddTagToChapter = (chapterId, tagName) => {
-    const cleanTagName = tagName.trim();
-    if (!cleanTagName) return;
-
-    setChapters((prevChapters) =>
-      prevChapters.map((chapter) => {
-        if (chapter.id === chapterId) {
-          const currentTags = chapter.chapter_tags || [];
-          // ป้องกันการใส่แท็กซ้ำ
-          if (currentTags.includes(cleanTagName)) return chapter;
-
-          setIsDataChanged(true);
-          return {
-            ...chapter,
-            chapter_tags: [...currentTags, cleanTagName], // ใช้ chapter_tags
-          };
-        }
-        return chapter;
-      }),
-    );
-  };
-
-  const handleRemoveTagFromChapter = (chapterId, tagName) => {
-    // 🌟 ข้อ 2: บังคับไม่ให้ผู้ใช้ลบแท็ก "จุดเริ่มต้น" เด็ดขาด!
-    if (tagName === "จุดเริ่มต้น") {
-      alert("ไม่สามารถลบแท็ก 'จุดเริ่มต้น' ได้ เนื่องจากเป็นแท็กบังคับของระบบ");
-      return;
-    }
-
-    setChapters((prevChapters) =>
-      prevChapters.map((chapter) => {
-        if (chapter.id === chapterId) {
-          const currentTags = chapter.chapter_tags || [];
-          setIsDataChanged(true);
-          return {
-            ...chapter,
-            chapter_tags: currentTags.filter((t) => t !== tagName), // ใช้ chapter_tags
-          };
-        }
-        return chapter;
-      }),
-    );
-  };
-
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSaveAll = async () => {
-    console.log("กำลังสั่งเซฟข้อมูลทั้งหมดลง Supabase...");
-    setIsSaving(true);
-    try {
-      for (let i = 0; i < Chapters.length; i++) {
-        const chapter = Chapters[i];
-
-        // ดึงแท็กปัจจุบันขึ้นมา ตรวจสอบเพื่อความปลอดภัยอีกชั้นว่าต้องมี "จุดเริ่มต้น"
-        let tags = chapter.chapter_tags || [];
-        if (!tags.includes("จุดเริ่มต้น")) {
-          tags = chapter.chapter_tags || [];
-        }
-
-        const statusToSave = chapter.chapter_status || "draft";
-
-        if (String(chapter.id).startsWith("temp_")) {
-          // ➕ กรณีเป็นบทเรียนใหม่ (ID ชั่วคราว) ให้ใช้คำสั่งสร้าง (Insert)
-          await chapterService.createChapter(
-            id, // project_id
-            chapter.chapter_titles,
-            i, // sort_order ตามตำแหน่งในแถวปัจจุบัน
-            tags,
-            chapter.chapter_status,
-          );
-        } else {
-          // 🔄 กรณีเป็นบทเรียนเดิมที่มีในฐานข้อมูลอยู่แล้ว ให้ใช้คำสั่งอัปเดต (Update)
-          await chapterService.updateExistingChapter(
-            chapter.id,
-            chapter.chapter_titles,
-            i, // sort_order อัปเดตเรียงตามการลากวาง
-            tags,
-            chapter.chapter_status,
-            statusToSave,
-          );
-        }
-      }
-
-      // 🌟 ข้อ 3: ดึงข้อมูลล่าสุดที่พึ่งเซฟจาก Supabase มาอัปเดตลง State หน้าเว็บอีกครั้ง
-      // เพื่อเปลี่ยนไอดีชั่วคราว (temp_xxx) ให้กลายเป็นไอดีจริงจากฐานข้อมูล
-      const freshChapters = await chapterService.getChapters(id);
-      if (freshChapters) {
-        setChapters(freshChapters);
-      }
-
-      setIsDataChanged(false); // ปิดสวิตช์ปุ่มเซฟ (กลับเป็นสถานะเซฟแล้ว)
-      alert("บันทึกข้อมูลและอัปเดตสถานะฉากเรียบร้อยแล้วครับ! 🎉");
-    } catch (catchError) {
-      console.error("เกิดข้อผิดพลาดในการเซฟข้อมูล:", catchError);
-      alert("เกิดข้อผิดพลาดในการเซฟข้อมูล กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleStatusChange = (id, newStatus) => {
-    const updatedChapters = Chapters.map((ch) =>
-      ch.id === id ? { ...ch, chapter_status: newStatus } : ch,
-    );
-    setChapters(updatedChapters);
-    setIsDataChanged(true);
-  };
 
   return (
     /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
@@ -518,7 +195,14 @@ const ChapterManagementPage = () => {
           onSave={handleSaveChapterChanges}
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
-          onSaveAll={handleSaveAll}
+          onSaveAll={() =>
+            handleSaveAll(
+              id, // คือ projectId
+              Chapters, // คือ array ของ chapters
+              setChapters, // ฟังก์ชันอัปเดต state ของแม่
+              setIsDataChanged, // ฟังก์ชันอัปเดตสถานะเซฟของแม่
+            )
+          }
           isSaving={isSaving}
           handleStatusChange={handleStatusChange}
         />

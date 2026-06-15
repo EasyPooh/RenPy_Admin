@@ -1,5 +1,6 @@
 // src/components/GlobalSaveButton.jsx
 import React, { useState, useEffect } from "react";
+import { useSaveManager } from "../../hooks/useSaveManager";
 
 function GlobalSaveButton({ isDataChanged, onSaveAll }) {
   console.log("📥 [ปุ่มเซฟ] ได้รับ Props isDataChanged = ", isDataChanged);

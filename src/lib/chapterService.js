@@ -95,13 +95,13 @@ export const chapterService = {
 
   // 5. ลบบทเรียน
   async deleteChapter(chapterId) {
-    const { error } = await supabase
+    const { data,error } = await supabase
       .from("chapters")
       .delete()
       .eq("id", chapterId);
 
     if (error) throw error;
-    return true;
+    return data;
   },
 // ➕ เพิ่มฟังก์ชันสำหรับอัปเดต Tags โดยเฉพาะ
   async updateChapterTags(chapterId, newTags) {

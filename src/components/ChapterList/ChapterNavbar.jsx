@@ -1,6 +1,7 @@
 // src/components/ChapterList/ChapterNavbar.jsx
 import React, { useState, useRef, useEffect } from "react";
 import GlobalSaveButton from "../WorkspaceContainer/GlobalSaveButton";
+import { useSaveManager } from "../../hooks/useSaveManager";
 
 const ChapterNavbar = ({
   currentChapter,
@@ -57,13 +58,13 @@ const ChapterNavbar = ({
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`flex items-center space-x-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border transition-all ${
-              currentChapter.chapter_status === "done"
+              currentChapter.status === "done"
                 ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100/70"
                 : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/70"
             }`}
           >
             <span>
-              {currentChapter.chapter_status === "done" ? "✓ Done" : "⚙ Draft"}
+              {currentChapter.status === "done" ? "✓ Done" : "⚙ Draft"}
             </span>
             <span className="text-[10px] opacity-60">▼</span>
           </button>
@@ -77,7 +78,7 @@ const ChapterNavbar = ({
                   handleStatusChange(currentChapter.id, "draft");
                 }}
                 className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center space-x-2 hover:bg-gray-50 ${
-                  currentChapter.chapter_status === "draft"
+                  currentChapter.status === "draft"
                     ? "text-amber-600 bg-amber-50/40"
                     : "text-gray-600"
                 }`}
@@ -93,7 +94,7 @@ const ChapterNavbar = ({
                   handleStatusChange(currentChapter.id, "done");
                 }}
                 className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center space-x-2 hover:bg-gray-50 ${
-                  currentChapter.chapter_status === "done"
+                  currentChapter.status === "done"
                     ? "text-green-600 bg-green-50/40"
                     : "text-gray-600"
                 }`}

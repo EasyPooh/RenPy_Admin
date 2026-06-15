@@ -5,9 +5,9 @@ const ChapterItem = React.forwardRef(
   (
     {
       id,
-      chapter_titles, // คาดว่าเป็น string จากฐานข้อมูลโดยตรง
-      chapter_status,
-      chapter_tags, // คาดว่าเป็น array จากฐานข้อมูลโดยตรง
+      name, // ✅ เปลี่ยนจาก chapter_titles มาใช้ name
+      status, // ✅ เปลี่ยนจาก chapter_status มาใช้ status
+      tags, // ✅ เปลี่ยนจาก chapter_tags มาใช้ tags
       isActive,
       isDragging,
       onClick,
@@ -64,7 +64,8 @@ const ChapterItem = React.forwardRef(
 
             <input
               type="text"
-              value={chapter_titles || ""}
+              ref={ref} // ✨ แปะ ref เข้ากับ input เพื่อให้ระบบโฟกัสอัตโนมัติทำงานได้จริง
+              value={name || ""} // ✅ เปลี่ยนมาผูกกับตัวแปร name หน้าบ้าน
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
                 onNameChange?.(id, e.target.value);
@@ -103,24 +104,31 @@ const ChapterItem = React.forwardRef(
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 mt-2 relative">
-            {(chapter_tags || []).map((tag, tagIdx) => (
-              <span
-                key={tagIdx}
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveTagFromChapter(id, tag);
-                  }}
-                  className="hover:text-amber-900 font-bold ml-0.5"
+            {(tags || []).map(
+              (
+                tag,
+                tagIdx, // ✅ เปลี่ยนมาใช้งานวนลูปจากตัวแปร tags
+              ) => (
+                <span
+                  key={tagIdx}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded"
                 >
-                  ×
-                </button>
-              </span>
-            ))}
+                  {tag}
+                  {tag !== "จุดเริ่มต้น" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveTagFromChapter(id, tag);
+                      }}
+                      className="hover:text-amber-900 font-bold ml-0.5"
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
+              ),
+            )}
 
             <button
               type="button"
@@ -152,15 +160,15 @@ const ChapterItem = React.forwardRef(
 
             <span
               className={`
-  ${
-    chapter_status === "done"
-      ? "bg-green-100 text-green-700"
-      : "bg-amber-100 text-amber-700"
-  } 
-  text-[10px] px-1.5 py-0.5 rounded font-medium
-`}
+                ${
+                  status === "done" // ✅ เปลี่ยนเงื่อนไขมาใช้ตัวแปร status
+                    ? "bg-green-100 text-green-700"
+                    : "bg-amber-100 text-amber-700"
+                } 
+                text-[10px] px-1.5 py-0.5 rounded font-medium
+              `}
             >
-              [{chapter_status || "draft"}]
+              [{status || "draft"}]
             </span>
           </div>
         </div>
