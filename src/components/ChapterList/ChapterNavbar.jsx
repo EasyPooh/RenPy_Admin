@@ -36,7 +36,7 @@ const ChapterNavbar = ({
   return (
     <div className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-6 select-none shrink-0">
       <div className="flex items-center space-x-3 text-sm">
-        <span className="text-gray-400 font-medium">ตำแหน่งในเรื่อง:</span>
+        {/* <span className="text-gray-400 font-medium">ตำแหน่งในเรื่อง:</span>
         <span className="font-bold text-gray-800 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
           {currentChapter.name}
         </span>
@@ -45,7 +45,7 @@ const ChapterNavbar = ({
           เริ่มเกม (Start)
         </span>
         <span className="text-gray-300 font-bold">&rarr;</span>
-        <span className="text-gray-500 font-medium">การตื่นนอนครั้งแรก...</span>
+        <span className="text-gray-500 font-medium">การตื่นนอนครั้งแรก...</span>*/}
       </div>
 
       <div className="flex items-center space-x-4">

@@ -47,7 +47,7 @@ export const chapterService = {
         }
       ])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -71,7 +71,7 @@ export const chapterService = {
         }
       ])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error inside createChapter:", error);
@@ -87,7 +87,7 @@ export const chapterService = {
       .update({ chapter_titles: newTitle })
       .eq("id", chapterId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -109,10 +109,11 @@ export const chapterService = {
       .from("chapters")
       .update({ chapter_tags: newTags }) // ส่ง Array ของแท็กใหม่ไปเซฟ (เช่น ['จุดเริ่มต้น', 'ดราม่า'])
       .eq("id", chapterId)
-      .select();
+      .select()
+      .maybeSingle();
 
     if (error) throw error;
-    return data[0];
+    return data;
   },
 
   async updateExistingChapter(chapterId, title, sortOrder, tags, status) {
@@ -126,7 +127,7 @@ export const chapterService = {
       })
       .eq("id", chapterId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;

@@ -19,7 +19,10 @@ const TagPopover = ({
   return (
     <div className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 mt-1 text-sm text-gray-700">
       <div className="flex justify-between items-center mb-2">
-        <span className="font-bold">แท็ก</span>
+        <span className="font-bold">แท็ก </span>
+        <span className="w-32 text-gray-600 text-xs font-medium">
+          จัดหมวดหมู่และค้นหาได้
+        </span>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
           ✕
         </button>

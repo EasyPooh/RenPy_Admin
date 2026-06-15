@@ -19,10 +19,19 @@ import { useAssets } from "../hooks/useAssets";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { useSaveManager } from "../hooks/useSaveManager";
 import { useChapters } from "../hooks/useChapters";
+import { WorkspaceProvider } from "../contexts/WorkspaceContext.jsx";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
 
+  return (
+    // ครอบ Provider ไว้ที่ระดับบนสุด
+    <WorkspaceProvider initialId={id}>
+      <ChapterContent projectId={id} />
+    </WorkspaceProvider>
+  );
+};
+const ChapterContent = ({ projectId: id }) => {
   // hook useAsset
   const { assetsList, isAssetsLoading } = useAssets(id);
   // hook useSaveManager ปุ่มเซฟ
@@ -50,6 +59,8 @@ const ChapterManagementPage = () => {
     handleStatusChange,
     handleDeleteChapter,
   } = useChapters(id);
+  console.log("ค่า Chapters ในไฟล์พ่อ:", Chapters);
+  console.log("ค่า activeChapterId ในไฟล์พ่อ:", activeChapterId);
 
   const {
     workspace,
@@ -182,6 +193,7 @@ const ChapterManagementPage = () => {
     /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
     และห้ามเลื่อนหน้าจอรวม overflow-hidden เพื่อให้สัดส่วนตกลงมาใต้ Navbar พอดี
   */
+
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
       {/* ส่วนของแผงเมนูด้านบนทั้งหมด (รวมกลุ่มอยู่ด้วยกันไม่ให้ไปดันหรือเบียดใคร) */}
       <div className="flex-none bg-white">

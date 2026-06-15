@@ -6,11 +6,11 @@ export const getWorkspaceByChapterId = async (chapterId) => {
     .from('workspaces')
     .select(`
       *,
-      background:assets!start_bg_asset_id(id, name),
-      music:assets!start_music_asset_id(id, name)
+      background:assets!start_bg_asset_id(id, name:file_name), 
+      music:assets!start_music_asset_id(id, name:file_name)
     `)
     .eq('chapter_id', chapterId)
-    .single();
+    .maybeSingle();
 
   // ถ้าไม่เจอ workspace ให้คืนค่า null แทนการ throw error เพื่อให้หน้า UI จัดการเคส "สร้างใหม่" ได้
   if (error && error.code !== 'PGRST116') throw error; 

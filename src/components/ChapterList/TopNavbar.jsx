@@ -67,9 +67,9 @@ const TopNavbar = ({ id }) => {
         >
           [ asset library ]
         </button>
-        <button className="hover:text-purple-600 transition-colors">
+        {/*<button className="hover:text-purple-600 transition-colors">
           [ story map ]
-        </button>
+        </button>*/}
         {/* ไฮไลท์ปุ่มสำหรับกดสร้างไฟล์แปลงโค้ด .rpy ส่งออกอนาคต */}
         <button className="text-purple-600 hover:text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded transition-all">
           [ export .rpy ]
