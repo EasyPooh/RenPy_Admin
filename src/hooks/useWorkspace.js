@@ -1,154 +1,112 @@
+// src/hooks/useWorkspace.js
 import { useState, useEffect } from 'react';
-import { getWorkspaceByChapterId, updateWorkspaceConfig } from "../lib/workspaceService";
-import { supabase } from "../lib/supabaseClient";
+import { getWorkspaceByChapterId, upsertWorkspaceConfig } from "../lib/workspaceService";
 
-export const useWorkspace = (chapterId) => {
-  const [workspace, setWorkspace] = useState(null);
-  const [blocks, setBlocks] = useState({});// เก็บเฉพาะบล็อกของบทปัจจุบัน
-  const [loading, setLoading] = useState(true);
-  const [pendingChanges, setPendingChanges] = useState({});
+export const useWorkspace = (projectId, chapterId, setIsDataChanged) => {
+  // 🌟 1. เปลี่ยนชื่อสเตทเป็น workspaces (เติม s) เพื่อบอกว่าก้อนนี้เก็บสเตทของ "ทุกบท" แยกด้วย ID
+  const [workspaces, setWorkspaces] = useState({});
+  const [blocks, setBlocks] = useState({}); // คงไว้ตามระบบเดิมของคุณ
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!chapterId) return;
+    if (!chapterId || chapterId === "mock-initial" || chapterId.length < 30) return; 
+    
+    // 🌟 2. ดักไว้: ถ้าในเครื่องมีสเตทของบทนี้อยู่แล้ว (กำลังแก้ไขค้างไว้) ไม่ต้องดึงจาก DB ซ้ำ ข้อมูลจะได้ไม่โดนทับ
+    if (workspaces[chapterId]) return;
+
     const fetchData = async () => {
       setLoading(true);
-      // สมมติว่ามี service ดึงข้อมูลทั้งคู่มาพร้อมกัน
-      const data = await getWorkspaceByChapterId(chapterId);
-      setWorkspace(data);
-      // ถ้ามี service ดึง blocks ให้เรียกตรงนี้ เช่น:
-      // const blks = await getBlocksByChapterId(chapterId);
-      // setBlocks(blks);
-      setLoading(false);
-    };
-    fetchData();
-  }, [chapterId]);
-
-  // --- ฟังก์ชัน Config ---
-  const updateConfig = (updates) => {
-    setPendingChanges(prev => ({ ...prev, ...updates }));
-    setWorkspace(prev => ({ ...prev, ...updates }));
-  };
-
-  const saveToDb = async () => {
-    if (!workspace?.id || Object.keys(pendingChanges).length === 0) return;
-    await updateWorkspaceConfig(workspace.id, pendingChanges);
-    setPendingChanges({});
-  };
-
-  // --- ฟังก์ชัน Blocks (ชื่อเดิมตามที่คุณต้องการ) ---
-  const handleAddBlock = (type,activeChapterId, setFocusedBlockId) => {
-    console.log("ถั่วต้ม! ปุ่มกดทำงานส่งประเภทมาคือ:", type);
-    const newId = Date.now();
-    let newBlock = {
-      id: Date.now(),
-      type: type || "default",
-      content: `บล็อกใหม่ที่ #${(blocks[activeChapterId] || []).length + 1}`,
-      createdAt: new Date().toLocaleTimeString(),
-    };
-    // ใช้ switch เพื่อเติมค่าเฉพาะตามประเภท
-    switch (type) {
-      case "dialogue":
-        newBlock = {
-          ...newBlock,
-          character: "",
-          expression: "normal",
-          text: "",
-        };
-        break;
-      case "scene":
-        newBlock = {
-          ...newBlock,
-          background: "",
-          backgroundEffect: "",
-          backgroundEffectSpeed: "normal",
-        };
-        break;
-      case "sprite":
-        newBlock = {
-          ...newBlock,
-          sprite: "",
-          spritecommand: "show",
-          spriteposition: "center",
-          spriteSpeed: "normal",
-        };
-        break;
-      case "audio":
-        newBlock = {
-          ...newBlock,
-          audio: "",
-          audiotype: "bgm",
-          audioCommand: "stop",
-        };
-        break;
-      case "choice":
-        newBlock = {
-          ...newBlock,
-          choice: "",
-        };
-        break;
-    }
-
-    setBlocks((prevBlocks) => ({
-      ...prevBlocks,
-      [activeChapterId]: [...(prevBlocks[activeChapterId] || []), newBlock],
-    }));
-    setFocusedBlockId(newId);
-
-    const handleScroll = (id) => {
-      const element = document.getElementById(`block-${id}`);
-
-      if (element) {
-        console.log("✅ พบ Element แล้ว กำลังสั่งให้เลื่อนไปที่:", id);
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else {
-        console.warn("❌ ไม่พบ Element ที่มี ID:", `block-${id}`);
+      try {
+        const data = await getWorkspaceByChapterId(chapterId);
+        
+        if (data) {
+          // ถ้ามีข้อมูลใน DB -> บันทึกลงช่องของบทนั้นๆ
+          setWorkspaces(prev => ({ ...prev, [chapterId]: data }));
+        } else {
+          console.log("ไม่พบข้อมูลเดิม เตรียมโครงสร้างรอไว้ใน Memory (เซฟจริงตอนกด Save All)...");
+          
+          // 🌟 3. แทนที่จะ Insert ลง DB ทันทีให้ติดกฎดีเลย์ เราสร้างก้อนจำลองรอไว้ในเครื่องก่อน
+          const blankWorkspace = {
+            chapter_id: chapterId,
+            project_id: projectId,
+            start_bg_asset_id: null,
+            start_music_asset_id: null,
+            start_characters: []
+          };
+          setWorkspaces(prev => ({ ...prev, [chapterId]: blankWorkspace }));
+        }
+      } catch (err) {
+        console.error("Fetch workspace error:", err);
+      } finally {
+        setLoading(false);
       }
     };
+    
+    fetchData();
+  }, [chapterId, projectId]); 
+
+  // 🌟 ดึงข้อมูลของบท "ปัจจุบัน" ออกมาส่งให้ UI แสดงผล
+  const currentWorkspace = workspaces[chapterId] || null;
+
+  // --- ฟังก์ชันอัปเดตสเตทจำในเครื่อง ---
+  const updateConfig = (updates) => {
+    if (!chapterId) return;
+
+    setWorkspaces(prev => {
+      const oldWs = prev[chapterId] || {
+        chapter_id: chapterId,
+        project_id: projectId,
+        start_bg_asset_id: null,
+        start_music_asset_id: null,
+        start_characters: []
+      };
+      
+      // อัปเดตเฉพาะบทที่เปิดอยู่ปัจจุบัน
+      return {
+        ...prev,
+        [chapterId]: { ...oldWs, ...updates }
+      };
+    });
+
+    if (setIsDataChanged) {
+      setIsDataChanged(true);
+    }
   };
 
-  const handleUpdateBlock = (blockId, field, value,activeChapterId) => {
-    if (!activeChapterId) return;
-    setBlocks((prevBlocks) => ({
-      ...prevBlocks,
-      [activeChapterId]: (prevBlocks[activeChapterId] || []).map((block) => {
-        if (block.id === blockId) {
-          return {
-            ...block,
-            [field]: value,
-          };
-        }
-        return block;
-      }),
-    }));
-  };
+  // ฟังก์ชันเซฟเฉพาะบทเดี่ยว (คงไว้เผื่อกรณีระบบคุณมีปุ่มเซฟแยกย่อย)
+  const saveToDb = async () => {
+    if (!currentWorkspace) return;
+    
+    try {
+      const payload = {
+        ...(currentWorkspace.id && { id: currentWorkspace.id }),
+        chapter_id: chapterId,
+        project_id: projectId,
+        start_bg_asset_id: currentWorkspace.start_bg_asset_id || null,
+        start_music_asset_id: currentWorkspace.start_music_asset_id || null,
+        start_characters: currentWorkspace.start_characters || [],
+      };
 
-  const handleDeleteBlock = (blockId,activeChapterId) => {
-    const isConfirmed = window.confirm(
-      "คุณแน่ใจหรือไม่ที่จะลบบล็อกนี้? ข้อมูลนี้ไม่สามารถกู้คืนได้",
-    );
+      const savedData = await upsertWorkspaceConfig(payload);
+      
+      if (savedData) {
+        setWorkspaces(prev => ({ ...prev, [chapterId]: savedData }));
+      }
 
-    // 2. ถ้าผู้ใช้กด "ตกลง" ถึงจะให้ทำงานต่อ
-    if (isConfirmed) {
-      if (!activeChapterId) return;
-      setBlocks((prevBlocks) => ({
-        ...prevBlocks,
-        [activeChapterId]: (prevBlocks[activeChapterId] || []).filter(
-          (block) => block.id !== blockId,
-        ),
-      }));
-      alert("ลบบล็อกสำเร็จแล้ว!");
+      if (setIsDataChanged) setIsDataChanged(false);
+      alert("💾 บันทึกข้อมูลฉากเริ่มต้นของบทนี้สำเร็จแล้ว!");
+    } catch (err) {
+      console.error("เซฟข้อมูลลง Supabase พัง:", err); 
+      alert("❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
   return { 
-    workspace, 
-    blocks, 
+    workspace: currentWorkspace, // 🌟 ส่งก้อนของบทปัจจุบันไปให้หน้าลูกใช้ (หน้าลูกไม่ต้องแก้โค้ดเลย)
+    allWorkspaces: workspaces,   // 🌟 ส่งก้อนใหญ่รวมทุกบทไปให้หน้าพ่อเพื่อใช้เซฟพร้อมกันทีเดียว
+    blocks,  
     loading, 
     updateConfig, 
     saveToDb,
-    // ส่งฟังก์ชันชื่อเดิมออกไปให้ UI ใช้งาน
-    handleAddBlock, 
-    handleUpdateBlock, 
-    handleDeleteBlock 
   };
 };

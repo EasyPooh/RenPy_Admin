@@ -33,8 +33,7 @@ const TopNavbar = ({ id }) => {
 
   const handleAssetPage = () => {
     // ตรงนี้คุณสามารถใส่เงื่อนไขได้ เช่น ถ้า user ล็อกอินแล้วค่อยไป
-    console.log("กำลังจะไปหน้าasset...");
-    console.log("ID ที่จะส่งไปคือ:", id);
+
     navigate(`/Chapter_editor/${id}/assets`); // สั่งให้เปลี่ยนหน้า
   };
   return (

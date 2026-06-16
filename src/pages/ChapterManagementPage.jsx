@@ -26,7 +26,7 @@ const ChapterManagementPage = () => {
 
   return (
     // ครอบ Provider ไว้ที่ระดับบนสุด
-    <WorkspaceProvider initialId={id}>
+    <WorkspaceProvider initialId={null}>
       <ChapterContent projectId={id} />
     </WorkspaceProvider>
   );
@@ -59,20 +59,18 @@ const ChapterContent = ({ projectId: id }) => {
     handleStatusChange,
     handleDeleteChapter,
   } = useChapters(id);
-  console.log("ค่า Chapters ในไฟล์พ่อ:", Chapters);
-  console.log("ค่า activeChapterId ในไฟล์พ่อ:", activeChapterId);
 
   const {
-    workspace,
     blocks,
-    loading,
+    workspace,
+    allWorkspaces,
     updateConfig,
-    saveToDb,
+    loading,
     // ส่งฟังก์ชันชื่อเดิมออกไปให้ UI ใช้งาน
-    handleAddBlock,
-    handleUpdateBlock,
-    handleDeleteBlock,
-  } = useWorkspace();
+    //handleAddBlock,
+    // handleUpdateBlock,
+    // handleDeleteBlock,
+  } = useWorkspace(id, activeChapterId, setIsDataChanged);
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
@@ -185,9 +183,90 @@ const ChapterContent = ({ projectId: id }) => {
     fetchChapters();
   }, [id]);*/
 
-  useEffect(() => {
-    console.log("🔄 [หน้าหลัก] ค่า isDataChanged เปลี่ยนเป็น:", isDataChanged);
-  }, [isDataChanged]);
+  useEffect(() => {}, [isDataChanged]);
+
+  // --- ฟังก์ชัน บล็อกไอเท็มต่างๆ (คงเดิมตามสูตรของคุณ) ---
+  const handleAddBlock = (type, activeChapterId, setFocusedBlockId) => {
+    const newId = Date.now();
+    let newBlock = {
+      id: newId,
+      type: type || "default",
+      content: `บล็อกใหม่ที่ #${(blocks[activeChapterId] || []).length + 1}`,
+      createdAt: new Date().toLocaleTimeString(),
+    };
+
+    switch (type) {
+      case "dialogue":
+        newBlock = {
+          ...newBlock,
+          character: "",
+          expression: "normal",
+          text: "",
+        };
+        break;
+      case "scene":
+        newBlock = {
+          ...newBlock,
+          background: "",
+          backgroundEffect: "",
+          backgroundEffectSpeed: "normal",
+        };
+        break;
+      case "sprite":
+        newBlock = {
+          ...newBlock,
+          sprite: "",
+          spritecommand: "show",
+          spriteposition: "center",
+          spriteSpeed: "normal",
+        };
+        break;
+      case "audio":
+        newBlock = {
+          ...newBlock,
+          audio: "",
+          audiotype: "bgm",
+          audioCommand: "stop",
+        };
+        break;
+      case "choice":
+        newBlock = { ...newBlock, choice: "" };
+        break;
+    }
+
+    setBlocks((prevBlocks) => ({
+      ...prevBlocks,
+      [activeChapterId]: [...(prevBlocks[activeChapterId] || []), newBlock],
+    }));
+    setFocusedBlockId(newId);
+  };
+
+  const handleUpdateBlock = (blockId, field, value, activeChapterId) => {
+    if (!activeChapterId) return;
+    setBlocks((prevBlocks) => ({
+      ...prevBlocks,
+      [activeChapterId]: (prevBlocks[activeChapterId] || []).map((block) =>
+        block.id === blockId ? { ...block, [field]: value } : block,
+      ),
+    }));
+  };
+
+  const handleDeleteBlock = (blockId, activeChapterId) => {
+    if (
+      window.confirm(
+        "คุณแน่ใจหรือไม่ที่จะลบบล็อกนี้? ข้อมูลนี้ไม่สามารถกู้คืนได้",
+      )
+    ) {
+      if (!activeChapterId) return;
+      setBlocks((prevBlocks) => ({
+        ...prevBlocks,
+        [activeChapterId]: (prevBlocks[activeChapterId] || []).filter(
+          (block) => block.id !== blockId,
+        ),
+      }));
+      alert("ลบบล็อกสำเร็จแล้ว!");
+    }
+  };
 
   return (
     /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
@@ -207,14 +286,9 @@ const ChapterContent = ({ projectId: id }) => {
           onSave={handleSaveChapterChanges}
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
-          onSaveAll={() =>
-            handleSaveAll(
-              id, // คือ projectId
-              Chapters, // คือ array ของ chapters
-              setChapters, // ฟังก์ชันอัปเดต state ของแม่
-              setIsDataChanged, // ฟังก์ชันอัปเดตสถานะเซฟของแม่
-            )
-          }
+          onSaveAll={() => {
+            handleSaveAll(id, Chapters, allWorkspaces, setIsDataChanged);
+          }}
           isSaving={isSaving}
           handleStatusChange={handleStatusChange}
         />
@@ -249,6 +323,7 @@ const ChapterContent = ({ projectId: id }) => {
               suggestedTags={suggestedTags}
               onAddTagToChapter={handleAddTagToChapter}
               onRemoveTagFromChapter={handleRemoveTagFromChapter}
+              isDataChanged={isDataChanged}
               setIsDataChanged={setIsDataChanged}
             />
           </div>
@@ -259,7 +334,7 @@ const ChapterContent = ({ projectId: id }) => {
       */}
         <WorkspaceContainer
           currentChapter={Chapters.find((s) => s.id === activeChapterId)}
-          blocks={currentBlocks}
+          blocks={blocks}
           onAddBlock={handleAddBlock}
           handleUpdateBlock={handleUpdateBlock}
           handleDeleteBlock={handleDeleteBlock}
@@ -268,7 +343,14 @@ const ChapterContent = ({ projectId: id }) => {
           inputRef={inputRef}
           allChapters={Chapters}
           assets={assetsList}
+          isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
+          activeChapterId={activeChapterId}
+          workspace={workspace}
+          handleSaveAll={handleSaveAll}
+          isSaving={isSaving}
+          updateConfig={updateConfig}
+          loading={loading}
         />
       </div>
     </div>

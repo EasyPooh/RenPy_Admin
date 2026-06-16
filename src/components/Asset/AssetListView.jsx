@@ -63,7 +63,6 @@ const AssetListView = ({
   // ฟังก์ชันจัดการการลบสินทรัพย์
   // 🎯 ฟังก์ชันจัดการการลบสินทรัพย์แบบสมบูรณ์ (Storage + Database)
   const handleDelete = async (asset) => {
-    console.log("🔎 ตรวจสอบข้อมูล asset ที่ส่งเข้ามา:", asset);
     if (!asset || !asset.id) {
       alert("ไม่พบข้อมูล asset ที่ต้องการลบ");
       return;
@@ -77,7 +76,6 @@ const AssetListView = ({
     try {
       // 1️⃣ ขั้นตอนที่ 1: ลบไฟล์ดิบออกจาก Supabase Storage Buckets "game-assets"
       if (asset.storage_path) {
-        console.log("กำลังลบไฟล์ใน Storage ที่ path:", asset.storage_path);
         const { error: storageError } = await supabase.storage
           .from("game-assets")
           .remove([asset.storage_path]); // ต้องส่งค่าเป็น Array [ ]
@@ -89,7 +87,6 @@ const AssetListView = ({
           );
           // ปล่อยให้ระบบทำงานต่อ เผื่อไฟล์ใน storage ถูกลบมือไปแล้ว แต่ข้อมูลในเบสยังค้างอยู่
         } else {
-          console.log("ลบไฟล์สำเร็จจาก Storage เรียบร้อย");
         }
       }
 

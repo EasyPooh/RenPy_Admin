@@ -7,37 +7,46 @@ const StartSection = ({
   setStartBg,
   startMusic,
   setStartMusic,
-  startChar,
-  setStartChar,
-  characterList,
-  setCharacterList,
+  characterList, // 🌟 รับอาร์เรย์ตัวละครจากฐานข้อมูลโดยตรง
+  onCharacterListChange, // 🌟 ฟังก์ชันอัปเดตอาร์เรย์เพื่อเปิดปุ่มเซฟ
   assets,
 }) => {
-  // 2. เพิ่ม State นี้เข้าไปเพื่อเก็บอาร์เรย์ของตัวละครทั้งหมดที่เคยบันทึก
-  // สามารถใส่ค่าเริ่มต้นไว้ก่อนได้
+  // สเตทสำหรับเก็บข้อความที่กำลังพิมพ์อยู่ในช่อง Input (Local State)
+  const [inputChar, setInputChar] = useState("");
 
   // ฟังก์ชันสำหรับตรวจจับการกด Enter เพื่อบันทึกชื่อตัวละครลงแคปซูล
   const handleKeyDown = (e) => {
-    // เพิ่มตัวเช็ก && startChar เข้าไปข้างหน้า เพื่อป้องกัน undefined
-    if (e.key === "Enter" && startChar && startChar.trim() !== "") {
+    // 💡 เปลี่ยนมาเช็กตัวแปร inputChar ที่เก็บค่าจากการพิมพ์จริง
+    if (e.key === "Enter" && inputChar && inputChar.trim() !== "") {
       e.preventDefault();
-      if (!characterList.includes(startChar.trim())) {
-        setCharacterList([...characterList, startChar.trim()]);
+
+      const trimmedName = inputChar.trim();
+
+      // ถ้าในลิสต์ของฐานข้อมูลยังไม่มีชื่อนี้
+      if (!characterList.includes(trimmedName)) {
+        const updatedList = [...characterList, trimmedName];
+        // 🌟 ยิงลิสต์ก้อนใหม่กลับไปหาพ่อ พ่อจะสั่ง updateConfig ทำให้ปุ่มเซฟสว่าง!
+        onCharacterListChange(updatedList);
       }
-      setStartChar("");
+
+      // เคลียร์ช่องพิมพ์ให้ว่างพร้อมพิมพ์ชื่อถัดไป
+      setInputChar("");
     }
   };
+
   // ฟังก์ชันสำหรับลบชื่อตัวละครออกจากแคปซูล
   const handleDeleteCharacter = (e, charToDelete) => {
-    e.stopPropagation(); // 💡 สำคัญมาก: ป้องกันไม่ให้จิ้มโดนปุ่มลบแล้วมันไปสั่งให้ input เลือกตัวละครนั้นซ้ำ
+    e.stopPropagation(); // ป้องกันบัคอีเวนต์ซ้อนคัน
 
     // กรองเอาเฉพาะตัวละครที่ชื่อไม่ตรงกับตัวที่ต้องการลบ
     const updatedList = characterList.filter((char) => char !== charToDelete);
-    setCharacterList(updatedList);
 
-    // (Option) ถ้าตัวที่กำลังลบอยู่ ดันตรงกับค่าในช่อง input หลัก ให้ล้างค่าในช่อง input ด้วย
-    if (startChar === charToDelete) {
-      setStartChar("");
+    // 🌟 ส่งลิสต์หลังลบกลับไปให้พ่อเซฟด้วย
+    onCharacterListChange(updatedList);
+
+    // ถ้าตัวที่ลบ ดันตรงกับคำที่ค้างอยู่ในช่องกรอก ให้ล้างช่องกรอกด้วย
+    if (inputChar === charToDelete) {
+      setInputChar("");
     }
   };
 
@@ -64,7 +73,6 @@ const StartSection = ({
             onChange={(e) => setStartBg(e.target.value)}
             className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           >
-            {/* 🎯 จัดการ Placeholder ตามจำนวนภาพพื้นหลังจริงในระบบ */}
             {backgroundAssets.length === 0 ? (
               <option value="">
                 ❌ ยังไม่มีภาพพื้นหลังใน asset library
@@ -73,7 +81,6 @@ const StartSection = ({
             ) : (
               <option value="">[ เลือกภาพพื้นหลังเริ่มต้น ]</option>
             )}
-            {/* วนลูปเฉพาะเพลงที่มีอยู่จริงเข้ามาแสดงผล */}
             {backgroundAssets.map((asset) => (
               <option key={asset.id} value={asset.id}>
                 {asset.file_name}
@@ -93,7 +100,6 @@ const StartSection = ({
             onChange={(e) => setStartMusic(e.target.value)}
             className="flex-1 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           >
-            {/* 🎯 จัดการ Placeholder ตามจำนวนเพลงจริงในระบบ */}
             {musicAssets.length === 0 ? (
               <option value="">
                 ❌ ยังไม่มีเพลงใน asset library (กรุณาอัปโหลดไฟล์เสียงก่อน)
@@ -101,7 +107,6 @@ const StartSection = ({
             ) : (
               <option value="">[ เลือกเพลงพื้นหลังเริ่มต้น ]</option>
             )}
-            {/* วนลูปเฉพาะเพลงที่มีอยู่จริงเข้ามาแสดงผล */}
             {musicAssets.map((asset) => (
               <option key={asset.id} value={asset.id}>
                 {asset.file_name}
@@ -112,22 +117,21 @@ const StartSection = ({
       </div>
 
       {/* Start Character */}
-      <div className="flex flex-col space-y-2 ">
-        {/* ส่วนช่องกรอกข้อมูลเดิม */}
-        <div className="flex items-center space-x-2 ">
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center space-x-2">
           <span className="w-28 text-gray-600 text-xs font-medium">
             start character
           </span>
           <input
             type="text"
             placeholder="+ เพิ่มตัวละคร (กด Enter เพื่อบันทึก)"
-            value={startChar}
-            onChange={(e) => setStartChar(e.target.value)}
-            onKeyDown={handleKeyDown} // เพิ่ม Event ตรวจจับการกด Enter
+            value={inputChar} // 🌟 เปลี่ยนมาผูกกับสเตทภายในเครื่อง พิมพ์ได้ลื่นไหลไม่หน่วงหน้าจอ
+            onChange={(e) => setInputChar(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="w-108 border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-400"
           />
           <div className="flex items-center space-x-2 gap-4">
-            <span className="whitespace-nowrap text-gray-600 text-xs font-medium ">
+            <span className="whitespace-nowrap text-gray-600 text-xs font-medium">
               {
                 "<--- เพิ่มตัวละครและบันทึกไว้ในส่วนนี้ แล้วจะปรากฏให้เลือกได้ในบล็อกบทสนทนา"
               }
@@ -135,30 +139,26 @@ const StartSection = ({
           </div>
         </div>
 
-        {/* ส่วนแสดงแคปซูลตัวละครที่เคยบันทึกไว้ */}
-        <div
-          className="flex flex-wrap gap-2 pl-30"
-          style={{ paddingLeft: "7rem" }}
-        >
+        {/* ส่วนแสดงแคปซูลตัวละครที่ดึงมาจากฐานข้อมูลจริง */}
+        <div className="flex flex-wrap gap-2" style={{ paddingLeft: "7rem" }}>
           {characterList.map((char, index) => {
-            const isSelected = startChar === char;
+            // ไฮไลต์สีม่วงจะทำงานเมื่อพิมพ์ชื่อในช่องค้นหา/กรอก ตรงกับตัวแคปซูล
+            const isSelected = inputChar === char;
             return (
               <div
                 key={index}
-                onClick={() => setStartChar(char)} // คลิกที่ตัวแคปซูลเพื่อเลือก
+                onClick={() => setInputChar(char)} // คลิกเพื่อเอาชื่อไปใส่ในช่องกรอกข้อมูล
                 className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-purple-100 text-purple-700 border-purple-300 font-medium"
                     : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                 }`}
               >
-                {/* ชื่อตัวละคร */}
                 <span>{char}</span>
 
-                {/* ปุ่มกากบาทสำหรับลบ */}
                 <button
                   type="button"
-                  onClick={(e) => handleDeleteCharacter(e, char)} // เรียกฟังก์ชันลบเมื่อกด (x)
+                  onClick={(e) => handleDeleteCharacter(e, char)}
                   className={`flex items-center justify-center w-3.5 h-3.5 rounded-full text-[10px] font-bold transition-colors ${
                     isSelected
                       ? "text-purple-500 hover:bg-purple-200 hover:text-purple-800"

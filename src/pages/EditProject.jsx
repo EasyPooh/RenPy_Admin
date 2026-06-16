@@ -53,7 +53,6 @@ function EditProject() {
     try {
       const fileName = imageUrl.split("/").pop();
       await supabase.storage.from("Project-Thumbnail").remove([fileName]);
-      console.log("ลบรูปเก่าจาก Storage สำเร็จ");
     } catch (err) {
       console.error("ลบรูปเก่าล้มเหลว:", err);
     }

@@ -116,8 +116,6 @@ function Allproject() {
         storagePath = imageUrl.split("/").pop();
       }
 
-      console.log("กำลังลบไฟล์ภาพปกที่ตำแหน่ง:", storagePath);
-
       const { data, error } = await supabase.storage
         .from(bucketName)
         .remove([storagePath]);
@@ -125,7 +123,6 @@ function Allproject() {
       if (error) {
         console.error("ไม่สามารถลบภาพปกจาก Storage ได้:", error.message);
       } else {
-        console.log("ลบภาพปกจากคลัง Storage สำเร็จ:", data);
       }
     } catch (err) {
       console.error("เกิดข้อผิดพลาดในการตรวจสอบ URL โครงสร้างภาพ:", err);

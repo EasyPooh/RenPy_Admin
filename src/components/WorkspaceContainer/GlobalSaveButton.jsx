@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { useSaveManager } from "../../hooks/useSaveManager";
 
 function GlobalSaveButton({ isDataChanged, onSaveAll }) {
-  console.log("📥 [ปุ่มเซฟ] ได้รับ Props isDataChanged = ", isDataChanged);
   const [saveState, setSaveState] = useState("saved"); // 'saved' | 'unsaved' | 'saving' | 'success'
 
   // คอยจับตาดูว่าถ้าข้อมูลในหน้าใหญ่เปลี่ยน ให้ปลุกปุ่มเซฟขึ้นมา
@@ -19,9 +18,7 @@ function GlobalSaveButton({ isDataChanged, onSaveAll }) {
     }
   }, [isDataChanged]);
 
-  useEffect(() => {
-    console.log("🎨 [ปุ่มเซฟ] saveState ปัจจุบันคือ:", saveState);
-  }, [saveState]);
+  useEffect(() => {}, [saveState]);
 
   const handlePressSave = async () => {
     if (saveState !== "unsaved") return; // ป้องกันการกดเบิ้ล

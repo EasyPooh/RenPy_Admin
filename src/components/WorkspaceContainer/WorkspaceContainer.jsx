@@ -19,18 +19,23 @@ import { useSaveManager } from "../../hooks/useSaveManager";
 // 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (ChapterManagementPage)
 const WorkspaceContainer = ({
   currentChapter,
-  //blocks = [],
-  //onAddBlock,
-  // handleUpdateBlock,
-  //handleDeleteBlock,
+  blocks,
+  handleAddBlock,
+  handleUpdateBlock,
+  handleDeleteBlock,
   focusedBlockId,
   setFocusedBlockId,
   inputRef,
   allChapters,
   assets,
   setIsDataChanged,
+  activeChapterId,
+  workspace,
+  handleSaveAll,
+  isSaving,
+  updateConfig,
 }) => {
-  const {
+  /*const {
     workspace,
     blocks,
     loading,
@@ -40,9 +45,7 @@ const WorkspaceContainer = ({
     handleAddBlock,
     handleUpdateBlock,
     handleDeleteBlock,
-  } = useWorkspace(currentChapter?.id);
-  console.log("รายชื่อบทที่เดินทางมาถึง Workspace:", allChapters);
-  const [characterList, setCharacterList] = useState(["เนวี่", "ผู้เล่น"]);
+  } = useWorkspace(currentChapter?.id, setIsDataChanged);*/
 
   const currentBlocks = blocks[currentChapter?.id] || [];
 
@@ -86,14 +89,22 @@ const WorkspaceContainer = ({
         {/* 1. ส่วน StartSection */}
         <div className="w-full">
           <StartSection
-            startBg={workspace?.background || ""}
-            setStartBg={(newBg) => updateConfig({ background: newBg })}
-            startMusic={workspace?.music || ""}
-            setStartMusic={(newMusic) => updateConfig({ music: newMusic })}
-            startChar={workspace?.character || ""}
-            setStartChar={(newChar) => updateConfig({ character: newChar })}
-            characterList={characterList}
-            setCharacterList={setCharacterList}
+            startBg={workspace?.start_bg_asset_id || ""}
+            setStartBg={(newBgId) =>
+              updateConfig({ start_bg_asset_id: newBgId })
+            }
+            startMusic={workspace?.start_music_asset_id || ""}
+            setStartMusic={(newMusicId) =>
+              updateConfig({ start_music_asset_id: newMusicId })
+            }
+            startChar={workspace?.start_characters || []}
+            setStartChar={(newCharsArray) =>
+              updateConfig({ start_characters: newCharsArray })
+            }
+            characterList={workspace?.start_characters || []}
+            onCharacterListChange={(updatedList) =>
+              updateConfig({ start_characters: updatedList })
+            }
             assets={assets}
           />
         </div>
@@ -127,7 +138,7 @@ const WorkspaceContainer = ({
                       character={block.character}
                       expression={block.expression}
                       text={block.text}
-                      characterList={characterList}
+                      characterList={workspace?.start_characters || []}
                       block={block}
                       index={index}
                       handleDeleteBlock={handleDeleteBlock}

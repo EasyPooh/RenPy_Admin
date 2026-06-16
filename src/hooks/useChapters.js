@@ -16,7 +16,7 @@
     const [isDataChanged, setIsDataChanged] = useState(false);
     
     const { activeChapterId, setActiveChapterId } = useWorkspaceContext();  
-    console.log("ค่าที่อ่านได้จากกระดานกลางคือ:", activeChapterId);
+    
    /* const [Chapters, setChapters] = useState([
       { id: "", name: "เริ่มเกม (Start)", label_name: "start", status: "draft", tags: ["จุดเริ่มต้น"] },
     ]);*/

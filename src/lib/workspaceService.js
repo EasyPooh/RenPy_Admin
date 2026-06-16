@@ -18,18 +18,22 @@ export const getWorkspaceByChapterId = async (chapterId) => {
 };
 
 // --- ส่วนที่ 2: การจัดการ Config พื้นฐาน ---
-export const updateWorkspaceConfig = async (workspaceId, updates) => {
+export const upsertWorkspaceConfig = async (payload) => {
+  console.log("กำลังส่งข้อมูลไป Upsert บน Supabase:", payload);
+  
   const { data, error } = await supabase
     .from('workspaces')
-    .update(updates)
-    .eq('id', workspaceId)
+    .upsert(payload) // ✨ มี id จะเขียนทับ ไม่มี id จะ Insert ให้ทันที
     .select();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("Supabase Error ใน Service:", error);
+    throw error;
+  }
+  return data?.[0] || null;
 };
 
-// --- ส่วนที่ 3: การจัดการ JSONB (start_characters) ---
+/*// --- ส่วนที่ 3: การจัดการ JSONB (start_characters) ---
 // เราจะใช้การดึงค่าเดิมออกมาอัปเดต แล้วเขียนทับ เป็นวิธีที่ปลอดภัยที่สุดสำหรับ Supabase
 export const updateWorkspaceCharacters = async (workspaceId, newCharactersArray) => {
   const { data, error } = await supabase
@@ -40,4 +44,4 @@ export const updateWorkspaceCharacters = async (workspaceId, newCharactersArray)
 
   if (error) throw error;
   return data;
-};
+};*/
