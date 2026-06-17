@@ -20,6 +20,7 @@ import { useWorkspace } from "../hooks/useWorkspace";
 import { useSaveManager } from "../hooks/useSaveManager";
 import { useChapters } from "../hooks/useChapters";
 import { WorkspaceProvider } from "../contexts/WorkspaceContext.jsx";
+import { useBlocks } from "../hooks/useBlocks.js";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
@@ -61,16 +62,29 @@ const ChapterContent = ({ projectId: id }) => {
   } = useChapters(id);
 
   const {
-    blocks,
+    //blocks,
     workspace,
     allWorkspaces,
     updateConfig,
-    loading,
+    loading: workspaceLoading,
     // ส่งฟังก์ชันชื่อเดิมออกไปให้ UI ใช้งาน
     //handleAddBlock,
     // handleUpdateBlock,
     // handleDeleteBlock,
   } = useWorkspace(id, activeChapterId, setIsDataChanged);
+
+  const {
+    blocks,
+    allBlocks,
+    pendingDeletions,
+    focusedBlockId,
+    setFocusedBlockId,
+    handleAddBlock,
+    handleUpdateBlock,
+    handleDeleteBlock,
+    clearPendingDeletions,
+    loading: blocksLoading,
+  } = useBlocks(workspace?.id, setIsDataChanged);
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
@@ -130,7 +144,7 @@ const ChapterContent = ({ projectId: id }) => {
       .replace(/^_+|_+$/g, "");
   };
 
-  const [focusedBlockId, setFocusedBlockId] = useState(null);
+  //const [focusedBlockId, setFocusedBlockId] = useState(null);
 
   const currentBlocks = blocks[activeChapterId] || [];
 
@@ -186,7 +200,7 @@ const ChapterContent = ({ projectId: id }) => {
   useEffect(() => {}, [isDataChanged]);
 
   // --- ฟังก์ชัน บล็อกไอเท็มต่างๆ (คงเดิมตามสูตรของคุณ) ---
-  const handleAddBlock = (type, activeChapterId, setFocusedBlockId) => {
+  /*const handleAddBlock = (type, activeChapterId, setFocusedBlockId) => {
     const newId = Date.now();
     let newBlock = {
       id: newId,
@@ -266,7 +280,7 @@ const ChapterContent = ({ projectId: id }) => {
       }));
       alert("ลบบล็อกสำเร็จแล้ว!");
     }
-  };
+  };*/
 
   return (
     /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
@@ -287,7 +301,15 @@ const ChapterContent = ({ projectId: id }) => {
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
           onSaveAll={() => {
-            handleSaveAll(id, Chapters, allWorkspaces, setIsDataChanged);
+            handleSaveAll(
+              id,
+              Chapters,
+              allWorkspaces,
+              allBlocks,
+              pendingDeletions,
+              clearPendingDeletions,
+              setIsDataChanged,
+            );
           }}
           isSaving={isSaving}
           handleStatusChange={handleStatusChange}
@@ -350,7 +372,7 @@ const ChapterContent = ({ projectId: id }) => {
           handleSaveAll={handleSaveAll}
           isSaving={isSaving}
           updateConfig={updateConfig}
-          loading={loading}
+          loading={workspaceLoading}
         />
       </div>
     </div>

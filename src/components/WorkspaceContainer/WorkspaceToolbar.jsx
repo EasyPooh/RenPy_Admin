@@ -2,6 +2,7 @@ import React from "react";
 import DialogueSection from "./DialogueSection";
 import SceneSection from "./SceneSection";
 import SpriteSection from "./SpriteSection";
+import { useBlocks } from "../../hooks/useBlocks.js";
 
 const WorkspaceToolbar = ({ onAddBlock }) => {
   return (

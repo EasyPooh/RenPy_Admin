@@ -20,7 +20,7 @@ import { useSaveManager } from "../../hooks/useSaveManager";
 const WorkspaceContainer = ({
   currentChapter,
   blocks,
-  handleAddBlock,
+  onAddBlock,
   handleUpdateBlock,
   handleDeleteBlock,
   focusedBlockId,
@@ -47,22 +47,25 @@ const WorkspaceContainer = ({
     handleDeleteBlock,
   } = useWorkspace(currentChapter?.id, setIsDataChanged);*/
 
+  const characterList = workspace?.start_characters || [];
+
   const currentBlocks = blocks[currentChapter?.id] || [];
 
   const dialogueBlocks = currentBlocks.filter((b) => b.type === "dialogue");
   const mappedDialogueOptions = dialogueBlocks.map((block, index) => {
     // ตัดข้อความบทสนทนาสั้น ๆ เพื่อเอาไปโชว์ใน Dropdown (ไม่ให้ยาวล้นจอ)
-    const shortText = block.text
-      ? block.text.length > 20
-        ? block.text.substring(0, 20) + "..."
-        : block.text
+    const currentContent = block.content || block.text;
+    const shortText = currentContent
+      ? currentContent.length > 20
+        ? currentContent.substring(0, 20) + "..."
+        : currentContent
       : "(บล็อกว่างเปล่า)";
 
     return {
       id: block.id,
       // รูปแบบการแสดงผล: "บล็อกที่ 1: [ชื่อตัวละคร] ข้อความ..."
-      displayName: `บล็อกที่ ${index + 1}: [${block.character || "ไม่มีชื่อ"}] ${shortText}`,
-      pureText: block.text || "",
+      displayName: `บล็อกที่ ${index + 1}: [${block.character_name || block.character || "ไม่มีชื่อ"}] ${shortText}`,
+      pureText: currentContent || "",
     };
   });
 
@@ -129,7 +132,7 @@ const WorkspaceContainer = ({
           ) : (
             /* วนลูปโชว์บล็อกบทพูด */
             <div className="w-full space-y-3">
-              {(blocks[currentChapter?.id] || []).map((block, index) => {
+              {blocks.map((block, index) => {
                 if (block.type === "dialogue") {
                   return (
                     <DialogueSection
@@ -142,7 +145,7 @@ const WorkspaceContainer = ({
                       block={block}
                       index={index}
                       handleDeleteBlock={handleDeleteBlock}
-                      onAddBlock={handleAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกบทพูดด้วย
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกบทพูดด้วย
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
@@ -159,7 +162,7 @@ const WorkspaceContainer = ({
                       backgroundEffectSpeed={block.backgroundEffectSpeed}
                       block={block}
                       handleDeleteBlock={handleDeleteBlock}
-                      onAddBlock={handleAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
@@ -179,7 +182,7 @@ const WorkspaceContainer = ({
                       spriteSpeed={block.spriteSpeed}
                       block={block}
                       handleDeleteBlock={handleDeleteBlock}
-                      onAddBlock={handleAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
@@ -198,7 +201,7 @@ const WorkspaceContainer = ({
                       audiotype={block.audiotype}
                       block={block}
                       handleDeleteBlock={handleDeleteBlock}
-                      onAddBlock={handleAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
@@ -215,7 +218,7 @@ const WorkspaceContainer = ({
                       choice={block.choice}
                       block={block}
                       handleDeleteBlock={handleDeleteBlock}
-                      onAddBlock={handleAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
+                      onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
                       allchapter={allChapters}
                       currentChapterBlocks={mappedDialogueOptions}
@@ -242,7 +245,7 @@ const WorkspaceContainer = ({
           ---------------------------------------------------- */}
       <div className="p-5  w-full flex-none -mt-10 ">
         {/* ส่งฟังก์ชัน onAddBlock ที่ได้มาจากไฟล์แม่ ลงไปให้ปุ่มกดทำงาน */}
-        <WorkspaceToolbar onAddBlock={handleAddBlock} />
+        <WorkspaceToolbar onAddBlock={onAddBlock} />
       </div>
     </div>
   );
