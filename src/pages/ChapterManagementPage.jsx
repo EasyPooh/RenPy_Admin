@@ -62,15 +62,10 @@ const ChapterContent = ({ projectId: id }) => {
   } = useChapters(id);
 
   const {
-    //blocks,
     workspace,
     allWorkspaces,
     updateConfig,
     loading: workspaceLoading,
-    // ส่งฟังก์ชันชื่อเดิมออกไปให้ UI ใช้งาน
-    //handleAddBlock,
-    // handleUpdateBlock,
-    // handleDeleteBlock,
   } = useWorkspace(id, activeChapterId, setIsDataChanged);
 
   const {
@@ -164,129 +159,9 @@ const ChapterContent = ({ projectId: id }) => {
     }
   }, [focusedBlockId, id]);
 
-  /*useEffect(() => {
-    const fetchChapters = async () => {
-      if (!id) return;
-
-      try {
-        const data = await chapterService.getChapters(id);
-
-        if (data && data.length > 0) {
-          // กรณีมีข้อมูลใน Database อยู่แล้ว
-          setChapters(data);
-          setActiveChapterId(data[0].id);
-        } else {
-          // กรณีโปรเจกต์ใหม่เอี่ยม ไม่มีข้อมูลเลย -> สร้างฉาก Start จำลองขึ้นมาทันที!
-          const startId = crypto.randomUUID(); // ใช้ UUID แทนเลข 1
-          const initialStartChapter = {
-            id: startId,
-            name: "เริ่มเกม (Start)",
-            labelName: "start", // เราจะใช้คำนี้เป็นตัวล็อคห้ามลบ
-            status: "draft",
-            tags: ["จุดเริ่มต้น"],
-          };
-
-          setChapters([initialStartChapter]);
-          setActiveChapterId(startId);
-        }
-      } catch (error) {
-        console.error("Error fetching chapters:", error);
-      }
-    };
-
-    fetchChapters();
-  }, [id]);*/
-
   useEffect(() => {}, [isDataChanged]);
 
-  // --- ฟังก์ชัน บล็อกไอเท็มต่างๆ (คงเดิมตามสูตรของคุณ) ---
-  /*const handleAddBlock = (type, activeChapterId, setFocusedBlockId) => {
-    const newId = Date.now();
-    let newBlock = {
-      id: newId,
-      type: type || "default",
-      content: `บล็อกใหม่ที่ #${(blocks[activeChapterId] || []).length + 1}`,
-      createdAt: new Date().toLocaleTimeString(),
-    };
-
-    switch (type) {
-      case "dialogue":
-        newBlock = {
-          ...newBlock,
-          character: "",
-          expression: "normal",
-          text: "",
-        };
-        break;
-      case "scene":
-        newBlock = {
-          ...newBlock,
-          background: "",
-          backgroundEffect: "",
-          backgroundEffectSpeed: "normal",
-        };
-        break;
-      case "sprite":
-        newBlock = {
-          ...newBlock,
-          sprite: "",
-          spritecommand: "show",
-          spriteposition: "center",
-          spriteSpeed: "normal",
-        };
-        break;
-      case "audio":
-        newBlock = {
-          ...newBlock,
-          audio: "",
-          audiotype: "bgm",
-          audioCommand: "stop",
-        };
-        break;
-      case "choice":
-        newBlock = { ...newBlock, choice: "" };
-        break;
-    }
-
-    setBlocks((prevBlocks) => ({
-      ...prevBlocks,
-      [activeChapterId]: [...(prevBlocks[activeChapterId] || []), newBlock],
-    }));
-    setFocusedBlockId(newId);
-  };
-
-  const handleUpdateBlock = (blockId, field, value, activeChapterId) => {
-    if (!activeChapterId) return;
-    setBlocks((prevBlocks) => ({
-      ...prevBlocks,
-      [activeChapterId]: (prevBlocks[activeChapterId] || []).map((block) =>
-        block.id === blockId ? { ...block, [field]: value } : block,
-      ),
-    }));
-  };
-
-  const handleDeleteBlock = (blockId, activeChapterId) => {
-    if (
-      window.confirm(
-        "คุณแน่ใจหรือไม่ที่จะลบบล็อกนี้? ข้อมูลนี้ไม่สามารถกู้คืนได้",
-      )
-    ) {
-      if (!activeChapterId) return;
-      setBlocks((prevBlocks) => ({
-        ...prevBlocks,
-        [activeChapterId]: (prevBlocks[activeChapterId] || []).filter(
-          (block) => block.id !== blockId,
-        ),
-      }));
-      alert("ลบบล็อกสำเร็จแล้ว!");
-    }
-  };*/
-
   return (
-    /* [จุดแก้ที่ 1] บังคับครอบด้วยกล่อง flex-col สูงเต็มหน้าจอ h-screen 
-    และห้ามเลื่อนหน้าจอรวม overflow-hidden เพื่อให้สัดส่วนตกลงมาใต้ Navbar พอดี
-  */
-
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
       {/* ส่วนของแผงเมนูด้านบนทั้งหมด (รวมกลุ่มอยู่ด้วยกันไม่ให้ไปดันหรือเบียดใคร) */}
       <div className="flex-none bg-white">
@@ -316,9 +191,6 @@ const ChapterContent = ({ projectId: id }) => {
         />
       </div>
 
-      {/* [จุดแก้ที่ 2] พื้นที่ทำงานด้านล่างทั้งหมดใต้ Navbar ลงมา 
-      กินพื้นที่ความสูงที่เหลือ (flex-1) และเรียงซ้ายไปขวา (flex flex-row) 
-    */}
       <div className="flex flex-1 overflow-hidden w-full">
         {/* ฝั่งซ้าย: เมนูรายชื่อฉาก (Chapter LIST) ล็อกความสูงพอดีจอฝั่งซ้าย */}
         <div className="w-80 bg-white border-r border-gray-100 flex flex-col h-full shrink-0 p-4 overflow-y-auto">
@@ -351,9 +223,6 @@ const ChapterContent = ({ projectId: id }) => {
           </div>
         </div>
 
-        {/* [จุดแก้ที่ 3] ฝั่งขวา: ส่งสเตทและฟังก์ชันจัดการบล็อกเข้าไปในคอมโพเนนต์ Workspace ตัวหลักตัวเดียว 
-        ไม่ต้องมีแท็กซ้ำซ้อน และไม่ต้องมีกล่อง absolute bottom มาเบียดบังด้านล่าง
-      */}
         <WorkspaceContainer
           currentChapter={Chapters.find((s) => s.id === activeChapterId)}
           blocks={blocks}

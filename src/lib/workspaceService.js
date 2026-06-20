@@ -33,15 +33,3 @@ export const upsertWorkspaceConfig = async (payload) => {
   return data?.[0] || null;
 };
 
-/*// --- ส่วนที่ 3: การจัดการ JSONB (start_characters) ---
-// เราจะใช้การดึงค่าเดิมออกมาอัปเดต แล้วเขียนทับ เป็นวิธีที่ปลอดภัยที่สุดสำหรับ Supabase
-export const updateWorkspaceCharacters = async (workspaceId, newCharactersArray) => {
-  const { data, error } = await supabase
-    .from('workspaces')
-    .update({ start_characters: newCharactersArray })
-    .eq('id', workspaceId)
-    .select();
-
-  if (error) throw error;
-  return data;
-};*/

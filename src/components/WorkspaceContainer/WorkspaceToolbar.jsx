@@ -46,6 +46,12 @@ const WorkspaceToolbar = ({ onAddBlock }) => {
         >
           <span>🔀 ช้อยส์ตัวเลือก</span>
         </button>
+        <button
+          onClick={() => onAddBlock("jump")}
+          className="flex items-center space-x-1 bg-gray-50 hover:bg-purple-50 hover:text-purple-600 border border-gray-200 hover:border-purple-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+        >
+          <span>👍 ไปยังบทอื่น / จบเกม</span>
+        </button>
       </div>
     </div>
   );

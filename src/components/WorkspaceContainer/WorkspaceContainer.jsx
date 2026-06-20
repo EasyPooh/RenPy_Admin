@@ -7,14 +7,10 @@ import SceneSection from "./SceneSection";
 import SpriteSection from "./SpriteSection";
 import AudioSection from "./AudioSection";
 import ChoiceSection from "./ChoiceSection";
+import JumpSection from "./JumpSection";
 import ChapterManagementPage from "../../pages/ChapterManagementPage";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import { useSaveManager } from "../../hooks/useSaveManager";
-/*import {
-  getWorkspaceByChapterId,
-  updateWorkspaceConfig,
-  updateWorkspaceCharacters,
-} from "../../lib/workspaceService";*/
 
 // 2. รับ Props ทั้งหมดที่ส่งมาจากไฟล์แม่ใหญ่ (ChapterManagementPage)
 const WorkspaceContainer = ({
@@ -35,18 +31,6 @@ const WorkspaceContainer = ({
   isSaving,
   updateConfig,
 }) => {
-  /*const {
-    workspace,
-    blocks,
-    loading,
-    updateConfig,
-    saveToDb,
-    // ส่งฟังก์ชันชื่อเดิมออกไปให้ UI ใช้งาน
-    handleAddBlock,
-    handleUpdateBlock,
-    handleDeleteBlock,
-  } = useWorkspace(currentChapter?.id, setIsDataChanged);*/
-
   const characterList = workspace?.start_characters || [];
 
   const currentBlocks = blocks[currentChapter?.id] || [];
@@ -69,9 +53,11 @@ const WorkspaceContainer = ({
     };
   });
 
-  /*const [startBg, setStartBg] = useState("");
-  const [startMusic, setStartMusic] = useState("");
-  const [startChar, setStartChar] = useState("");*/
+  const returnBlockIndex = blocks.findIndex(
+    (b) =>
+      b.type === "jump" &&
+      (b.action_type === "return" || b.jumpType === "return"),
+  );
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white font-mono text-sm border-l border-gray-200 overflow-hidden">
@@ -133,6 +119,8 @@ const WorkspaceContainer = ({
             /* วนลูปโชว์บล็อกบทพูด */
             <div className="w-full space-y-3">
               {blocks.map((block, index) => {
+                const isGhosted =
+                  returnBlockIndex !== -1 && index > returnBlockIndex;
                 if (block.type === "dialogue") {
                   return (
                     <DialogueSection
@@ -149,6 +137,7 @@ const WorkspaceContainer = ({
                       handleUpdateBlock={handleUpdateBlock}
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
+                      isGhosted={isGhosted}
                     />
                   );
                 }
@@ -167,6 +156,7 @@ const WorkspaceContainer = ({
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
                       assets={assets}
+                      isGhosted={isGhosted}
                     />
                   );
                 }
@@ -187,6 +177,7 @@ const WorkspaceContainer = ({
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
                       assets={assets}
+                      isGhosted={isGhosted}
                     />
                   );
                 }
@@ -206,6 +197,7 @@ const WorkspaceContainer = ({
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
                       assets={assets}
+                      isGhosted={isGhosted}
                     />
                   );
                 }
@@ -222,6 +214,22 @@ const WorkspaceContainer = ({
                       handleUpdateBlock={handleUpdateBlock}
                       allchapter={allChapters}
                       currentChapterBlocks={mappedDialogueOptions}
+                      isGhosted={isGhosted}
+                    />
+                  );
+                }
+
+                if (block.type === "jump") {
+                  return (
+                    <JumpSection
+                      key={block.id}
+                      id={block.id}
+                      target_workspace_id={block.target_workspace_id}
+                      action_type={block.action_type} // ดึงค่า Flatten State จากตัวบล็อกตรง ๆ
+                      chapterList={allChapters} // ส่งรายชื่อ Chapter ทั้งหมดเข้าไปตามที่คุณใช้ใน Choice
+                      handleUpdateBlock={handleUpdateBlock}
+                      handleDeleteBlock={handleDeleteBlock}
+                      isGhosted={isGhosted}
                     />
                   );
                 }
@@ -240,12 +248,17 @@ const WorkspaceContainer = ({
         </div>
       </div>
 
-      {/* ----------------------------------------------------
-          [ 🌟 เติมจุดนี้ ] แถบเครื่องมือปุ่มกดที่หายไป เอามาล็อกไว้ตรงนี้แทนครับ
-          ---------------------------------------------------- */}
-      <div className="p-5  w-full flex-none -mt-10 ">
-        {/* ส่งฟังก์ชัน onAddBlock ที่ได้มาจากไฟล์แม่ ลงไปให้ปุ่มกดทำงาน */}
-        <WorkspaceToolbar onAddBlock={onAddBlock} />
+      <div className="p-5 w-full flex-none -mt-10">
+        {returnBlockIndex === -1 ? (
+          // สถานะปกติ: แสดง Toolbar ปุ่มกดเพิ่มบล็อก
+          <WorkspaceToolbar onAddBlock={onAddBlock} />
+        ) : (
+          // สถานะติด Return: พ่นแถบแจ้งเตือนสีแดงล็อกการกดเพิ่มเนื้อเรื่องต่อท้าย
+          <div className="text-red-500 font-sans text-sm p-3 bg-red-50 border border-red-200 rounded-xl text-center flex items-center justify-center gap-2 select-none font-bold shadow-sm animate-pulse">
+            🚨
+            ไม่สามารถเพิ่มบล็อกเนื้อเรื่องต่อได้เนื่องจากการสิ้นสุดเนื้อเรื่องด้านบนแล้ว
+          </div>
+        )}
       </div>
     </div>
   );

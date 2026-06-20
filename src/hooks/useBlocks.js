@@ -10,7 +10,6 @@ export const useBlocks = (workspaceId ,setIsDataChanged) => {
 
   useEffect(() => {
     if (!workspaceId || workspaceId === "mock-initial" || workspaceId.length < 30) return;
-
     if (allBlocks[workspaceId]) return;
 
     const fetchBlocks = async () => {
@@ -25,12 +24,32 @@ export const useBlocks = (workspaceId ,setIsDataChanged) => {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          const formattedBlocks = data.map(row => ({
-            id: row.id, 
-            type: row.type,
-            content: row.content,
-            ...(row.properties || {}) 
-          }));
+          const formattedBlocks = data.map(row => {
+            const props = row.properties || {};
+            
+            return {
+              id: row.id, 
+              type: row.type,
+              content: row.content,
+              ...props, // ดึงพรอพเพอร์ตี้ยิบย่อยจาก JSON เช่น backgroundEffect ออกมาก่อน
+
+              // 🌟 จุดสำคัญ: ดึงค่าจากคอลัมน์หลักในเบส กลับมาเป็นชื่อตัวแปรที่หน้าบ้านใช้
+
+              // 🌟 เพิ่มบรรทัดนี้เข้าไปครับ! ดึงค่าจากคอลัมน์หลักมาเก็บใน State หน้าบ้าน
+              target_workspace_id: row.target_workspace_id || null,
+              
+              // 1. แปลงบทพูดคืนค่าให้ตัวแปร text ที่กล่องบทสนทนารออ่าน
+              text: row.type === 'dialogue' ? (row.content || '') : '',
+              
+              // 2. แปลงชื่อตัวละครในเบสกลับมาเป็นชื่อตัวแปร character
+              character: row.character_name || '',
+
+              // 3. แปลงรหัสจากคอลัมน์ asset_id คืนค่าให้ตรงกับ Dropdown แต่ละประเภทบล็อก
+              background: row.type === 'scene' ? (row.asset_id || '') : '',
+              sprite: row.type === 'sprite' ? (row.asset_id || '') : '',
+              audio: row.type === 'audio' ? (row.asset_id || '') : '',
+            };
+          });
 
           setAllBlocks(prev => ({ ...prev, [workspaceId]: formattedBlocks }));
         } else {
@@ -75,6 +94,13 @@ export const useBlocks = (workspaceId ,setIsDataChanged) => {
       case "choice":
         newBlock = { ...newBlock, choice: "" };
         break;
+      case "jump":
+        newBlock = { 
+      ...newBlock, 
+      target_workspace_id: null,  // เริ่มต้นเป็น null (ยังไม่ได้เลือกบทปลายทาง)
+      action_type: "jump"         // ค่าเริ่มต้นของ Radio Button ให้เป็นแบบกระโดดข้ามบท
+    };
+    break;
     }
 
     setAllBlocks(prev => ({

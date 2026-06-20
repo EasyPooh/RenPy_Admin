@@ -22,15 +22,18 @@ export const chapterService = {
   
   // 1. ดึงข้อมูลบทเรียนทั้งหมด (แยกตาม project_id และเรียงตามลำดับ)
   async getChapters(projectId) {
-    const { data, error } = await supabase
-      .from("chapters")
-      .select("*")
-      .eq("project_id", projectId)
-      .order("sort_order", { ascending: true });
+  const { data, error } = await supabase
+    .from("chapters")
+    .select(`
+      *,
+      workspaces ( id )  
+    `)
+    .eq("project_id", projectId)
+    .order("sort_order", { ascending: true });
 
-    if (error) throw error;
-    return data;
-  },
+  if (error) throw error;
+  return data;
+},
 
   // 2. 🌟 ฟังก์ชันพิเศษ: สำหรับสร้างบทเริ่มต้น (Start Chapter) อัตโนมัติทันทีที่สร้างโปรเจกต์ใหม่
   async createStartChapter(projectId) {

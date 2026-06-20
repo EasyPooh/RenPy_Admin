@@ -10,13 +10,14 @@ const ChoiceSection = ({
   allchapter,
   currentChapterBlocks = [],
   // เพิ่ม Mock Data สำหรับค้นหาฉากย่อย (สามารถส่งผ่าน Props เข้ามาแทนได้)
-  allScenes = [
+  /*allScenes = [
     { id: "scene-0", name: "chapter นี้" },
     { id: "scene-1", name: "Chapter 10" },
     { id: "scene-2", name: "Chapter 5000" },
     { id: "scene-3", name: "Chapter 20 - Scene 1" },
     { id: "scene-4", name: "Chapter 30 - Scene 2" },
-  ],
+  ],*/
+  isGhosted,
 }) => {
   const inputRef = useRef(null);
   const containerRef = useRef(null);
