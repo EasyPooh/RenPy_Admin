@@ -2,21 +2,30 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../lib/supabaseClient";
+import { useRenPyExport } from "../../hooks/useRenPyExport";
+
+// 💡 กำหนด URL ของไฟล์ Template (เลือกเปิดใช้วิธีใดวิธีหนึ่ง)
+// วิธีที่ 1: หากเก็บในโฟลเดอร์ public ของโปรเจกต์ React
+//const TEMPLATE_URL = "/templates/renpy-thai-template.zip";
+
+// วิธีที่ 2: หากเก็บใน Supabase Storage (เปลี่ยน URL ให้ตรงกับโปรเจกต์ของคุณ)
+const TEMPLATE_URL =
+  "https://qwhrixreaurkpwzocqff.supabase.co/storage/v1/object/public/game-templates/renpy_templete-1.0-pc.zip";
 
 const TopNavbar = ({ id }) => {
   const navigate = useNavigate();
   const [projectName, setProjectName] = useState("กำลังโหลด...");
+  const { exportProject, isExporting, exportProgress } = useRenPyExport();
 
-  // 🎯 ดึงชื่อโปรเจกต์จากฐานข้อมูลเมื่อ id เปลี่ยนแปลง
   useEffect(() => {
     const fetchProjectName = async () => {
       if (!id) return;
       try {
         const { data, error } = await supabase
-          .from("Projects") // ชื่อตารางโปรเจกต์ของคุณ
-          .select("titles") // สมมติว่าในเบสคุณเก็บชื่อด้วยฟิลด์ project_name (ถ้าเป็น name ให้เปลี่ยนตรงนี้ครับ)
+          .from("Projects")
+          .select("titles")
           .eq("id", id)
-          .single(); // ดึงข้อมูลมาแค่แถวเดียว
+          .single();
 
         if (error) throw error;
         if (data) {
@@ -32,10 +41,24 @@ const TopNavbar = ({ id }) => {
   }, [id]);
 
   const handleAssetPage = () => {
-    // ตรงนี้คุณสามารถใส่เงื่อนไขได้ เช่น ถ้า user ล็อกอินแล้วค่อยไป
-
-    navigate(`/Chapter_editor/${id}/assets`); // สั่งให้เปลี่ยนหน้า
+    navigate(`/Chapter_editor/${id}/assets`);
   };
+
+  const handleExportClick = () => {
+    exportProject(id, projectName);
+  };
+
+  // 💡 เพิ่มฟังก์ชันสำหรับจัดการดาวน์โหลดไฟล์เทมเพลต
+  const handleDownloadTemplate = () => {
+    // สร้าง element <a> จำลองเพื่อสั่งดาวน์โหลดแบบโปรแกรมมิ่ง (Best Practice สำหรับ Web)
+    const link = document.createElement("a");
+    link.href = TEMPLATE_URL;
+    link.setAttribute("download", "renpy-thai-template.zip"); // ชื่อไฟล์ที่จะเซฟลงเครื่องผู้ใช้
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link); // เคลียร์ element ทิ้งหลังจากดาวน์โหลดเสร็จ
+  };
+
   return (
     <div className="h-11 border-b border-gray-100 bg-white flex items-center justify-between px-6 select-none shrink-0 text-xs text-gray-500">
       <div className="flex items-center gap-10">
@@ -46,7 +69,6 @@ const TopNavbar = ({ id }) => {
           ← กลับ
         </button>
 
-        {/* ฝั่งซ้าย: โลโก้และชื่อระบบจัดการสคริปต์ */}
         <div className="flex items-center space-x-2 font-medium tracking-wide">
           <span className="text-sm">🔮</span>
           <span className="font-bold text-gray-700">RenPy Admin</span>
@@ -55,23 +77,34 @@ const TopNavbar = ({ id }) => {
         </div>
       </div>
 
-      {/* ฝั่งขวา: ศูนย์รวมปุ่มกด Utilities เครื่องมือจัดการภาพรวมโปรเจกต์ */}
       <div className="flex items-center space-x-6 font-semibold">
-        <button className="hover:text-purple-600 transition-colors">
+        {exportProgress && (
+          <span className="text-purple-500 font-mono animate-pulse text-[11px]">
+            {exportProgress}
+          </span>
+        )}
+
+        {/* 💡 ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ */}
+        <button
+          onClick={handleDownloadTemplate}
+          className="hover:text-purple-600 transition-colors"
+        >
           [ download game template ]
         </button>
+
         <button
           onClick={handleAssetPage}
           className="hover:text-purple-600 transition-colors"
         >
           [ asset library ]
         </button>
-        {/*<button className="hover:text-purple-600 transition-colors">
-          [ story map ]
-        </button>*/}
-        {/* ไฮไลท์ปุ่มสำหรับกดสร้างไฟล์แปลงโค้ด .rpy ส่งออกอนาคต */}
-        <button className="text-purple-600 hover:text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded transition-all">
-          [ export .rpy ]
+
+        <button
+          onClick={handleExportClick}
+          disabled={isExporting}
+          className="text-purple-600 hover:text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isExporting ? "[ exporting... ]" : "[ export .rpy ]"}
         </button>
       </div>
     </div>

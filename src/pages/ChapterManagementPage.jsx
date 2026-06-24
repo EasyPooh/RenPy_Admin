@@ -11,12 +11,12 @@ import WorkspaceToolbar from "../components/WorkspaceContainer/WorkspaceToolbar"
 import DialogueSection from "../components/WorkspaceContainer/DialogueSection";
 import TextareaField from "../components/TextareaField";
 import StartSection from "../components/WorkspaceContainer/StartSection";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { chapterService } from "../lib/chapterService";
 import { useAssets } from "../hooks/useAssets";
-import { useWorkspace } from "../hooks/useWorkspace";
+// 🎯 จุดที่ 1: เปลี่ยนมา Import Hook ตัวใหม่ที่เรายุบรวมแล้ว
+import { useChapterConfig } from "../hooks/useChapterConfig";
 import { useSaveManager } from "../hooks/useSaveManager";
 import { useChapters } from "../hooks/useChapters";
 import { WorkspaceProvider } from "../contexts/WorkspaceContext.jsx";
@@ -26,18 +26,16 @@ const ChapterManagementPage = () => {
   const { id } = useParams();
 
   return (
-    // ครอบ Provider ไว้ที่ระดับบนสุด
     <WorkspaceProvider initialId={null}>
       <ChapterContent projectId={id} />
     </WorkspaceProvider>
   );
 };
+
 const ChapterContent = ({ projectId: id }) => {
-  // hook useAsset
   const { assetsList, isAssetsLoading } = useAssets(id);
-  // hook useSaveManager ปุ่มเซฟ
   const { handleSaveAll, isSaving } = useSaveManager();
-  // hook useChapter
+
   const {
     Chapters,
     setChapters,
@@ -61,13 +59,15 @@ const ChapterContent = ({ projectId: id }) => {
     handleDeleteChapter,
   } = useChapters(id);
 
+  // 🎯 จุดที่ 2: เรียกใช้ useChapterConfig แทนของเดิม
   const {
-    workspace,
-    allWorkspaces,
+    config,
+    allConfigs,
     updateConfig,
-    loading: workspaceLoading,
-  } = useWorkspace(id, activeChapterId, setIsDataChanged);
+    loading: configLoading,
+  } = useChapterConfig(id, activeChapterId, setIsDataChanged);
 
+  // 🎯 จุดที่ 3: เปลี่ยนจาก workspace?.id มารับเป็น activeChapterId ตรงๆ
   const {
     blocks,
     allBlocks,
@@ -79,13 +79,11 @@ const ChapterContent = ({ projectId: id }) => {
     handleDeleteBlock,
     clearPendingDeletions,
     loading: blocksLoading,
-  } = useBlocks(workspace?.id, setIsDataChanged);
+  } = useBlocks(activeChapterId, setIsDataChanged);
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
-  // ซ่อน/แสดงหน้าต่างเลือกแท็ก
   const [showTagDropdown, setShowTagDropdown] = useState(false);
-  // รายการแท็กที่มีให้เลือกในระบบ (สามารถเพิ่มหรือดึงมาจากฐานข้อมูลในอนาคตได้)
   const [suggestedTags, setSuggestedTags] = useState([
     "เนื้อเรื่องหลัก",
     "เนื้อเรื่องรอง",
@@ -97,7 +95,6 @@ const ChapterContent = ({ projectId: id }) => {
   const [tagInput, setTagInput] = useState("");
   const [tempTags, setTempTags] = useState([]);
 
-  // 🌟 2. ดึงสถานะตั้งต้นมาลงฟอร์มชั่วคราว ทุกครั้งที่ผู้ใช้สลับเปลี่ยนคลิกเลือกฉากฝั่งซ้าย
   useEffect(() => {
     if (currentActiveChapter) {
       setTempStatus(currentActiveChapter.status);
@@ -139,15 +136,10 @@ const ChapterContent = ({ projectId: id }) => {
       .replace(/^_+|_+$/g, "");
   };
 
-  //const [focusedBlockId, setFocusedBlockId] = useState(null);
-
   const currentBlocks = blocks[activeChapterId] || [];
-
   const inputRef = React.useRef(null);
 
-  // 2. ใช้ useEffect ดักจับจังหวะที่มีการสร้าง Chapter ใหม่ขึ้นมา
   useEffect(() => {
-    // เมื่อมีไอเท็มผูกกับ inputRef สำเร็จ ให้สั่ง Focus ไปที่กล่องนั้นทันที
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -159,15 +151,11 @@ const ChapterContent = ({ projectId: id }) => {
     }
   }, [focusedBlockId, id]);
 
-  useEffect(() => {}, [isDataChanged]);
-
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
-      {/* ส่วนของแผงเมนูด้านบนทั้งหมด (รวมกลุ่มอยู่ด้วยกันไม่ให้ไปดันหรือเบียดใคร) */}
       <div className="flex-none bg-white">
         <Navbar />
         <TopNavbar title="Chapter Management" id={id} />
-        {/* 🌟 ส่ง State ชั่วคราว และฟังก์ชันจัดการเซฟไปที่ Navbar */}
         <ChapterNavbar
           currentChapter={currentActiveChapter}
           tempStatus={tempStatus}
@@ -176,10 +164,11 @@ const ChapterContent = ({ projectId: id }) => {
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
           onSaveAll={() => {
+            // 🎯 จุดที่ 4: เปลี่ยนการส่งข้อมูลจาก allWorkspaces เป็น allConfigs
             handleSaveAll(
               id,
               Chapters,
-              allWorkspaces,
+              allConfigs,
               allBlocks,
               pendingDeletions,
               clearPendingDeletions,
@@ -192,7 +181,6 @@ const ChapterContent = ({ projectId: id }) => {
       </div>
 
       <div className="flex flex-1 overflow-hidden w-full">
-        {/* ฝั่งซ้าย: เมนูรายชื่อฉาก (Chapter LIST) ล็อกความสูงพอดีจอฝั่งซ้าย */}
         <div className="w-80 bg-white border-r border-gray-100 flex flex-col h-full shrink-0 p-4 overflow-y-auto">
           <div className="pb-1 flex items-center space-x-2 text-gray-500 font-semibold text-sm select-none mb-3">
             <span>📁</span>
@@ -212,7 +200,7 @@ const ChapterContent = ({ projectId: id }) => {
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
-              handleDeleteChapter={handleDeleteChapter} // ส่งฟังก์ชันลบบทลงไปที่ Sidebar ด้วย
+              handleDeleteChapter={handleDeleteChapter}
               inputRef={inputRef}
               suggestedTags={suggestedTags}
               onAddTagToChapter={handleAddTagToChapter}
@@ -223,6 +211,7 @@ const ChapterContent = ({ projectId: id }) => {
           </div>
         </div>
 
+        {/* 🎯 จุดที่ 5: ส่งตัวแปร config ไปแทนพรอพ workspace เดิม */}
         <WorkspaceContainer
           currentChapter={Chapters.find((s) => s.id === activeChapterId)}
           blocks={blocks}
@@ -237,11 +226,11 @@ const ChapterContent = ({ projectId: id }) => {
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
           activeChapterId={activeChapterId}
-          workspace={workspace}
+          workspace={config} // ยิงพรอพชื่อเดิม แต่เปลี่ยนไส้ในเป็นข้อมูล config บทเรียน
           handleSaveAll={handleSaveAll}
           isSaving={isSaving}
           updateConfig={updateConfig}
-          loading={workspaceLoading}
+          loading={configLoading}
         />
       </div>
     </div>

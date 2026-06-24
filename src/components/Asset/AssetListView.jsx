@@ -60,8 +60,8 @@ const AssetListView = ({
     return `${(parseFloat(sizeInKb) / 1024).toFixed(1)} MB`;
   };
 
-  // ฟังก์ชันจัดการการลบสินทรัพย์
-  // 🎯 ฟังก์ชันจัดการการลบสินทรัพย์แบบสมบูรณ์ (Storage + Database)
+  // ฟังก์ชันจัดการการลบasset
+  // 🎯 ฟังก์ชันจัดการการลบassetแบบสมบูรณ์ (Storage + Database)
   const handleDelete = async (asset) => {
     if (!asset || !asset.id) {
       alert("ไม่พบข้อมูล asset ที่ต้องการลบ");
@@ -108,7 +108,7 @@ const AssetListView = ({
       }
     } catch (error) {
       console.error("Error during asset deletion:", error.message);
-      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลสินทรัพย์ได้ - " + error.message);
+      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลassetได้ - " + error.message);
     }
   };
 
@@ -158,7 +158,7 @@ const AssetListView = ({
                   )}
                 </div>
 
-                {/*ส่วนข้อมูลสินทรัพย์ (Content) */}
+                {/*ส่วนข้อมูลasset (Content) */}
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
                     <h3

@@ -24,10 +24,7 @@ export const chapterService = {
   async getChapters(projectId) {
   const { data, error } = await supabase
     .from("chapters")
-    .select(`
-      *,
-      workspaces ( id )  
-    `)
+    .select("*")
     .eq("project_id", projectId)
     .order("sort_order", { ascending: true });
 

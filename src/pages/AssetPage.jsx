@@ -103,7 +103,7 @@ const AssetPage = () => {
           <AssetFilterTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        {/* ส่วนแสดงผลรายการสินทรัพย์ทั้งหมด */}
+        {/* ส่วนแสดงผลรายการassetทั้งหมด */}
         <div className="mt-6">
           {isLoading ? (
             <div className="text-center py-12 text-gray-500">

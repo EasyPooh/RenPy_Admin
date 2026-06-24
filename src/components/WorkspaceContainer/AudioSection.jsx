@@ -69,6 +69,9 @@ const AudioSection = ({
             }
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
           >
+            <option value="" disabled>
+              [ เลือกคำสั่งเสียง ]
+            </option>
             <option value="stop">stop</option>
             <option value="play">play</option>
           </select>

@@ -138,6 +138,9 @@ const WorkspaceContainer = ({
                       focusedBlockId={focusedBlockId}
                       setFocusedBlockId={setFocusedBlockId}
                       isGhosted={isGhosted}
+                      assets={assets}
+                      selected_asset_id={block.selected_asset_id}
+                      sprite_tag={block.sprite_tag}
                     />
                   );
                 }

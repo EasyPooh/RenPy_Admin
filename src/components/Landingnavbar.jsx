@@ -32,7 +32,7 @@ const LandingNavbar = () => {
             </a>
 
             <button
-              onClick={test}
+              onClick={() => navigate("/LoginPage")}
               className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-all shadow-md active:scale-95"
             >
               เข้าสู่ระบบ

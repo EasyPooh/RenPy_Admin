@@ -8,6 +8,7 @@ import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
 import ChapterManagement from "./pages/ChapterManagementPage";
 import AssetPage from "./pages/AssetPage";
+import LoginPage from "./pages/LoginPage";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
       <Route path="/EditProject/:id" element={<EditProject />} />
       <Route path="/Chapter_editor/:id" element={<ChapterManagement />} />
       <Route path="/Chapter_editor/:id/assets" element={<AssetPage />} />
+      <Route path="/LoginPage" element={<LoginPage />} />
     </Routes>
   );
 }
