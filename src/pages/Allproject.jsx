@@ -5,20 +5,26 @@ import Emptystate from "../components/Emptystate";
 import { supabase } from "../lib/supabaseClient";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { LayoutGrid, Plus, Gamepad2, Clock, CheckCircle2 } from "lucide-react"; // เพิ่มไอคอนสวยๆ
+import { LayoutGrid, Plus, Gamepad2, Clock, CheckCircle2 } from "lucide-react";
 
-function Allproject() {
+const Allproject = ({ session }) => {
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // [จุดแก้ไขที่ 1] อัปเดต useEffect ให้กรองข้อมูลตาม user_id
   useEffect(() => {
     const fetchProjects = async () => {
+      // ตรวจสอบความปลอดภัย: ถ้ายังไม่มี session หรือ user id ให้ข้ามการทำงานไปก่อน
+      if (!session?.user?.id) return;
+
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from("Projects")
           .select("*")
+          .eq("user_id", session.user.id) // 🔥 เพิ่มบรรทัดนี้: กรองเฉพาะโปรเจกต์ที่เป็นของ user คนนี้
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -29,9 +35,11 @@ function Allproject() {
         setLoading(false);
       }
     };
-    fetchProjects();
-  }, []);
 
+    fetchProjects();
+  }, [session]); // 🔥 เพิ่มบรรทัดนี้: ให้ทำฟังก์ชันใหม่เมื่อ session มีการอัปเดต
+
+  // โค้ดเดิมของคุณ (ระบบลบไฟล์ขยะ และลบโปรเจกต์ - รักษาไว้ 100%)
   const handleDeleteProject = async (projectId) => {
     const confirmDelete = window.confirm(
       "คุณแน่ใจหรือไม่ที่จะลบโปรเจกต์นี้และ Assets ทั้งหมดในเกม?",
@@ -39,21 +47,16 @@ function Allproject() {
     if (!confirmDelete) return;
 
     try {
-      // 1. ดึงข้อมูลโปรเจกต์ตัวที่จะลบออกมาก่อนเพื่อเอา image_url ปกเกม
       const targetProject = projects.find((p) => p.id === projectId);
 
-      // 2. 🚀 เพิ่มเติม: ดึงรายการ Assets ทั้งหมดของโปรเจกต์นี้จากฐานข้อมูลมาลบออกจาก Storage
-      // ⚠️ หมายเหตุ: ให้เปลี่ยนชื่อตาราง "Project_Assets" เป็นชื่อตารางเก็บ Asset จริงๆ ในเบสของคุณ
       const { data: relatedAssets, error: assetFetchError } = await supabase
         .from("Project_Assets")
         .select("storage_path")
-        .eq("project_id", projectId); // ค้นหา Asset ที่ผูกกับไอดีเกมนี้
+        .eq("project_id", projectId);
 
       if (!assetFetchError && relatedAssets && relatedAssets.length > 0) {
-        // แกะเอาอาเรย์เฉพาะ storage_path ทั้งหมดออกมา เช่น ["folder/pic.png", "folder/sound.mp3"]
         const filesToDelete = relatedAssets.map((asset) => asset.storage_path);
 
-        // สั่งลบ Assets เกมทั้งหมดออกจาก Bucket "game-assets" พร้อมกันในครั้งเดียว
         const { error: storageDeleteError } = await supabase.storage
           .from("game-assets")
           .remove(filesToDelete);
@@ -66,12 +69,10 @@ function Allproject() {
         }
       }
 
-      // 3. สั่งลบภาพปกเกมออกจาก Bucket "Project-Thumbnail"
       if (targetProject && targetProject.image_url) {
         await deleteImageFromStorage(targetProject.image_url);
       }
 
-      // 4. ลบข้อมูลโปรเจกต์ออกจากฐานข้อมูลตาราง Projects
       const { error } = await supabase
         .from("Projects")
         .delete()
@@ -79,7 +80,6 @@ function Allproject() {
 
       if (error) throw error;
 
-      // อัปเดต State บนหน้าจอแสดงผล
       setProjects((prevProjects) =>
         prevProjects.filter((item) => item.id !== projectId),
       );
@@ -91,11 +91,10 @@ function Allproject() {
     }
   };
 
-  // ปรับปรุงฟังก์ชันลบรูปภาพจาก URL ให้รอบคอบและสกัด Path ได้ถูกต้อง 100%
+  // โค้ดเดิมของคุณ (ลบรูปจาก Storage - รักษาไว้ 100%)
   const deleteImageFromStorage = async (imageUrl) => {
     if (!imageUrl) return;
 
-    // 🛑 ตรวจสอบและข้ามการทำงานทันทีหากเจอ URL ที่บันทึกผิดพลาดเป็นชนิด 'blob:' นำหน้า
     if (imageUrl.startsWith("blob:")) {
       console.warn(
         "ข้ามการลบ: เนื่องจากที่อยู่รูปภาพในเบสเป็นสตริง blob ชั่วคราว:",
@@ -109,7 +108,6 @@ function Allproject() {
       const keyword = `/${bucketName}/`;
       let storagePath = "";
 
-      // ตัดข้อความหลังจากชื่อคลังเก็บไฟล์ เพื่อเอาโครงสร้าง Path ด้านในทั้งหมดไปสั่งลบ
       if (imageUrl.includes(keyword)) {
         storagePath = imageUrl.split(keyword)[1];
       } else {
@@ -122,13 +120,13 @@ function Allproject() {
 
       if (error) {
         console.error("ไม่สามารถลบภาพปกจาก Storage ได้:", error.message);
-      } else {
       }
     } catch (err) {
       console.error("เกิดข้อผิดพลาดในการตรวจสอบ URL โครงสร้างภาพ:", err);
     }
   };
 
+  // โค้ดส่วน UI และ Layout เดิมของคุณทั้งหมด (รักษาไว้ 100%)
   return (
     <div className="min-h-screen bg-[#F8F9FD] flex flex-col font-sans">
       <Navbar />
@@ -181,7 +179,6 @@ function Allproject() {
                     to={`/Chapter_editor/${item.id}`}
                     className="block cursor-pointer"
                   >
-                    {/* Thumbnail Area */}
                     <div className="relative h-52 overflow-hidden bg-gray-100">
                       <img
                         src={
@@ -190,13 +187,11 @@ function Allproject() {
                         }
                         alt={item.titles}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        // เพิ่ม Error Handler เผื่อลิงก์พัง
                         onError={(e) => {
                           e.target.src =
                             "https://placehold.co/600x400?text=No+Image";
                         }}
                       />
-                      {/* Status Badge */}
                       <div className="absolute top-4 left-4">
                         {item.status === "developing" ? (
                           <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/90 backdrop-blur-md text-amber-700 text-xs font-bold rounded-full border border-amber-200">
@@ -210,7 +205,7 @@ function Allproject() {
                       </div>
                     </div>
                   </Link>
-                  {/* Details Area */}
+
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex-1 space-y-3">
                       <h3 className="font-extrabold text-xl text-gray-900 group-hover:text-violet-600 transition-colors line-clamp-1">
@@ -260,6 +255,6 @@ function Allproject() {
       </main>
     </div>
   );
-}
+};
 
 export default Allproject;

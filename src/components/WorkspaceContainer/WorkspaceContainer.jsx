@@ -218,6 +218,7 @@ const WorkspaceContainer = ({
                       allchapter={allChapters}
                       currentChapterBlocks={mappedDialogueOptions}
                       isGhosted={isGhosted}
+                      characterList={workspace?.start_characters || []}
                     />
                   );
                 }

@@ -1,6 +1,5 @@
 // src/pages/ChapterManagementPage.jsx
 import React, { useState, useEffect, useRef } from "react";
-
 import MainLayout from "../components/ChapterList/MainLayout";
 import ChapterNavbar from "../components/ChapterList/ChapterNavbar";
 import ChapterSidebar from "../components/ChapterList/ChapterSidebar";
@@ -15,7 +14,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { chapterService } from "../lib/chapterService";
 import { useAssets } from "../hooks/useAssets";
-// 🎯 จุดที่ 1: เปลี่ยนมา Import Hook ตัวใหม่ที่เรายุบรวมแล้ว
 import { useChapterConfig } from "../hooks/useChapterConfig";
 import { useSaveManager } from "../hooks/useSaveManager";
 import { useChapters } from "../hooks/useChapters";
@@ -59,7 +57,6 @@ const ChapterContent = ({ projectId: id }) => {
     handleDeleteChapter,
   } = useChapters(id);
 
-  // 🎯 จุดที่ 2: เรียกใช้ useChapterConfig แทนของเดิม
   const {
     config,
     allConfigs,
@@ -67,7 +64,6 @@ const ChapterContent = ({ projectId: id }) => {
     loading: configLoading,
   } = useChapterConfig(id, activeChapterId, setIsDataChanged);
 
-  // 🎯 จุดที่ 3: เปลี่ยนจาก workspace?.id มารับเป็น activeChapterId ตรงๆ
   const {
     blocks,
     allBlocks,
@@ -164,7 +160,6 @@ const ChapterContent = ({ projectId: id }) => {
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
           onSaveAll={() => {
-            // 🎯 จุดที่ 4: เปลี่ยนการส่งข้อมูลจาก allWorkspaces เป็น allConfigs
             handleSaveAll(
               id,
               Chapters,
@@ -211,7 +206,6 @@ const ChapterContent = ({ projectId: id }) => {
           </div>
         </div>
 
-        {/* 🎯 จุดที่ 5: ส่งตัวแปร config ไปแทนพรอพ workspace เดิม */}
         <WorkspaceContainer
           currentChapter={Chapters.find((s) => s.id === activeChapterId)}
           blocks={blocks}

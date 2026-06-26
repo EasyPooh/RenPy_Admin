@@ -19,6 +19,7 @@ const DialogueSection = ({
 }) => {
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // 🔄 State สำหรับควบคุมการเปิด-ปิดกล่องเลือกรูปภาพพรีวิว
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -161,23 +162,14 @@ const DialogueSection = ({
           <button
             type="button"
             disabled={isGhosted}
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm text-left h-[38px]"
+            onClick={() => {
+              setIsDropdownOpen(!isDropdownOpen);
+              setSearchTerm(""); // ล้างคำค้นหาทุกครั้งที่ปิด/เปิดใหม่
+            }}
+            className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm text-left h-9.5"
           >
             {currentAsset ? (
               <div className="flex items-center gap-2 overflow-hidden">
-                {/*  <img
-                  src={
-                    currentAsset.file_url ||
-                    currentAsset.url ||
-                    "/placeholder-avatar.png"
-                  }
-                  alt={currentAsset.main_tag}
-                  className="w-6 h-6 rounded object-cover bg-gray-100 flex-shrink-0"
-                  onError={(e) => {
-                    e.target.src = "https://placehold.co/100x100?text=Sprite";
-                  }}
-                />*/}
                 <span className="truncate font-medium text-gray-700">
                   {currentAsset.main_tag}{" "}
                   <span className="text-gray-400 text-xs">
@@ -191,7 +183,7 @@ const DialogueSection = ({
               </span>
             )}
             <svg
-              className="w-4 h-4 text-gray-400 flex-shrink-0 ml-1"
+              className="w-4 h-4 text-gray-400 shrink-0 ml-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -208,6 +200,17 @@ const DialogueSection = ({
           {/* รายการรูปภาพสไปรต์ที่จะงอกลงมาเมื่อกดเปิด */}
           {isDropdownOpen && (
             <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50 p-1">
+              {/* 🌟 ส่วนที่เพิ่มเข้ามาใหม่: Sticky Search Bar */}
+              <div className="sticky top-0 bg-white pb-1 z-10">
+                <input
+                  type="text"
+                  placeholder="พิมพ์ค้นหาชื่อตัวละคร หรือ สีหน้า..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:border-purple-400 bg-gray-50/50"
+                />
+              </div>
+
               {/* ตัวเลือกพิเศษสำหรับล้างค่า/ซ่อนภาพ */}
               <div
                 onClick={handleClearAsset}
@@ -217,32 +220,40 @@ const DialogueSection = ({
               </div>
               <hr className="my-1 border-gray-100" />
 
-              {spriteAssets.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-gray-400 text-center">
-                  ไม่มีรูปภาพตัวละครในคลัง Asset
-                </div>
-              ) : (
-                spriteAssets.map((asset) => (
+              {/* 🌟 กรองข้อมูล spriteAssets ตาม searchTerm ก่อนนำไปแสดงผล */}
+              {(() => {
+                const filteredAssets = spriteAssets.filter((asset) => {
+                  const mainTag = (asset.main_tag || "").toLowerCase();
+                  const expTag = (
+                    asset.expression_tag || "ทั่วไป"
+                  ).toLowerCase();
+                  const query = searchTerm.toLowerCase().trim();
+                  return mainTag.includes(query) || expTag.includes(query);
+                });
+
+                if (filteredAssets.length === 0) {
+                  return (
+                    <div className="px-3 py-4 text-xs text-gray-400 text-center">
+                      {spriteAssets.length === 0
+                        ? "ไม่มีรูปภาพตัวละครในคลัง Asset"
+                        : "🔍 ไม่พบตัวละครหรือสีหน้าที่ค้นหา"}
+                    </div>
+                  );
+                }
+
+                return filteredAssets.map((asset) => (
                   <div
                     key={asset.id}
-                    onClick={() => handleSelectAsset(asset)}
+                    onClick={() => {
+                      handleSelectAsset(asset);
+                      setIsDropdownOpen(false); // ปรับให้ปิด dropdown เมื่อเลือก
+                    }}
                     className={`flex items-center gap-2.5 px-3 py-2 hover:bg-purple-50 rounded-md cursor-pointer transition-colors text-sm ${
                       selected_asset_id === asset.id
                         ? "bg-purple-50 font-semibold text-purple-700"
                         : "text-gray-700"
                     }`}
                   >
-                    {/*  <img
-                      src={
-                        asset.file_url || asset.url || "/placeholder-avatar.png"
-                      }
-                      alt={asset.main_tag}
-                      className="w-8 h-8 rounded object-cover bg-gray-100 border border-gray-200 flex-shrink-0"
-                      onError={(e) => {
-                        e.target.src =
-                          "https://placehold.co/100x100?text=Sprite";
-                      }}
-                    />*/}
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{asset.main_tag}</span>
                       <span className="text-xs text-gray-400 truncate">
@@ -250,8 +261,8 @@ const DialogueSection = ({
                       </span>
                     </div>
                   </div>
-                ))
-              )}
+                ));
+              })()}
             </div>
           )}
         </div>

@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient"; // import instance ของคุณ
+import { supabase } from "../lib/supabaseClient"; // ตรวจสอบ path ให้ตรงกับโครงสร้างของคุณ
 
-function LoginPage() {
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // เพิ่ม State สำหรับจับสถานะกำลังโหลด
+
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true); // เริ่มต้นโหลดข้อมูล (ป้องกันผู้ใช้กดเบิ้ล)
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -17,6 +20,7 @@ function LoginPage() {
 
     if (error) {
       alert(error.message); // แสดง Error ถ้า Login ไม่ผ่าน
+      setLoading(false);
     } else {
       alert("เข้าสู่ระบบสำเร็จ!");
       navigate("/Allproject"); // พาไปหน้าที่มีโฟลเดอร์ของเขา
@@ -24,38 +28,76 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <form
-        onSubmit={handleLogin}
-        className="p-8 border rounded-lg shadow-md w-96"
-      >
-        <h2 className="text-2xl font-bold mb-4">เข้าสู่ระบบ</h2>
+    // คุมพื้นหลังโทนเดียวกับหน้าสร้างโปรเจกต์และหน้าสมัครสมาชิก
+    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-6">
+      {/* Card Container: ขาว มน คลีน */}
+      <div className="w-full max-w-md bg-white p-10 rounded-2xl border border-slate-100 shadow-sm">
+        {/* Header Section */}
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-slate-800">Ren'Py Admin</h2>
+          <p className="text-sm text-slate-400 mt-1">
+            ยินดีต้อนรับกลับมา กรุณาเข้าสู่ระบบ
+          </p>
+        </div>
 
-        <input
-          type="email"
-          placeholder="อีเมล"
-          className="w-full p-2 mb-4 border rounded"
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        {/* Form Section */}
+        <form onSubmit={handleLogin} className="space-y-5">
+          {/* Email Input */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              อีเมล
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-slate-200 bg-white p-3 rounded-xl text-sm focus:outline-none focus:border-purple-400 transition-all placeholder-slate-300"
+              placeholder="your@email.com"
+              required
+              disabled={loading}
+            />
+          </div>
 
-        <input
-          type="password"
-          placeholder="รหัสผ่าน"
-          className="w-full p-2 mb-4 border rounded"
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          {/* Password Input */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              รหัสผ่าน
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-slate-200 bg-white p-3 rounded-xl text-sm focus:outline-none focus:border-purple-400 transition-all placeholder-slate-300"
+              placeholder="••••••••"
+              required
+              disabled={loading}
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
-        >
-          Login
-        </button>
-      </form>
+          {/* Action Buttons */}
+          <div className="pt-2 flex flex-col gap-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#A78BFA] hover:bg-[#8B5CF6] disabled:bg-slate-300 text-white font-medium p-3 rounded-xl shadow-sm transition-all text-sm"
+            >
+              {loading ? "กำลังตรวจสอบข้อมูล..." : "เข้าสู่ระบบ"}
+            </button>
+
+            {/* ปุ่มทางเลือกสำหรับผู้ใช้ที่ยังไม่มีบัญชี */}
+            <button
+              type="button"
+              onClick={() => navigate("/RegisterPage")}
+              className="w-full text-slate-500 hover:text-[#8B5CF6] text-sm py-2 transition-all text-center"
+            >
+              ยังไม่มีบัญชี?{" "}
+              <span className="font-semibold underline">สมัครสมาชิกที่นี่</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
-}
+};
 
 export default LoginPage;

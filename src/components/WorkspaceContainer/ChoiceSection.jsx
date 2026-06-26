@@ -18,6 +18,7 @@ const ChoiceSection = ({
     { id: "scene-4", name: "Chapter 30 - Scene 2" },
   ],*/
   isGhosted,
+  characterList,
 }) => {
   const inputRef = useRef(null);
   const containerRef = useRef(null);
@@ -184,6 +185,24 @@ const ChoiceSection = ({
     handleUpdateBlock(id, "choice", updatedChoices);
   };
 
+  const handleUpdateChoiceDialogue = (choiceItemId, dialogueId, key, value) => {
+    const updatedChoices = choicesList.map((c) => {
+      if (c.id === choiceItemId) {
+        return {
+          ...c,
+          dialoguesList: (c.dialoguesList || []).map((d) => {
+            if (d.id !== dialogueId) return d;
+            return { ...d, [key]: value }; // อัปเดตตัวแปรตาม key (เช่น "character")
+          }),
+        };
+      }
+      return c;
+    });
+
+    // ใช้ฟังก์ชันส่วนกลางของบล็อกในการบันทึกข้อมูลกลับไปที่ Parent Component
+    handleUpdateBlock(id, "choice", updatedChoices);
+  };
+
   return (
     <div className="relative flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-3">
       <div className="flex items-center justify-between mb-2">
@@ -233,7 +252,6 @@ const ChoiceSection = ({
                   ตัวเลือกที่ {index + 1}:
                 </span>
                 <input
-                  ref={inputRef}
                   ref={index === 0 ? inputRef : null}
                   type="text"
                   value={item.text || ""}
@@ -278,6 +296,26 @@ const ChoiceSection = ({
                     <span className="text-sm font-medium text-gray-400 min-w-17.5 whitespace-nowrap text-right pr-1">
                       บทสนทนา {dIndex + 1} :
                     </span>
+                    <select
+                      value={dialogueItem.character || ""} // ผูกค่า character ของบทสนทนานั้นๆ
+                      onChange={(e) =>
+                        handleUpdateChoiceDialogue(
+                          item.id,
+                          dialogueItem.id,
+                          "character",
+                          e.target.value,
+                        )
+                      }
+                      className="px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm min-w-35"
+                    >
+                      <option value="">(ไม่มีตัวละครพูด)</option>
+                      {characterList &&
+                        characterList.map((char, index) => (
+                          <option key={index} value={char}>
+                            {char}
+                          </option>
+                        ))}
+                    </select>
                     <input
                       ref={(el) => {
                         if (el) dialogueInputsRef.current[dialogueItem.id] = el;
