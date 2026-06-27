@@ -38,7 +38,7 @@ const WorkspaceToolbar = ({ onAddBlock }) => {
           onClick={() => onAddBlock("audio")}
           className="flex items-center space-x-1 bg-gray-50 hover:bg-purple-50 hover:text-purple-600 border border-gray-200 hover:border-purple-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
         >
-          <span>🔊 เสียงพื้นหลัง/sfx </span>
+          <span>🔊 เสียงพื้นหลัง / เอฟเฟค </span>
         </button>
         <button
           onClick={() => onAddBlock("choice")}

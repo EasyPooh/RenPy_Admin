@@ -12,6 +12,7 @@ const Allproject = ({ session }) => {
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // [จุดแก้ไขที่ 1] อัปเดต useEffect ให้กรองข้อมูลตาม user_id
   useEffect(() => {
@@ -24,7 +25,7 @@ const Allproject = ({ session }) => {
         const { data, error } = await supabase
           .from("Projects")
           .select("*")
-          .eq("user_id", session.user.id) // 🔥 เพิ่มบรรทัดนี้: กรองเฉพาะโปรเจกต์ที่เป็นของ user คนนี้
+          .eq("user_id", session.user.id) // 🔥 เพิ่มบรรทัดนี้: กรองเฉพาะโปรเจคที่เป็นของ user คนนี้
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -39,10 +40,10 @@ const Allproject = ({ session }) => {
     fetchProjects();
   }, [session]); // 🔥 เพิ่มบรรทัดนี้: ให้ทำฟังก์ชันใหม่เมื่อ session มีการอัปเดต
 
-  // โค้ดเดิมของคุณ (ระบบลบไฟล์ขยะ และลบโปรเจกต์ - รักษาไว้ 100%)
+  // โค้ดเดิมของคุณ (ระบบลบไฟล์ขยะ และลบโปรเจค - รักษาไว้ 100%)
   const handleDeleteProject = async (projectId) => {
     const confirmDelete = window.confirm(
-      "คุณแน่ใจหรือไม่ที่จะลบโปรเจกต์นี้และ Assets ทั้งหมดในเกม?",
+      "คุณแน่ใจหรือไม่ที่จะลบโปรเจคนี้และ Assets ทั้งหมดในเกม?",
     );
     if (!confirmDelete) return;
 
@@ -84,10 +85,10 @@ const Allproject = ({ session }) => {
         prevProjects.filter((item) => item.id !== projectId),
       );
 
-      alert("ลบโปรเจกต์และเคลียร์ Assets ขยะสำเร็จเรียบร้อยแล้ว!");
+      alert("ลบโปรเจคและเคลียร์ Assets ขยะสำเร็จเรียบร้อยแล้ว!");
     } catch (error) {
       console.error("Error deleting project:", error.message);
-      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลโปรเจกต์ได้ - " + error.message);
+      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลโปรเจคได้ - " + error.message);
     }
   };
 
@@ -126,6 +127,10 @@ const Allproject = ({ session }) => {
     }
   };
 
+  const filteredProjects = projects.filter((item) =>
+    item.titles?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   // โค้ดส่วน UI และ Layout เดิมของคุณทั้งหมด (รักษาไว้ 100%)
   return (
     <div className="min-h-screen bg-[#F8F9FD] flex flex-col font-sans">
@@ -150,12 +155,24 @@ const Allproject = ({ session }) => {
               </div>
             </div>
 
-            <Link to="/CreateProject">
-              <button className="group inline-flex items-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl font-bold text-lg hover:bg-violet-700 transition-all duration-300 shadow-md hover:shadow-violet-200 active:scale-95">
-                <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-                สร้างโปรเจคใหม่
-              </button>
-            </Link>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 w-64 focus-within:border-violet-600 focus-within:ring-1 focus-within:ring-violet-600 transition-all">
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อโปรเจค..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none w-full text-sm text-gray-700 placeholder-gray-400"
+                />
+              </div>
+
+              <Link to="/CreateProject">
+                <button className="group inline-flex items-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl font-bold text-lg hover:bg-violet-700 transition-all duration-300 shadow-md hover:shadow-violet-200 active:scale-95">
+                  <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                  สร้างโปรเจคใหม่
+                </button>
+              </Link>
+            </div>
           </div>
 
           {/* --- Content Section --- */}
@@ -166,11 +183,11 @@ const Allproject = ({ session }) => {
                 กำลังดึงข้อมูลโปรเจค...
               </p>
             </div>
-          ) : projects.length === 0 ? (
+          ) : filteredProjects.length === 0 ? (
             <Emptystate />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects.map((item) => (
+              {filteredProjects.map((item) => (
                 <div
                   key={item.id}
                   className="group bg-white rounded-4xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden flex flex-col"

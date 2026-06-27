@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../lib/supabaseClient";
 import { useRenPyExport } from "../../hooks/useRenPyExport";
+import { Download, Folder, FileDown } from "lucide-react";
 
 // 💡 กำหนด URL ของไฟล์ Template (เลือกเปิดใช้วิธีใดวิธีหนึ่ง)
-// วิธีที่ 1: หากเก็บในโฟลเดอร์ public ของโปรเจกต์ React
+// วิธีที่ 1: หากเก็บในโฟลเดอร์ public ของโปรเจค React
 //const TEMPLATE_URL = "/templates/renpy-thai-template.zip";
 
-// วิธีที่ 2: หากเก็บใน Supabase Storage (เปลี่ยน URL ให้ตรงกับโปรเจกต์ของคุณ)
+// วิธีที่ 2: หากเก็บใน Supabase Storage (เปลี่ยน URL ให้ตรงกับโปรเจคของคุณ)
 const TEMPLATE_URL =
   "https://qwhrixreaurkpwzocqff.supabase.co/storage/v1/object/public/game-templates/renpy_templete-1.0-pc.zip";
 
@@ -29,7 +30,7 @@ const TopNavbar = ({ id }) => {
 
         if (error) throw error;
         if (data) {
-          setProjectName(data.titles || "ไม่มีชื่อโปรเจกต์");
+          setProjectName(data.titles || "ไม่มีชื่อโปรเจค");
         }
       } catch (error) {
         console.error("Error fetching project name:", error.message);
@@ -87,24 +88,27 @@ const TopNavbar = ({ id }) => {
         {/* 💡 ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ */}
         <button
           onClick={handleDownloadTemplate}
-          className="hover:text-purple-600 transition-colors"
+          className="flex items-center gap-2 text-black-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95"
         >
-          [ download game template ]
+          <Download className="w-4 h-4" />
+          <span>Download game template</span>
         </button>
 
         <button
           onClick={handleAssetPage}
-          className="hover:text-purple-600 transition-colors"
+          className="flex items-center gap-2 text-black-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95"
         >
-          [ asset library ]
+          <Folder className="w-4 h-4" />
+          <span>Asset library</span>
         </button>
 
         <button
           onClick={handleExportClick}
           disabled={isExporting}
-          className="text-purple-600 hover:text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95 "
         >
-          {isExporting ? "[ exporting... ]" : "[ export .rpy ]"}
+          <FileDown className="w-4 h-4" />
+          <span>{isExporting ? "Exporting..." : "Export .rpy"}</span>
         </button>
       </div>
     </div>

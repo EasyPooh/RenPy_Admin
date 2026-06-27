@@ -28,7 +28,7 @@ const LoginPage = () => {
   };
 
   return (
-    // คุมพื้นหลังโทนเดียวกับหน้าสร้างโปรเจกต์และหน้าสมัครสมาชิก
+    // คุมพื้นหลังโทนเดียวกับหน้าสร้างโปรเจคและหน้าสมัครสมาชิก
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-6">
       {/* Card Container: ขาว มน คลีน */}
       <div className="w-full max-w-md bg-white p-10 rounded-2xl border border-slate-100 shadow-sm">

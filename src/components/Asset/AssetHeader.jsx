@@ -18,7 +18,7 @@ const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
         <div>
           <h1 className="text-xl font-bold text-gray-900">คลังจัดการ Assets</h1>
           <p className="text-xs text-gray-500">
-            อัปโหลด ค้นหา และแก้ไขไฟล์ต่าง ๆ ภายในโปรเจกต์
+            อัปโหลด ค้นหา และแก้ไขไฟล์ต่าง ๆ ภายในโปรเจค
           </p>
         </div>
       </div>

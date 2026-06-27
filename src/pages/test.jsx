@@ -2,7 +2,7 @@ const handleAddChapter = async () => {
   const defaultName = `บทใหม่ที่ ${Chapters.length + 1}`;
 
   try {
-    // 💡 ส่งแค่ id โปรเจกต์, ชื่อตั้งต้น, และจำนวนแถวปัจจุบันไปให้ Service จัดการ
+    // 💡 ส่งแค่ id โปรเจค, ชื่อตั้งต้น, และจำนวนแถวปัจจุบันไปให้ Service จัดการ
     const insertedData = await chapterService.createChapter(
       id,
       defaultName,

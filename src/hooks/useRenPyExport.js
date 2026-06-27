@@ -10,9 +10,9 @@ import { slugify } from 'transliteration';
 // ==========================================
 const RENPY_SPEED_MAP = {
   none: 0.0,
-  slow: 1.5,
+  fast: 0.2,
   normal: 0.5,
-  fast: 0.2
+  slow: 1.5,
 };
 
 function escapeDialog(text) {
@@ -129,23 +129,26 @@ export const useRenPyExport = () => {
       // 🔥 [ADDED] INJECT OVERRIDE CONFIG: ทำรูปครึ่งตัวอัตโนมัติ
       // เขียนทับค่ามาตรฐาน left, center, right ของ Engine Ren'Py
       // =========================================================
+      rpyContent += 'define config.say_attribute_transition = dissolve\n';
+      rpyContent += 'define config.show_transition = dissolve\n';
+      rpyContent += 'define config.hide_transition = dissolve\n';
       rpyContent += `# ==========================================\n`;
       rpyContent += `# AUTO GENERATED: HALF-BODY CONFIGURATION OVERRIDE\n`;
       rpyContent += `# ==========================================\n`;
       rpyContent += `transform center:\n`;
       rpyContent += `    xalign 0.5\n`;
       rpyContent += `    yalign 0.0\n`;
-      rpyContent += `    zoom 0.50\n`;      // 🔥 ลดพลังซูมลงมาเหลือ 1.15 (ภาพจะได้ไม่ใหญ่เกินไป)
-      rpyContent += `    yoffset 200\n\n`;  // 🔥 ปรับระยะดันลงเหลือ 200 (ให้สมดุลกับขนาดตัว)
+      rpyContent += `    zoom 0.50\n`;      
+      rpyContent += `    yoffset 200\n\n`;  
       rpyContent += `transform left:\n`;
       rpyContent += `    xalign 0.15\n`;
       rpyContent += `    yalign 0.0\n`;
-      rpyContent += `    zoom 0.50\n`;      // 🔥 ปรับให้เท่ากัน
+      rpyContent += `    zoom 0.50\n`;      
       rpyContent += `    yoffset 200\n\n`;
       rpyContent += `transform right:\n`;
       rpyContent += `    xalign 0.85\n`;
       rpyContent += `    yalign 0.0\n`;
-      rpyContent += `    zoom 0.50\n`;      // 🔥 ปรับให้เท่ากัน
+      rpyContent += `    zoom 0.50\n`;      
       rpyContent += `    yoffset 200\n`;
       rpyContent += `# ==========================================\n\n`;
 
@@ -220,22 +223,49 @@ export const useRenPyExport = () => {
             props = {};
           }
 
-          const getTransitionStr = () => {
-            const effectRaw = props?.backgroundEffect || props?.spriteEffect || props?.effect || props?.bg_effect || props?.transition || props?.["เอฟเฟกต์พื้นหลัง"] || block?.effect;
-            if (!effectRaw || effectRaw === "none") return "";
-            
-            const effect = String(effectRaw).toLowerCase().trim();
-            const speedRaw = props?.backgroundEffectSpeed || props?.spriteSpeed || props?.speed || props?.bg_speed || props?.transition_speed || props?.["ความเร็วเอฟเฟกต์"] || "";
-            const speedToken = String(speedRaw).toLowerCase().trim();
-            
-            if (speedToken === "normal" || speedToken === "") return ` with ${effect}`;
+          const getTransitionStr = (isSpriteBlock = false) => {
+  let effectRaw = props?.backgroundEffect || props?.spriteEffect || props?.effect || props?.bg_effect || props?.transition || props?.["เอฟเฟกต์พื้นหลัง"] || block?.effect;
+  
+  const speedRaw = props?.backgroundEffectSpeed || props?.spriteSpeed || props?.speed || props?.bg_speed || props?.transition_speed || props?.["ความเร็วเอฟเฟกต์"] || ""; //
+  const cleanSpeedToken = String(speedRaw).toLowerCase().trim();
 
-            if (effect === "dissolve") {
-              let duration = RENPY_SPEED_MAP[speedToken] !== undefined ? RENPY_SPEED_MAP[speedToken] : 0.5;
-              return ` with Dissolve(${duration})`;
-            }
-            return ` with ${effect}`;
-          };
+  // 🟢 1. เคสพิเศษสำหรับบล็อก Sprite (ตัวละคร) ที่ไม่มีการเลือกเอฟเฟกต์ใน UI
+  if (!effectRaw && isSpriteBlock) {
+    // ถ้าความเร็วเป็น normal หรือไม่ได้เลือก ให้ปล่อยว่างไว้ (เพื่อให้ Ren'Py วิ่งไปใช้ config.show_transition / hide_transition เอง)
+    if (cleanSpeedToken === "normal" || cleanSpeedToken === "" || cleanSpeedToken === "none") {
+      return "";
+    }
+    // แต่ถ้าผู้ใช้จงใจเลือกความเร็วพิเศษ (เช่น slow, fast) ให้บังคับใช้ dissolve เพื่อใส่ duration ครอบลงไป
+    effectRaw = "dissolve";
+  }
+
+  // 🟢 2. ล้างค่าตัวแปรเอฟเฟกต์
+  const cleanEffect = String(effectRaw || "").toLowerCase().trim();
+  if (!cleanEffect || cleanEffect === "none" || cleanEffect.includes("ไม่มี")) {
+    return "";
+  }
+
+  // 🟢 3. ถ้าเอฟเฟกต์เป็นทั่วไป และความเร็วเป็น normal ไม่ต้องเจนโค้ด with ซ้ำซ้อน (ปล่อยให้ Config กลางคุม)
+  if (cleanSpeedToken === "normal" || cleanSpeedToken === "") {
+    // ยกเว้นฉากหลัง (Background) ที่ยังต้องการให้มีคำสั่งพื้นฐานกำกับไว้ชัดเจนในบางเคส 
+    // หรือถ้าอยากให้คลีนทั้งหมด สามารถสั่ง return "" ตรงนี้ได้เลยเช่นกันครับ
+    return ` with ${cleanEffect}`;
+  }
+  
+  // 🟢 4. คำนวณเวลาสำหรับ Speed พิเศษ (slow, fast)
+  let duration = RENPY_SPEED_MAP[cleanSpeedToken] !== undefined ? RENPY_SPEED_MAP[cleanSpeedToken] : 0.5; //
+
+  if (cleanEffect === "dissolve") {
+    return ` with Dissolve(${duration})`; //
+  }
+  
+  if (cleanEffect === "fade") {
+    let halfDuration = duration / 2;
+    return ` with Fade(${halfDuration}, 0.0, ${halfDuration})`;
+  }
+  
+  return ` with ${cleanEffect}`;
+};
 
           if (type === "dialogue" || type === "character" || type === "text") {
     // 🔍 1. ดักจับ ID ให้ครอบคลุมทุกฟิลด์เพื่อความปลอดภัย
@@ -314,14 +344,17 @@ export const useRenPyExport = () => {
             
             let hideTagName = spriteCommandName.includes(" ") ? spriteCommandName.split(" ")[0] : spriteCommandName;
             
-            const actionRaw = props.action || props?.["คำสั่งภาพตัวละคร"] || "show";
+            // 🟢 แก้ไขบรรทัดนี้: เพิ่ม props.spritecommand เข้าไปเช็กก่อน
+            const actionRaw = props.spritecommand || props.action || props?.["คำสั่งภาพตัวละคร"] || "show";
             const action = String(actionRaw).toLowerCase().includes("hide") || String(actionRaw).includes("ซ่อน") ? "hide" : "show";
-            const position = props.position || props?.["ตำแหน่งภาพตัวละคร"] || "center";
+
+            // 🟢 แก้ไขบรรทัดนี้ด้วย: เพิ่ม props.spriteposition เพื่อป้องกันบั๊กตำแหน่งไม่เปลี่ยนในอนาคต
+            const position = props.spriteposition || props.position || props?.["ตำแหน่งภาพตัวละคร"] || "center";
 
             if (action === "hide") {
-              rpyContent += `    hide ${hideTagName}${getTransitionStr()}\n`;
+              rpyContent += `    hide ${hideTagName}${getTransitionStr(true)}\n`;
             } else {
-              rpyContent += `    show ${spriteCommandName} at ${position}${getTransitionStr()}\n`;
+              rpyContent += `    show ${spriteCommandName} at ${position}${getTransitionStr(true)}\n`;
             }
           }
           

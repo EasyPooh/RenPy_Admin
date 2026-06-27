@@ -68,7 +68,7 @@ const CreateProjectForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.titles || formData.titles.trim() === "") {
-      alert("กรุณากรอกชื่อโปรเจกต์ด้วยครับ!");
+      alert("กรุณากรอกชื่อโปรเจคด้วยครับ!");
       return; // สั่งหยุดทำงานทันที ไม่ให้วิ่งไปหา Supabase
     }
     setLoading(true);
@@ -97,7 +97,7 @@ const CreateProjectForm = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const newProject = data[0]; // ดึงข้อมูลโปรเจกต์แถวแรกที่เพิ่งสร้าง
+        const newProject = data[0]; // ดึงข้อมูลโปรเจคแถวแรกที่เพิ่งสร้าง
         const projectId = newProject.id; // สมมติว่าคอลัมน์ ID ของคุณชื่อ 'id' (ถ้าชื่อ project_id ให้เปลี่ยนตามนะครับ)
 
         // เรียกใช้ฟังก์ชันจาก chapterService เพื่อสร้างบทแรกอัตโนมัติ
@@ -105,7 +105,7 @@ const CreateProjectForm = () => {
         await chapterService.createStartChapter(projectId);
       }
 
-      alert("สร้างโปรเจกต์สำเร็จแล้ว!");
+      alert("สร้างโปรเจคสำเร็จแล้ว!");
 
       // 🧹 [จุดแก้ไขที่ 2] เคลียร์หน่วยความจำ Blob และไฟล์ออกให้หมดจดก่อนย้ายหน้า
       if (previewUrl) {
@@ -136,7 +136,7 @@ const CreateProjectForm = () => {
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-12 w-full max-w-3xl mx-auto">
         <div className="space-y-8">
           <InputField
-            label="ชื่อโปรเจกต์"
+            label="ชื่อโปรเจค"
             name="titles"
             value={formData.titles}
             onChange={handleChange}
@@ -176,7 +176,7 @@ const CreateProjectForm = () => {
           {/* === ส่วนอัปโหลดรูปภาพดีไซน์ใหม่ ปรับขนาดฟอนต์หัวข้อให้เท่ากันเป๊ะ === */}
           <div className="space-y-2">
             <label className="block text-slate-700 font-bold mb-2">
-              ภาพปกโปรเจกต์
+              ภาพปกโปรเจค
             </label>
 
             {/* อินพุตรับไฟล์แบบซ่อนเพื่อความสะอาดตา */}
@@ -268,7 +268,7 @@ const CreateProjectForm = () => {
               type="submit"
               disabled={loading}
             >
-              {loading ? "กำลังบันทึก..." : "สร้างโปรเจกต์"}
+              {loading ? "กำลังบันทึก..." : "สร้างโปรเจค"}
             </Button>
           </div>
         </div>

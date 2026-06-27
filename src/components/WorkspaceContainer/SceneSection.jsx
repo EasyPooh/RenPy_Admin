@@ -11,6 +11,7 @@ const SceneSection = ({
   focusedBlockId,
   setFocusedBlockId,
   assets,
+  blockNumber,
   isGhosted,
 }) => {
   const inputRef = useRef(null);
@@ -30,13 +31,13 @@ const SceneSection = ({
       className={`relative flex flex-col gap-3 p-4 border rounded-xl mb-3 transition-all ${
         isGhosted
           ? "opacity-40 pointer-events-none select-none bg-gray-100 border-gray-300"
-          : "bg-gray-50 border-gray-200"
+          : "bg-blue-50 text-blue-600 border border-blue-100"
       }`}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
-            ช่องจัดการฉากพื้นหลัง
+          <label className="text-xs font-bold text-black-400 tracking-wider">
+            #{blockNumber} 🖼️ ช่องจัดการฉากพื้นหลัง
           </label>
           {isGhosted && (
             <span className="text-xs text-red-500 font-bold animate-pulse">
@@ -128,9 +129,9 @@ const SceneSection = ({
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
           >
             <option value="none">none</option>
-            <option value="slow">slow (0.2)</option>
+            <option value="fast">fast (0.2)</option>
             <option value="normal">normal (0.5)</option>
-            <option value="fast">fast (1.0)</option>
+            <option value="slow">slow (1.5)</option>
           </select>
         </div>
       </div>

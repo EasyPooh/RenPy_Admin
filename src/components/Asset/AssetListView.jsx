@@ -116,7 +116,7 @@ const AssetListView = ({
     <div className="w-full p-4">
       {assets.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <p className="text-gray-400">ยังไม่มี Assets ในโปรเจกต์นี้</p>
+          <p className="text-gray-400">ยังไม่มี Assets ในโปรเจคนี้</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

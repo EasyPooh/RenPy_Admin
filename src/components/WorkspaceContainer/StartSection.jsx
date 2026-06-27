@@ -57,7 +57,7 @@ const StartSection = ({
 
   return (
     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3 select-none">
-      <div className="text-xs font-bold text-gray-400 tracking-wider">
+      <div className="text-xs font-bold text-black-400 tracking-wider">
         🎬 CONFIG ฉากเริ่มต้น
       </div>
 

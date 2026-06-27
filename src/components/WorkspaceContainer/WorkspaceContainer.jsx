@@ -121,6 +121,7 @@ const WorkspaceContainer = ({
               {blocks.map((block, index) => {
                 const isGhosted =
                   returnBlockIndex !== -1 && index > returnBlockIndex;
+                const currentBlockNumber = index + 1;
                 if (block.type === "dialogue") {
                   return (
                     <DialogueSection
@@ -141,6 +142,7 @@ const WorkspaceContainer = ({
                       assets={assets}
                       selected_asset_id={block.selected_asset_id}
                       sprite_tag={block.sprite_tag}
+                      blockNumber={currentBlockNumber}
                     />
                   );
                 }
@@ -160,6 +162,7 @@ const WorkspaceContainer = ({
                       setFocusedBlockId={setFocusedBlockId}
                       assets={assets}
                       isGhosted={isGhosted}
+                      blockNumber={currentBlockNumber}
                     />
                   );
                 }
@@ -181,6 +184,7 @@ const WorkspaceContainer = ({
                       setFocusedBlockId={setFocusedBlockId}
                       assets={assets}
                       isGhosted={isGhosted}
+                      blockNumber={currentBlockNumber}
                     />
                   );
                 }
@@ -201,6 +205,7 @@ const WorkspaceContainer = ({
                       setFocusedBlockId={setFocusedBlockId}
                       assets={assets}
                       isGhosted={isGhosted}
+                      blockNumber={currentBlockNumber}
                     />
                   );
                 }
@@ -219,6 +224,7 @@ const WorkspaceContainer = ({
                       currentChapterBlocks={mappedDialogueOptions}
                       isGhosted={isGhosted}
                       characterList={workspace?.start_characters || []}
+                      blockNumber={currentBlockNumber}
                     />
                   );
                 }
@@ -228,12 +234,13 @@ const WorkspaceContainer = ({
                     <JumpSection
                       key={block.id}
                       id={block.id}
-                      target_workspace_id={block.target_workspace_id}
+                      target_chapter_id={block.target_chapter_id}
                       action_type={block.action_type} // ดึงค่า Flatten State จากตัวบล็อกตรง ๆ
                       chapterList={allChapters} // ส่งรายชื่อ Chapter ทั้งหมดเข้าไปตามที่คุณใช้ใน Choice
                       handleUpdateBlock={handleUpdateBlock}
                       handleDeleteBlock={handleDeleteBlock}
                       isGhosted={isGhosted}
+                      blockNumber={currentBlockNumber}
                     />
                   );
                 }

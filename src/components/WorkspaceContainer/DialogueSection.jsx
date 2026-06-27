@@ -12,6 +12,7 @@ const DialogueSection = ({
   focusedBlockId,
   setFocusedBlockId,
   isGhosted,
+  blockNumber,
   assets = [],
   // 🌟 เพิ่ม Props ใหม่ 2 ตัวเพื่อเก็บความสัมพันธ์ของรูปภาพที่เลือกอย่างแม่นยำ
   selected_asset_id,
@@ -93,13 +94,13 @@ const DialogueSection = ({
       className={`relative flex flex-col gap-3 p-4 border rounded-xl mb-3 transition-all ${
         isGhosted
           ? "opacity-40 pointer-events-none select-none bg-gray-100 border-gray-300"
-          : "bg-gray-50 border-gray-200"
+          : "bg-slate-50 text-slate-700 border-slate-200"
       }`}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
-            ช่องบทสนทนา
+          <label className="text-xs font-bold text-black-400 tracking-wider">
+            #{blockNumber} 💬 ช่องบทสนทนา
           </label>
           {isGhosted && (
             <span className="text-xs text-red-500 font-bold animate-pulse">

@@ -82,29 +82,31 @@ const Navbar = () => {
 
           {/*  ส่วน Menu Links */}
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 bg-violet-50 text-violet-700 px-4 py-2 rounded-xl font-medium">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 10l-2 4m1 1l2-4m-10 6h12a3 3 0 003-3V7a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                />
-              </svg>
-              โปรเจค
-            </button>
+            <Link to="/Allproject">
+              <button className="flex items-center gap-2 bg-violet-50 text-violet-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 10l-2 4m1 1l2-4m-10 6h12a3 3 0 003-3V7a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
+                </svg>
+                โปรเจค
+              </button>
+            </Link>
           </div>
         </div>
 
         {/*  ส่วนจัดการ User Profile & Dropdown  */}
         <div className="relative">
           {user ? (
-            <div>
+            <div className=" bg-violet-50/50 text-violet-700 border border-violet-100 rounded-xl font-medium transition-all duration-300 hover:bg-violet-50 hover:border-violet-400 hover:text-violet-900">
               {/* ปุ่มกดเปิด/ปิด Dropdown */}
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}

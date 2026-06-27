@@ -1,59 +1,22 @@
-import React, { useState, useEffect } from "react"; // 🌟 อิมพอร์ต useState และ useEffect เข้ามาจัดการ State
+import React from "react"; // 🌟 ลบ useState, useEffect และ Supabase ออกเพราะไม่ต้องดึงตารางจับคู่แล้ว
 import Select from "react-select";
-import { supabase } from "../../lib/supabaseClient"; // 🌟 อิมพอร์ตสิทธิ์ใช้งาน Supabase (รบกวนเช็กตำแหน่ง Path ไฟล์ให้ตรงกับเครื่องคุณนะครับ)
 
 const JumpSection = ({
   id,
-  target_workspace_id, // ค่า UUID ของ Workspace ปลายทางจากฐานข้อมูล
+  target_chapter_id, // 🔄 เปลี่ยนชื่อพร็อบรับจากหน้าหลักตามชื่อคอลัมน์ใหม่ของคุณ
   action_type,
   chapterList, // รายชื่อ Chapter ทั้งหมดที่ส่งมาจากหน้าจอหลัก
   workspaces, // พรอบเดิม (เก็บไว้เพื่อไม่ให้หน้าบ้านหลักเออร์เรอร์พัง)
   handleUpdateBlock,
   handleDeleteBlock,
   isGhosted,
+  blockNumber,
 }) => {
   const currentActionType = action_type || "jump";
 
-  // 🌟 1. สร้างพื้นที่เก็บตารางจับคู่ไอดี { [chapter_id]: workspace_id } ภายในเครื่อง
-  const [workspaceMap, setWorkspaceMap] = useState({});
-
-  // 🌟 2. ดึงข้อมูลความสัมพันธ์จากตาราง workspaces มาทำแผนที่จับคู่แบบเงียบ ๆ ทันทีที่ข้อมูลบทเรียนโหลดมา
-  useEffect(() => {
-    const fetchWorkspaceIds = async () => {
-      if (!chapterList || chapterList.length === 0) return;
-
-      try {
-        // แกะเอาเฉพาะไอดีของบทเรียนทั้งหมดส่งไปถามหาคู่ในฐานข้อมูล workspaces
-        const chapterIds = chapterList.map((ch) => ch.id);
-
-        const { data, error } = await supabase
-          .from("workspaces")
-          .select("id, chapter_id")
-          .in("chapter_id", chapterIds);
-
-        if (error) throw error;
-
-        // แปลงข้อมูลให้อยู่ในรูป Object คีย์-ค่า เพื่อคิวรีหาได้ทันทีโดยไม่ต้องวนลูปซ้อนลูป
-        const mapping = {};
-        data.forEach((ws) => {
-          mapping[ws.chapter_id] = ws.id;
-        });
-
-        setWorkspaceMap(mapping);
-      } catch (err) {
-        console.error(
-          "❌ เกิดข้อผิดพลาดตอนทำแผนที่จับคู่ Workspace ใน JumpSection:",
-          err,
-        );
-      }
-    };
-
-    fetchWorkspaceIds();
-  }, [chapterList]);
-
   const handleModeChange = (mode) => {
     if (mode === "return") {
-      handleUpdateBlock(id, "target_workspace_id", null);
+      handleUpdateBlock(id, "target_chapter_id", null); // 🔄 อัปเดตคอลัมน์ใหม่
       handleUpdateBlock(id, "action_type", "return");
     } else {
       handleUpdateBlock(id, "action_type", "jump");
@@ -62,61 +25,65 @@ const JumpSection = ({
 
   // ล็อกไว้ส่องตรวจสอบความถูกต้องของข้อมูลผ่าน Console
   console.log("👀 เช็กไส้ใน chapterList ปัจจุบัน:", chapterList);
-  console.log("🧩 ตารางแผนที่จับคู่ไอดีล่าสุด:", workspaceMap);
+  console.log(
+    "🎯 ไอดีบทปลายทางที่เลือกอยู่ปัจจุบัน (target_chapter_id):",
+    target_chapter_id,
+  );
 
-  // 🌟 3. ปรับลอจิกการ Map ตัวเลือกโดยดึงเลข Workspace ID ตัวจริงมาจากแผนที่ที่เราทำไว้
+  // 🌟 3. ปรับลอจิกการ Map ตัวเลือก: ดึงค่า ch.id มาเป็น value ตรง ๆ ได้เลย ไม่ต้องวิ่งไปหาในตารางอื่นแล้ว
   const chapterOptions = chapterList
-    ? chapterList
-        .map((ch) => {
-          // ค้นหาค่า Workspace ID ปลายทางที่แท้จริงจากแผนที่ดักจับข้อมูล
-          const targetWorkspaceId = workspaceMap[ch.id];
-
-          return {
-            value: targetWorkspaceId, // 💡 ได้ Workspace ID ตัวจริงไปบันทึกลงตาราง blocks
-            label:
-              ch.name ||
-              ch.chapter_titles ||
-              `บทสนทนาที่ไม่มีชื่อ (${ch.id.slice(0, 5)})`, // รองรับฟิลด์ name ล่าสุดของคุณ
-          };
-        })
-        // กรองตัวเลือกออกชั่วคราว หากบทนั้นยังทำแผนที่จับคู่ไอดีจาก Supabase ไม่เสร็จสิ้น
-        .filter((opt) => opt.value !== undefined && opt.value !== null)
+    ? chapterList.map((ch) => ({
+        value: ch.id, // 💡 ใช้ไอดีของ Chapter ตรง ๆ ไปบันทึกลงคอลัมน์ target_chapter_id
+        label:
+          ch.name ||
+          ch.chapter_titles ||
+          `บทสนทนาที่ไม่มีชื่อ (${ch.id.slice(0, 5)})`,
+      }))
     : [];
 
   // ตรวจสอบตัวเลือกที่กำลังถูกเลือกอยู่ในปัจจุบัน
-  const currentSelectedOption = target_workspace_id
-    ? chapterOptions.find((opt) => opt.value === target_workspace_id)
+  const currentSelectedOption = target_chapter_id
+    ? chapterOptions.find((opt) => opt.value === target_chapter_id)
     : null;
 
   return (
-    <div className="relative flex flex-col gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-3">
+    <div className="relative flex flex-col gap-4 p-4 bg-rose-50 text-rose-700 border-rose-200 rounded-xl mb-3">
       {/* ส่วนหัวของบล็อก */}
       <div className="flex items-center justify-between border-b border-gray-200 pb-2">
         <div className="flex items-center gap-2">
           <span className="text-base">👍</span>
-          <label className="text-xs font-bold text-gray-400 tracking-wider uppercase">
-            เส้นทาง / ปลายทางถัดไป
+          <label className="text-xs font-bold text-black-400 tracking-wider uppercase">
+            #{blockNumber} เส้นทาง / ปลายทางถัดไป
           </label>
+          {/* ป้ายเตือนเมื่อบล็อกโดน Ghosted */}
+          {isGhosted && (
+            <span className="text-xs text-red-500 font-bold animate-pulse">
+              🚨 บล็อกนี้จะไม่ทำงานในเกม (อยู่หลังจุดสิ้นสุดเนื้อเรื่อง)
+            </span>
+          )}
         </div>
-        <button
-          onClick={() => handleDeleteBlock(id)}
-          className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {/* ซ่อนปุ่มลบเมื่อบล็อกโดน Ghosted */}
+        {!isGhosted && (
+          <button
+            onClick={() => handleDeleteBlock(id)}
+            className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          ลบ
-        </button>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            ลบ
+          </button>
+        )}
       </div>
 
       {/* ส่วนเลือกรูปแบบผลลัพธ์ (Radio Buttons) */}
@@ -127,6 +94,7 @@ const JumpSection = ({
             name={`action_type_${id}`}
             value="jump"
             checked={currentActionType === "jump"}
+            disabled={isGhosted}
             onChange={() => handleModeChange("jump")}
             className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
           />
@@ -139,6 +107,7 @@ const JumpSection = ({
             name={`action_type_${id}`}
             value="return"
             checked={currentActionType === "return"}
+            disabled={isGhosted}
             onChange={() => handleModeChange("return")}
             className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
           />
@@ -157,17 +126,27 @@ const JumpSection = ({
           <Select
             options={chapterOptions}
             value={currentSelectedOption}
+            isDisabled={isGhosted}
             onChange={(selectedOption) => {
-              // 💡 ส่งค่า Workspace ID ปลายทางที่เชื่อมโยงถูกต้องร้อยเปอร์เซ็นต์ขึ้นไปบันทึก
+              // 💡 ส่งค่า target_chapter_id ขึ้นไปบันทึกบนตารางบล็อกโดยตรง
               handleUpdateBlock(
                 id,
-                "target_workspace_id",
+                "target_chapter_id",
                 selectedOption ? selectedOption.value : null,
               );
             }}
             placeholder="-- เลือก Chapter ปลายทาง --"
             isClearable={true}
             isSearchable={true}
+            filterOption={(option, rawInput) => {
+              const labelText = option.label
+                ? String(option.label).toLowerCase()
+                : "";
+              const searchInput = rawInput
+                ? String(rawInput).toLowerCase()
+                : "";
+              return labelText.includes(searchInput);
+            }}
             styles={{
               control: (baseStyles, state) => ({
                 ...baseStyles,

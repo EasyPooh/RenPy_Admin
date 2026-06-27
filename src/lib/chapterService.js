@@ -32,7 +32,7 @@ export const chapterService = {
   return data;
 },
 
-  // 2. 🌟 ฟังก์ชันพิเศษ: สำหรับสร้างบทเริ่มต้น (Start Chapter) อัตโนมัติทันทีที่สร้างโปรเจกต์ใหม่
+  // 2. 🌟 ฟังก์ชันพิเศษ: สำหรับสร้างบทเริ่มต้น (Start Chapter) อัตโนมัติทันทีที่สร้างโปรเจคใหม่
   async createStartChapter(projectId) {
     const { data, error } = await supabase
       .from("chapters")
