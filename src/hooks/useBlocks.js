@@ -32,23 +32,13 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
               type: row.type,
               content: row.content,
               file_name: row.assets?.file_name,
-              ...props, // ดึงพรอพเพอร์ตี้ยิบย่อยจาก JSON เช่น backgroundEffect ออกมาก่อน
+              ...props, 
 
-              // 🌟 จุดสำคัญ: ดึงค่าจากคอลัมน์หลักในเบส กลับมาเป็นชื่อตัวแปรที่หน้าบ้านใช้
-
-              // 🌟 เพิ่มบรรทัดนี้เข้าไปครับ! ดึงค่าจากคอลัมน์หลักมาเก็บใน State หน้าบ้าน
               target_chapter_id: row.target_chapter_id || null,
-              
-              // 1. แปลงบทพูดคืนค่าให้ตัวแปร text ที่กล่องบทสนทนารออ่าน
               text: row.type === 'dialogue' ? (row.content || '') : '',
-              
-              // 2. แปลงชื่อตัวละครในเบสกลับมาเป็นชื่อตัวแปร character
               character: row.character_name || '',
-
-              //ดึง asset_id มาใส่ให้ตัวแปร selected_asset_id ของบล็อกสนทนา
               selected_asset_id: row.type === 'dialogue' ? (row.asset_id || null) : null,
 
-              // 3. แปลงรหัสจากคอลัมน์ asset_id คืนค่าให้ตรงกับ Dropdown แต่ละประเภทบล็อก
               background: row.type === 'scene' ? (row.asset_id || '') : '',
               sprite: row.type === 'sprite' ? (row.asset_id || '') : '',
               audio: row.type === 'audio' ? (row.asset_id || '') : '',
@@ -101,11 +91,11 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
         break;
       case "jump":
         newBlock = { 
-      ...newBlock, 
-      target_chapter_id: null,  // เริ่มต้นเป็น null (ยังไม่ได้เลือกบทปลายทาง)
-      action_type: "jump"         // ค่าเริ่มต้นของ Radio Button ให้เป็นแบบกระโดดข้ามบท
-    };
-    break;
+          ...newBlock, 
+          target_chapter_id: null,  
+          action_type: "jump"         
+        };
+        break;
     }
 
     setAllBlocks(prev => ({
@@ -116,28 +106,24 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
     setIsDataChanged(true);
   };
 
-  // --- 🟨 2. อัปเดตข้อมูลบล็อก  ---
   const handleUpdateBlock = (blockId, fieldOrObject, value) => {
-  if (!chapterId) return; // 🌟 (หรือ workspaceId ตามที่คุณเปลี่ยนไว้)
+    if (!chapterId) return; 
 
-  setAllBlocks(prev => ({
-    ...prev,
-    [chapterId]: (prev[chapterId] || []).map(block => {
-      if (block.id === blockId) {
-        // 🌟 จุดเด่น: เช็กว่าถ้าอาร์กิวเมนต์ที่ 2 เป็น Object ให้แตกกระจายค่าลงไปเลย
-        if (typeof fieldOrObject === "object" && fieldOrObject !== null) {
-          return { ...block, ...fieldOrObject };
+    setAllBlocks(prev => ({
+      ...prev,
+      [chapterId]: (prev[chapterId] || []).map(block => {
+        if (block.id === blockId) {
+          if (typeof fieldOrObject === "object" && fieldOrObject !== null) {
+            return { ...block, ...fieldOrObject };
+          }
+          return { ...block, [fieldOrObject]: value };
         }
-        
-        // 🌟 ถ้าเป็น String ปกติ ให้ทำงานแบบเดิม (Dynamic Key)
-        return { ...block, [fieldOrObject]: value };
-      }
-      return block;
-    })
-  }));
-  
-  setIsDataChanged(true);
-};
+        return block;
+      })
+    }));
+    
+    setIsDataChanged(true);
+  };
 
   const handleDeleteBlock = (blockId) => {
     if (!chapterId) return;
@@ -156,6 +142,34 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
     setIsDataChanged(true);
   };
 
+  // --- 🟩 ฟังก์ชันสำหรับกดสลับตำแหน่งบล็อกฟอร์ม ขึ้น - ลง ---
+  const handleMoveBlock = (index, direction) => {
+    if (!chapterId) return;
+
+    const targetArray = allBlocks[chapterId] || [];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    // ระบบป้องกัน: ถ้าตำแหน่งเป้าหมายหลุดขอบอาร์เรย์ (เช่น ตัวแรกสุดกดขึ้น หรือตัวสุดท้ายกดลง) ให้หยุดการทำงาน
+    if (targetIndex < 0 || targetIndex >= targetArray.length) return;
+
+    // ทำการโคลน Array เพื่อไม่ให้กระทบ State เดิมโดยตรง (Immutability)
+    const updatedArray = [...targetArray];
+    
+    // สลับตำแหน่งของ Object ระหว่าง index ปัจจุบัน กับ targetIndex (Swap Elements)
+    const temp = updatedArray[index];
+    updatedArray[index] = updatedArray[targetIndex];
+    updatedArray[targetIndex] = temp;
+
+    // อัปเดตค่ากลับเข้าไปในโครงสร้าง State แบบ Object ที่ผูกกับ chapterId
+    setAllBlocks(prev => ({
+      ...prev,
+      [chapterId]: updatedArray
+    }));
+
+    // เปิดสวิตช์สถานะแจ้งหน้าบ้านว่าข้อมูลมีการเปลี่ยนแปลงเพื่อให้ปุ่มบันทึกทำงาน
+    setIsDataChanged(true);
+  };
+
   const clearPendingDeletions = () => setPendingDeletions([]);
 
   return {
@@ -168,6 +182,7 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
     handleAddBlock,
     handleUpdateBlock,
     handleDeleteBlock,
+    handleMoveBlock, // 👈 🌟 ส่งฟังก์ชันนี้ออกไปให้หน้าบ้านเรียกใช้ได้เลยครับ
     clearPendingDeletions
   };
 };

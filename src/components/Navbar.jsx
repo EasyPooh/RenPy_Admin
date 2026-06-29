@@ -45,6 +45,7 @@ const Navbar = () => {
         console.error("Error signing out:", error.message);
       }
     }, 100);
+    alert("คุณออกจากระบบแล้ว");
   };
 
   return (

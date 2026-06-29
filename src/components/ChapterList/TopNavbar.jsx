@@ -11,7 +11,8 @@ import { Download, Folder, FileDown } from "lucide-react";
 
 // วิธีที่ 2: หากเก็บใน Supabase Storage (เปลี่ยน URL ให้ตรงกับโปรเจคของคุณ)
 const TEMPLATE_URL =
-  "https://qwhrixreaurkpwzocqff.supabase.co/storage/v1/object/public/game-templates/renpy_templete-1.0-pc.zip";
+  //  "https://qwhrixreaurkpwzocqff.supabase.co/storage/v1/object/public/game-templates/renpy_templete-1.0-pc.zip";
+  "https://github.com/EasyPooh/RenPy_Admin/releases/download/v1.0/renpy_template-1.0-pc.zip";
 
 const TopNavbar = ({ id }) => {
   const navigate = useNavigate();
@@ -88,6 +89,7 @@ const TopNavbar = ({ id }) => {
         {/* 💡 ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ */}
         <button
           onClick={handleDownloadTemplate}
+          title="ดาวน์โหลดตัวเกมRen'Py สำหรับวางไฟล์เนื้อเรื่อง"
           className="flex items-center gap-2 text-black-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95"
         >
           <Download className="w-4 h-4" />
@@ -96,6 +98,7 @@ const TopNavbar = ({ id }) => {
 
         <button
           onClick={handleAssetPage}
+          title="คลังเก็บรูปภาพและเสียง"
           className="flex items-center gap-2 text-black-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95"
         >
           <Folder className="w-4 h-4" />
@@ -104,11 +107,12 @@ const TopNavbar = ({ id }) => {
 
         <button
           onClick={handleExportClick}
+          title="ดาวน์โหลดไฟล์เนื้อเรื่อง พร้อม Assets"
           disabled={isExporting}
           className="flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95 "
         >
           <FileDown className="w-4 h-4" />
-          <span>{isExporting ? "Exporting..." : "Export .rpy"}</span>
+          <span>{isExporting ? "Exporting..." : "Export ZIP"}</span>
         </button>
       </div>
     </div>

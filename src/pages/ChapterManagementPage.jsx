@@ -72,6 +72,7 @@ const ChapterContent = ({ projectId: id }) => {
     setFocusedBlockId,
     handleAddBlock,
     handleUpdateBlock,
+    handleMoveBlock,
     handleDeleteBlock,
     clearPendingDeletions,
     loading: blocksLoading,
@@ -212,6 +213,7 @@ const ChapterContent = ({ projectId: id }) => {
           onAddBlock={handleAddBlock}
           handleUpdateBlock={handleUpdateBlock}
           handleDeleteBlock={handleDeleteBlock}
+          handleMoveBlock={handleMoveBlock}
           focusedBlockId={focusedBlockId}
           setFocusedBlockId={setFocusedBlockId}
           inputRef={inputRef}

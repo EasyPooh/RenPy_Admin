@@ -19,6 +19,7 @@ const WorkspaceContainer = ({
   onAddBlock,
   handleUpdateBlock,
   handleDeleteBlock,
+  handleMoveBlock,
   focusedBlockId,
   setFocusedBlockId,
   inputRef,
@@ -33,7 +34,7 @@ const WorkspaceContainer = ({
 }) => {
   const characterList = workspace?.start_characters || [];
 
-  const currentBlocks = blocks[currentChapter?.id] || [];
+  const currentBlocks = blocks || [];
 
   const dialogueBlocks = currentBlocks.filter((b) => b.type === "dialogue");
   const mappedDialogueOptions = dialogueBlocks.map((block, index) => {
@@ -118,7 +119,7 @@ const WorkspaceContainer = ({
           ) : (
             /* วนลูปโชว์บล็อกบทพูด */
             <div className="w-full space-y-3">
-              {blocks.map((block, index) => {
+              {currentBlocks.map((block, index) => {
                 const isGhosted =
                   returnBlockIndex !== -1 && index > returnBlockIndex;
                 const currentBlockNumber = index + 1;
@@ -133,6 +134,10 @@ const WorkspaceContainer = ({
                       characterList={workspace?.start_characters || []}
                       block={block}
                       index={index}
+                      onMoveUp={() => handleMoveBlock(index, "up")}
+                      onMoveDown={() => handleMoveBlock(index, "down")}
+                      isFirst={index === 0}
+                      isLast={index === currentBlocks.length - 1}
                       handleDeleteBlock={handleDeleteBlock}
                       onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกบทพูดด้วย
                       handleUpdateBlock={handleUpdateBlock}
@@ -155,6 +160,11 @@ const WorkspaceContainer = ({
                       backgroundEffect={block.backgroundEffect}
                       backgroundEffectSpeed={block.backgroundEffectSpeed}
                       block={block}
+                      index={index}
+                      onMoveUp={() => handleMoveBlock(index, "up")}
+                      onMoveDown={() => handleMoveBlock(index, "down")}
+                      isFirst={index === 0}
+                      isLast={index === currentBlocks.length - 1}
                       handleDeleteBlock={handleDeleteBlock}
                       onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
@@ -177,6 +187,11 @@ const WorkspaceContainer = ({
                       spriteposition={block.spriteposition}
                       spriteSpeed={block.spriteSpeed}
                       block={block}
+                      index={index}
+                      onMoveUp={() => handleMoveBlock(index, "up")}
+                      onMoveDown={() => handleMoveBlock(index, "down")}
+                      isFirst={index === 0}
+                      isLast={index === currentBlocks.length - 1}
                       handleDeleteBlock={handleDeleteBlock}
                       onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
@@ -198,6 +213,11 @@ const WorkspaceContainer = ({
                       audiocommand={block.audiocommand}
                       audiotype={block.audiotype}
                       block={block}
+                      index={index}
+                      onMoveUp={() => handleMoveBlock(index, "up")}
+                      onMoveDown={() => handleMoveBlock(index, "down")}
+                      isFirst={index === 0}
+                      isLast={index === currentBlocks.length - 1}
                       handleDeleteBlock={handleDeleteBlock}
                       onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
@@ -217,6 +237,11 @@ const WorkspaceContainer = ({
                       id={block.id}
                       choice={block.choice}
                       block={block}
+                      index={index}
+                      onMoveUp={() => handleMoveBlock(index, "up")}
+                      onMoveDown={() => handleMoveBlock(index, "down")}
+                      isFirst={index === 0}
+                      isLast={index === currentBlocks.length - 1}
                       handleDeleteBlock={handleDeleteBlock}
                       onAddBlock={onAddBlock} // ส่งฟังก์ชันเพิ่มบล็อกลงไปที่แต่ละบล็อกฉากด้วย
                       handleUpdateBlock={handleUpdateBlock}
@@ -234,6 +259,11 @@ const WorkspaceContainer = ({
                     <JumpSection
                       key={block.id}
                       id={block.id}
+                      index={index}
+                      onMoveUp={() => handleMoveBlock(index, "up")}
+                      onMoveDown={() => handleMoveBlock(index, "down")}
+                      isFirst={index === 0}
+                      isLast={index === currentBlocks.length - 1}
                       target_chapter_id={block.target_chapter_id}
                       action_type={block.action_type} // ดึงค่า Flatten State จากตัวบล็อกตรง ๆ
                       chapterList={allChapters} // ส่งรายชื่อ Chapter ทั้งหมดเข้าไปตามที่คุณใช้ใน Choice

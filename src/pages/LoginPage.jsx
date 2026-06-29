@@ -32,6 +32,12 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-6">
       {/* Card Container: ขาว มน คลีน */}
       <div className="w-full max-w-md bg-white p-10 rounded-2xl border border-slate-100 shadow-sm">
+        <button
+          onClick={() => navigate("/")} // เปลี่ยน '/' เป็น Path หน้าแรกของระบบที่คุณต้องการ
+          className="w-full text-slate-500 hover:text-[#8B5CF6] text-sm py-2 transition-all text-left "
+        >
+          ← กลับสู่หน้าหลัก
+        </button>
         {/* Header Section */}
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold text-slate-800">Ren'Py Admin</h2>
@@ -93,6 +99,12 @@ const LoginPage = () => {
               ยังไม่มีบัญชี?{" "}
               <span className="font-semibold underline">สมัครสมาชิกที่นี่</span>
             </button>
+            {/* <button
+              onClick={() => navigate("/")} // เปลี่ยน '/' เป็น Path หน้าแรกของระบบที่คุณต้องการ
+              className="inline-block text-sm text-slate-400 hover:text-slate-600 transition-colors mb-5 text-center"
+            >
+              กลับสู่หน้าหลัก
+            </button>*/}
           </div>
         </form>
       </div>

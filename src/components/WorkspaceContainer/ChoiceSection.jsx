@@ -19,6 +19,10 @@ const ChoiceSection = ({
   ],*/
   isGhosted,
   blockNumber,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
   characterList,
 }) => {
   const inputRef = useRef(null);
@@ -227,25 +231,80 @@ const ChoiceSection = ({
 
         {/* ปุ่มลบ Block (อ้างอิงไอคอนและสไตล์จาก AudioSection) */}
         {!isGhosted && (
-          <button
-            onClick={() => handleDeleteBlock(id)}
-            className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-bold text-black-400 tracking-wider">
+              เลื่อนบล็อก
+            </label>
+            {/* กลุ่มปุ่มลูกศร สลับขึ้น-ลง */}
+            <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+              {/* ปุ่มเลื่อนขึ้น */}
+              <button
+                type="button"
+                onClick={onMoveUp}
+                disabled={isFirst}
+                title="เลื่อนบล็อกขึ้น"
+                className="p-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4.5 15.75l7.5-7.5 7.5 7.5"
+                  />
+                </svg>
+              </button>
+              <div className="w-px h-4 bg-gray-200" /> {/* เส้นแบ่งกลางเล็กๆ */}
+              {/* ปุ่มเลื่อนลง */}
+              <button
+                type="button"
+                onClick={onMoveDown}
+                disabled={isLast}
+                title="เลื่อนบล็อกลง"
+                className="p-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* ปุ่มลบเดิม */}
+            <button
+              onClick={() => handleDeleteBlock(id)}
+              className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-lg shadow-sm"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-            ลบ
-          </button>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              ลบ
+            </button>
+          </div>
         )}
       </div>
 

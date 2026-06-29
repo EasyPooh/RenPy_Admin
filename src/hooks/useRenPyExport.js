@@ -524,7 +524,7 @@ export const useRenPyExport = () => {
 
       setExportProgress("กำลังดาวน์โหลดไฟล์ลงเครื่อง...");
       const zipBlob = await zip.generateAsync({ type: "blob" });
-      const safeFileName = projectName.toLowerCase().replace(/[^a-z0-9]/g, "_");
+     const safeFileName = projectName.toLowerCase().replace(/[\/:*?"<>|]/g, "_").trim();
       saveAs(zipBlob, `${safeFileName || "renpy_project"}_export.zip`);
 
     } catch (error) {
