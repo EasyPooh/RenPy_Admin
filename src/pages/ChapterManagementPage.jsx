@@ -62,7 +62,7 @@ const ChapterContent = ({ projectId: id }) => {
     allConfigs,
     updateConfig,
     loading: configLoading,
-  } = useChapterConfig(id, activeChapterId, setIsDataChanged);
+  } = useChapterConfig(id, activeChapterId, isDataChanged, setIsDataChanged);
 
   const {
     blocks,
@@ -76,7 +76,7 @@ const ChapterContent = ({ projectId: id }) => {
     handleDeleteBlock,
     clearPendingDeletions,
     loading: blocksLoading,
-  } = useBlocks(id, activeChapterId, setIsDataChanged);
+  } = useBlocks(id, activeChapterId, isDataChanged, setIsDataChanged);
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
@@ -91,17 +91,6 @@ const ChapterContent = ({ projectId: id }) => {
   ]);
   const [tagInput, setTagInput] = useState("");
   const [tempTags, setTempTags] = useState([]);
-
-  // 2. [แก้ไข] ปรับเงื่อนไขใน useEffect ตัว Auto-Save ด้านล่างนี้
-  useEffect(() => {
-    // 🟢 เพิ่มตัวแปร isDataChanged เข้าไปในเงื่อนไข เพื่อล็อกไม่ให้ข้อมูลเก่าจาก DB วิ่งมาเขียนทับดราฟต์
-    if (isDataChanged && allBlocks && Object.keys(allBlocks).length > 0) {
-      localStorage.setItem(
-        `draft_blocks_project_${id}`,
-        JSON.stringify(allBlocks),
-      );
-    }
-  }, [allBlocks, id, isDataChanged]); // 🟢 เพิ่ม isDataChanged เข้ามาใน Dependencies
 
   // 🟢 2. [เพิ่ม] ทำเช่นเดียวกันกับ Config ของแต่ละบท (เช่น ฉากหลังเริ่มต้น, เพลงเริ่มต้น)
   useEffect(() => {
