@@ -18,9 +18,9 @@ export const useSaveManager = () => {
     console.log("🚨 ปุ่ม Save ถูกกดจริง! ฟังก์ชันใน useSaveManager เริ่มทำงานแล้ว");
     console.log("🔍 ตรวจสอบค่าที่ส่งเข้ามาในฟังก์ชัน -> allConfigs:", allConfigs, " | allBlocks:", allBlocks);
 
-    localStorage.removeItem(`draft_blocks_project_${id}`);
-    localStorage.removeItem(`draft_configs_project_${id}`);
-    localStorage.removeItem(`draft_deletions_project_${id}`);
+    localStorage.removeItem(`draft_blocks_project_${projectId}`);
+localStorage.removeItem(`draft_configs_project_${projectId}`);
+localStorage.removeItem(`draft_deletions_project_${projectId}`);
     
     setIsSaving(true);
     try {
