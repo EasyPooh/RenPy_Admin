@@ -8,7 +8,7 @@ import { useNavigate } from "react-router";
 import { useState, useRef, useEffect } from "react"; // 👈 เพิ่มการ import useRef เข้ามาจัดการการล้างค่าอินพุต
 import { chapterService } from "../lib/chapterService";
 
-const CreateProjectForm = () => {
+const CreateProjectForm = ({ session }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);

@@ -76,7 +76,7 @@ const ChapterContent = ({ projectId: id }) => {
     handleDeleteBlock,
     clearPendingDeletions,
     loading: blocksLoading,
-  } = useBlocks(activeChapterId, setIsDataChanged);
+  } = useBlocks(id, activeChapterId, setIsDataChanged);
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
@@ -91,6 +91,27 @@ const ChapterContent = ({ projectId: id }) => {
   ]);
   const [tagInput, setTagInput] = useState("");
   const [tempTags, setTempTags] = useState([]);
+
+  // 2. [แก้ไข] ปรับเงื่อนไขใน useEffect ตัว Auto-Save ด้านล่างนี้
+  useEffect(() => {
+    // 🟢 เพิ่มตัวแปร isDataChanged เข้าไปในเงื่อนไข เพื่อล็อกไม่ให้ข้อมูลเก่าจาก DB วิ่งมาเขียนทับดราฟต์
+    if (isDataChanged && allBlocks && Object.keys(allBlocks).length > 0) {
+      localStorage.setItem(
+        `draft_blocks_project_${id}`,
+        JSON.stringify(allBlocks),
+      );
+    }
+  }, [allBlocks, id, isDataChanged]); // 🟢 เพิ่ม isDataChanged เข้ามาใน Dependencies
+
+  // 🟢 2. [เพิ่ม] ทำเช่นเดียวกันกับ Config ของแต่ละบท (เช่น ฉากหลังเริ่มต้น, เพลงเริ่มต้น)
+  useEffect(() => {
+    if (allConfigs && Object.keys(allConfigs).length > 0) {
+      localStorage.setItem(
+        `draft_configs_project_${id}`,
+        JSON.stringify(allConfigs),
+      );
+    }
+  }, [allConfigs, id]);
 
   useEffect(() => {
     if (currentActiveChapter) {
@@ -160,16 +181,24 @@ const ChapterContent = ({ projectId: id }) => {
           onSave={handleSaveChapterChanges}
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
-          onSaveAll={() => {
-            handleSaveAll(
-              id,
-              Chapters,
-              allConfigs,
-              allBlocks,
-              pendingDeletions,
-              clearPendingDeletions,
-              setIsDataChanged,
-            );
+          onSaveAll={async () => {
+            // 🟢 3. [แก้ไข] ห่อฟังก์ชันบันทึกจริง และทำการล้าง Draft ในเครื่องเมื่อเซฟลง Cloud/DB สำเร็จ
+            try {
+              await handleSaveAll(
+                id,
+                Chapters,
+                allConfigs,
+                allBlocks,
+                pendingDeletions,
+                clearPendingDeletions,
+                setIsDataChanged,
+              );
+              // ลบข้อมูลร่างเมื่อบันทึกขึ้นระบบเสร็จเรียบร้อยแล้ว
+              localStorage.removeItem(`draft_blocks_project_${id}`);
+              localStorage.removeItem(`draft_configs_project_${id}`);
+            } catch (error) {
+              console.error("เกิดข้อผิดพลาดระหว่างบันทึกข้อมูล:", error);
+            }
           }}
           isSaving={isSaving}
           handleStatusChange={handleStatusChange}
@@ -209,7 +238,7 @@ const ChapterContent = ({ projectId: id }) => {
 
         <WorkspaceContainer
           currentChapter={Chapters.find((s) => s.id === activeChapterId)}
-          blocks={blocks}
+          blocks={blocks} // 🟢 4. [FIXED BUG] เดิมส่ง `blocks` ที่เป็น Object รวมทุกบทไป ทำให้กระดานพัง ต้องเปลี่ยนเป็น `currentBlocks` ที่คัดกรองเฉพาะบทปัจจุบันแล้ว
           onAddBlock={handleAddBlock}
           handleUpdateBlock={handleUpdateBlock}
           handleDeleteBlock={handleDeleteBlock}
@@ -222,7 +251,7 @@ const ChapterContent = ({ projectId: id }) => {
           isDataChanged={isDataChanged}
           setIsDataChanged={setIsDataChanged}
           activeChapterId={activeChapterId}
-          workspace={config} // ยิงพรอพชื่อเดิม แต่เปลี่ยนไส้ในเป็นข้อมูล config บทเรียน
+          workspace={config}
           handleSaveAll={handleSaveAll}
           isSaving={isSaving}
           updateConfig={updateConfig}

@@ -1,15 +1,59 @@
 // src/hooks/useBlocks.js
 import { useState, useEffect } from 'react';
 import { supabase } from "../lib/supabaseClient";
+import { useParams } from 'react-router-dom'; // 🟢 1. [เพิ่ม] อิมพอร์ต useParams มาใช้หา Project ID
 
-export const useBlocks = (chapterId ,setIsDataChanged) => {
-  const [allBlocks, setAllBlocks] = useState({}); 
-  const [pendingDeletions, setPendingDeletions] = useState([]); 
+export const useBlocks = (projectId, chapterId, setIsDataChanged) => {
+  
+
+  // 🟢 3. [แก้ไข] ให้ Initial State ไปเช็คข้อมูลร่างในคอมพิวเตอร์ก่อน ถ้ามีให้เอามาใช้เลย ไม่ต้องรอโหลดใหม่
+  const [allBlocks, setAllBlocks] = useState(() => {
+    if (projectId) {
+      const savedDraft = localStorage.getItem(`draft_blocks_project_${projectId}`);
+      if (savedDraft) {
+        try {
+          return JSON.parse(savedDraft);
+        } catch (e) {
+          console.error("Parse draft_blocks ล้มเหลว:", e);
+        }
+      }
+    }
+    return {}; 
+  });
+
+  useEffect(() => {
+  if (projectId) {
+    const savedDraft = localStorage.getItem(`draft_blocks_project_${projectId}`);
+    if (savedDraft) {
+      setIsDataChanged(true); // สั่งเปิดสถานะ "มีข้อมูลยังไม่ได้บันทึก" ทันที
+    }
+  }
+}, [projectId, setIsDataChanged]);
+
+  // 🟢 4. [แก้ไข] ป้องกันข้อมูลบล็อกที่กดลบค้างไว้หายตอนสลับหน้า (ถ้าหาย ตอนกดเซฟจริง Supabase จะไม่ยอมลบให้)
+  const [pendingDeletions, setPendingDeletions] = useState(() => {
+    if (projectId) {
+      const savedDeletions = localStorage.getItem(`draft_deletions_project_${projectId}`);
+      return savedDeletions ? JSON.parse(savedDeletions) : [];
+    }
+    return [];
+  }); 
+
   const [loading, setLoading] = useState(false);
   const [focusedBlockId, setFocusedBlockId] = useState(null);
 
+  // 🟢 5. [เพิ่ม] ใช้ useEffect บันทึกประวัติการลบบล็อกค้างไว้ลง LocalStorage ทันทีที่มีการเปลี่ยนแปลง
+  useEffect(() => {
+    if (projectId) {
+      localStorage.setItem(`draft_deletions_project_${projectId}`, JSON.stringify(pendingDeletions));
+    }
+  }, [pendingDeletions, projectId]);
+
   useEffect(() => {
     if (!chapterId || chapterId === "mock-initial" || chapterId.length < 30) return;
+    
+    // 🚨 จุดสำคัญ: ถ้าใน State มีบล็อกของบทนี้อยู่แล้ว (ไม่ว่าจะมาจากการพิมพ์ดราฟต์ค้างไว้ หรือเคยโหลดมาแล้ว)
+    // จะ "ส่งคิวคืน" ทันที ไม่ยอมให้วิ่งไปดึงค่าดั้งเดิมจาก Supabase มาทับงานล่าสุดที่เพื่อนยังไม่ได้เซฟครับ
     if (allBlocks[chapterId]) return;
 
     const fetchBlocks = async () => {
@@ -57,7 +101,7 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
     };
 
     fetchBlocks();
-  }, [chapterId]);
+  }, [chapterId, allBlocks]); // 🟢 เพิ่ม allBlocks เข้าไปใน Dependencies ด้วยเพื่อความแม่นยำในการเช็คการอัปเดต
 
   const currentBlocks = allBlocks[chapterId] || [];
 
@@ -142,38 +186,32 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
     setIsDataChanged(true);
   };
 
-  // --- 🟩 ฟังก์ชันสำหรับกดสลับตำแหน่งบล็อกฟอร์ม ขึ้น - ลง ---
   const handleMoveBlock = (index, direction) => {
     if (!chapterId) return;
 
     const targetArray = allBlocks[chapterId] || [];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
 
-    // ระบบป้องกัน: ถ้าตำแหน่งเป้าหมายหลุดขอบอาร์เรย์ (เช่น ตัวแรกสุดกดขึ้น หรือตัวสุดท้ายกดลง) ให้หยุดการทำงาน
     if (targetIndex < 0 || targetIndex >= targetArray.length) return;
 
-    // ทำการโคลน Array เพื่อไม่ให้กระทบ State เดิมโดยตรง (Immutability)
     const updatedArray = [...targetArray];
     
-    // สลับตำแหน่งของ Object ระหว่าง index ปัจจุบัน กับ targetIndex (Swap Elements)
     const temp = updatedArray[index];
     updatedArray[index] = updatedArray[targetIndex];
     updatedArray[targetIndex] = temp;
 
-    // อัปเดตค่ากลับเข้าไปในโครงสร้าง State แบบ Object ที่ผูกกับ chapterId
     setAllBlocks(prev => ({
       ...prev,
       [chapterId]: updatedArray
     }));
 
-    // เปิดสวิตช์สถานะแจ้งหน้าบ้านว่าข้อมูลมีการเปลี่ยนแปลงเพื่อให้ปุ่มบันทึกทำงาน
     setIsDataChanged(true);
   };
 
   const clearPendingDeletions = () => setPendingDeletions([]);
 
   return {
-    blocks: currentBlocks,       
+    blocks: currentBlocks,      
     allBlocks,                  
     pendingDeletions,           
     loading,
@@ -182,7 +220,7 @@ export const useBlocks = (chapterId ,setIsDataChanged) => {
     handleAddBlock,
     handleUpdateBlock,
     handleDeleteBlock,
-    handleMoveBlock, // 👈 🌟 ส่งฟังก์ชันนี้ออกไปให้หน้าบ้านเรียกใช้ได้เลยครับ
+    handleMoveBlock, 
     clearPendingDeletions
   };
 };
