@@ -17,15 +17,18 @@ const Allproject = ({ session }) => {
   // [จุดแก้ไขที่ 1] อัปเดต useEffect ให้กรองข้อมูลตาม user_id
   useEffect(() => {
     const fetchProjects = async () => {
-      // ตรวจสอบความปลอดภัย: ถ้ายังไม่มี session หรือ user id ให้ข้ามการทำงานไปก่อน
-      if (!session?.user?.id) return;
+      // ถ้ายืนยันตัวตนยังไม่เสร็จ หรือไม่มี session ให้ปิด loading แล้วเด้งออกไปก่อน
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
         const { data, error } = await supabase
           .from("Projects")
           .select("*")
-          .eq("user_id", session.user.id) // 🔥 เพิ่มบรรทัดนี้: กรองเฉพาะโปรเจคที่เป็นของ user คนนี้
+          .eq("user_id", session.user.id)
           .order("created_at", { ascending: false });
 
         if (error) throw error;
