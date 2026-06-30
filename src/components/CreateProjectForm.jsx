@@ -89,7 +89,7 @@ const CreateProjectForm = () => {
             game_type: formData.game_type,
             status: formData.status,
             image_url: finalImageUrl,
-            user_id: MOCK_USER_ID, // ใช้ Mock User ID ที่เรากำหนดไว้ใน supabaseClient.js
+            user_id: session?.user?.id, // ใช้ Mock User ID ที่เรากำหนดไว้ใน supabaseClient.js
           },
         ])
         .select();
