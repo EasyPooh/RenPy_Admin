@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 
-// 1. รับค่า session เข้ามาเป็น Prop ตรงนี้ครับ
+// 1. รับค่า session เข้ามาเป็น Prop
 const Herosection = ({ session }) => (
   <section className="pt-32 pb-20 px-4 bg-linear-to-b from-purple-50 to-white text-center">
     <h1 className="text-5xl md:text-6xl font-bold mb-6">

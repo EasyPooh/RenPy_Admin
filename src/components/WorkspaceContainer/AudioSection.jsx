@@ -1,5 +1,5 @@
-import { audio } from "framer-motion/client";
 import React, { useState, useEffect, useRef, forwardRef } from "react";
+import Select from "react-select";
 
 const AudioSection = ({
   id,
@@ -17,7 +17,7 @@ const AudioSection = ({
   onMoveDown,
   isFirst,
   isLast,
-  assets,
+  assets = [],
 }) => {
   const inputRef = useRef(null);
 
@@ -27,7 +27,7 @@ const AudioSection = ({
     }
   }, [focusedBlockId, id, isGhosted]);
 
-  // 🎯 1. กรองไฟล์เสียงแยกตามประเภทแบบปลอดภัย (สวม || [] ครอบไว้เสมอ)
+  // กรองไฟล์เสียงแยกตามประเภทแบบปลอดภัย
   const filteredAudioAssets = (assets || []).filter((asset) => {
     if (audiotype === "bgm") {
       return asset.file_type === "music";
@@ -36,6 +36,44 @@ const AudioSection = ({
     }
     return false;
   });
+
+  // ชุดแต่งสไตล์สีม่วงพรีเมียม
+  const selectStyles = {
+    control: (baseStyles, state) => ({
+      ...baseStyles,
+      borderColor: state.isFocused ? "#a855f7" : "#e5e7eb",
+      boxShadow: "none",
+      "&:hover": {
+        borderColor: state.isFocused ? "#a855f7" : "#d1d5db",
+      },
+      borderRadius: "0.5rem",
+      fontSize: "0.875rem",
+      fontFamily: "sans-serif",
+      paddingTop: "1px",
+      paddingBottom: "1px",
+    }),
+    menu: (baseStyles) => ({
+      ...baseStyles,
+      fontSize: "0.875rem",
+      borderRadius: "0.5rem",
+      zIndex: 50,
+    }),
+    menuPortal: (baseStyles) => ({
+      ...baseStyles,
+      zIndex: 9999,
+    }),
+  };
+
+  // แปลงชุดข้อมูลเสียงให้เข้าฟอร์แมต { value, label } ของ react-select
+  const audioOptions = filteredAudioAssets.map((asset) => ({
+    value: String(asset.id),
+    label: asset.file_name || `ไฟล์เสียง #${asset.id}`,
+  }));
+
+  // ค้นหา Object ตัวเลือกเสียงที่ตรงกับค่าปัจจุบันในระบบ
+  const currentAudioOption = audio
+    ? audioOptions.find((opt) => opt.value === String(audio))
+    : null;
 
   return (
     <div
@@ -50,7 +88,6 @@ const AudioSection = ({
           <label className="text-xs font-bold text-black-400 tracking-wider">
             #{blockNumber} 🔊 ช่องจัดการเสียง
           </label>
-          {/* 🚨 1. แสดงข้อความเตือนสีแดงเมื่อบล็อกถูก Ghosted */}
           {isGhosted && (
             <span className="text-xs text-red-500 font-bold animate-pulse">
               🚨 บล็อกนี้จะไม่ทำงานในเกม (อยู่หลังจุดสิ้นสุดเนื้อเรื่อง)
@@ -62,9 +99,7 @@ const AudioSection = ({
             <label className="text-xs font-bold text-black-400 tracking-wider">
               เลื่อนบล็อก
             </label>
-            {/* กลุ่มปุ่มลูกศร สลับขึ้น-ลง */}
             <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-              {/* ปุ่มเลื่อนขึ้น */}
               <button
                 type="button"
                 onClick={onMoveUp}
@@ -86,8 +121,7 @@ const AudioSection = ({
                   />
                 </svg>
               </button>
-              <div className="w-px h-4 bg-gray-200" /> {/* เส้นแบ่งกลางเล็กๆ */}
-              {/* ปุ่มเลื่อนลง */}
+              <div className="w-px h-4 bg-gray-200" />
               <button
                 type="button"
                 onClick={onMoveDown}
@@ -111,7 +145,6 @@ const AudioSection = ({
               </button>
             </div>
 
-            {/* ปุ่มลบเดิม */}
             <button
               onClick={() => handleDeleteBlock(id)}
               className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-lg shadow-sm"
@@ -134,9 +167,11 @@ const AudioSection = ({
           </div>
         )}
       </div>
-      <div className="flex gap-3">
+
+      <div className="flex gap-3 w-full">
+        {/* [ช่องที่ 1] คำสั่งเสียง */}
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             คำสั่งเสียง
           </label>
           <select
@@ -145,7 +180,7 @@ const AudioSection = ({
             onChange={(e) =>
               handleUpdateBlock(id, "audiocommand", e.target.value)
             }
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="" disabled>
               [ เลือกคำสั่งเสียง ]
@@ -154,49 +189,64 @@ const AudioSection = ({
             <option value="play">play</option>
           </select>
         </div>
+
+        {/* 🛠️ [ช่องที่ 2] ประเภทเสียง - เพิ่มฟังก์ชันเคลียร์ค่าเก่าอัตโนมัติ */}
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             ประเภทเสียง
           </label>
           <select
             value={audiotype}
             disabled={isGhosted}
-            onChange={(e) => handleUpdateBlock(id, "audiotype", e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+            onChange={(e) => {
+              handleUpdateBlock(id, "audiotype", e.target.value);
+              handleUpdateBlock(id, "audio", ""); // ✨ ล้างค่า ID เสียงเก่าออกทันทีเมื่อสลับประเภทเสียง
+            }}
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="bgm">background music</option>
             <option value="sfx">sound effects</option>
           </select>
         </div>
+
+        {/* [ช่องที่ 3] เลือกไฟล์เสียง */}
         {audiocommand === "play" && (
-          <div className="w-1/4 min-w-30">
-            <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <div className="w-1/4 min-w-44">
+            <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
               เลือกไฟล์เสียง
             </label>
-
-            <select
-              value={audio}
-              disabled={isGhosted}
-              onChange={(e) => handleUpdateBlock(id, "audio", e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
-            >
-              {/* 🎯 2. แสดง Placeholder ตามสถานะเพลงในคลังจริง */}
-              {filteredAudioAssets.length === 0 ? (
-                <option value="">
-                  ❌ ไม่มีไฟล์{" "}
-                  {audiotype === "bgm" ? "เพลงประกอบ" : "เอฟเฟกต์เสียง"} ในระบบ
-                  (กรุณาอัปโหลดไฟล์ใน asset library ก่อน)
-                </option>
-              ) : (
-                <option value="">[ เลือกเสียงที่ต้องการ ]</option>
-              )}
-
-              {filteredAudioAssets.map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.file_name}
-                </option>
-              ))}
-            </select>
+            <Select
+              options={audioOptions}
+              value={currentAudioOption}
+              isDisabled={isGhosted}
+              onChange={(selectedOption) => {
+                handleUpdateBlock(
+                  id,
+                  "audio",
+                  selectedOption ? selectedOption.value : "",
+                );
+              }}
+              placeholder={
+                filteredAudioAssets.length === 0
+                  ? `❌ ไม่มีไฟล์ ${audiotype === "bgm" ? "เพลงประกอบ" : "เอฟเฟกต์เสียง"} ในระบบ`
+                  : "[ เลือกเสียงที่ต้องการ ]"
+              }
+              isClearable={true}
+              isSearchable={true}
+              menuPortalTarget={
+                typeof window !== "undefined" ? document.body : null
+              }
+              filterOption={(option, rawInput) => {
+                const labelText = option.label
+                  ? String(option.label).toLowerCase()
+                  : "";
+                const searchInput = rawInput
+                  ? String(rawInput).toLowerCase()
+                  : "";
+                return labelText.includes(searchInput);
+              }}
+              styles={selectStyles}
+            />
           </div>
         )}
       </div>

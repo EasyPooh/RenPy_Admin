@@ -13,15 +13,15 @@ const CreateProjectHeader = ({ backTo = "/AllProject" }) => {
         <ArrowLeft size={24} />
       </button>
 
-      {/* ไอคอนโปรเจค (สีม่วง) */}
+      {/* ไอคอนโปรเจกต์ (สีม่วง) */}
       <div className="bg-purple-600 p-3 rounded-2xl shadow-lg shadow-purple-200">
         <Gamepad2 className="text-white" size={28} />
       </div>
 
       {/* หัวข้อ */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">สร้างโปรเจคใหม่</h1>
-        <p className="text-gray-500 text-sm">กรอกข้อมูลโปรเจคของคุณ</p>
+        <h1 className="text-2xl font-bold text-slate-800">สร้างโปรเจกต์ใหม่</h1>
+        <p className="text-gray-500 text-sm">กรอกข้อมูลโปรเจกต์ของคุณ</p>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { BookOpen, ChevronDown, LogOut, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router";
-import { supabase } from "../lib/supabaseClient"; // ตรวจสอบตัวพิมพ์เล็ก-ใหญ่ให้ตรงกับไฟล์ของคุณนะครับ
+import { supabase } from "../lib/supabaseClient";
 
 const LandingNavbar = ({ session }) => {
   const navigate = useNavigate();
@@ -11,7 +11,15 @@ const LandingNavbar = ({ session }) => {
   const userEmail = session?.user?.email || "";
 
   // ฟังก์ชันออกจากระบบ
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
+    if (window.globalIsDataChanged === true) {
+      const isConfirmed = window.confirm(
+        "คุณแน่ใจใช่หรือไม่ที่จะออกจากระบบ? โปรดแน่ใจว่าคุณได้บันทึกงานแล้ว",
+      );
+
+      if (!isConfirmed) return; // ถ้าผู้ใช้กด Cancel ให้จบฟังก์ชันทันที (ไม่ล็อกเอาต์)
+      window.globalIsDataChanged = false; // ถ้าผู้ใช้กด OK ให้ปลดล็อกสถานะเพื่อเตรียมย้ายหน้า
+    }
     try {
       await supabase.auth.signOut();
       setIsOpen(false);
@@ -19,6 +27,7 @@ const LandingNavbar = ({ session }) => {
     } catch (error) {
       console.error("Error signing out:", error.message);
     }
+    alert("คุณออกจากระบบแล้ว");
   };
 
   return (
@@ -84,13 +93,13 @@ const LandingNavbar = ({ session }) => {
                         onClick={() => navigate("/Allproject")}
                         className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
                       >
-                        <LayoutDashboard className="w-4 h-4" /> โปรเจคของฉัน
+                        <LayoutDashboard className="w-4 h-4" /> โปรเจกต์ของฉัน
                       </button>
                     </div>
 
                     <div className="border-t border-slate-100 mt-1 pt-1 px-2">
                       <button
-                        onClick={handleSignOut}
+                        onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all font-medium"
                       >
                         <LogOut className="w-4 h-4" /> ออกจากระบบ

@@ -13,7 +13,8 @@ export const useSaveManager = () => {
     allBlocks, 
     pendingDeletions, 
     clearPendingDeletions, 
-    setIsDataChanged
+    setIsDataChanged,
+    isSilent = false
   ) => {
     console.log("🚨 ปุ่ม Save ถูกกดจริง! ฟังก์ชันใน useSaveManager เริ่มทำงานแล้ว");
     console.log("🔍 ตรวจสอบค่าที่ส่งเข้ามาในฟังก์ชัน -> allConfigs:", allConfigs, " | allBlocks:", allBlocks);
@@ -153,8 +154,11 @@ localStorage.removeItem(`draft_deletions_project_${projectId}`);
       }
 
       setIsDataChanged(false); 
+      if (!isSilent) {
       alert("💾 บันทึกโครงสร้างและบล็อกเนื้อหาทั้งหมดลงตารางบทเรียนสำเร็จเรียบร้อยแล้ว!");
-    } catch (error) {
+    } 
+    return true;
+  }catch (error) {
       console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูลแบบรวมกลุ่ม:", error);
       alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
     } finally {

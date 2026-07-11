@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef } from "react";
+// 1. ดึง Select เข้ามาใช้งานสำหรับช่องค้นหาตัวละคร
+import Select from "react-select";
 
 const SpriteSection = ({
   id,
@@ -17,7 +19,7 @@ const SpriteSection = ({
   onMoveDown,
   isFirst,
   isLast,
-  assets,
+  assets = [], // ใส่ default ป้องกันกรณีเลเยอร์บนไม่ได้ส่งค่ามา
 }) => {
   const inputRef = useRef(null);
 
@@ -28,6 +30,45 @@ const SpriteSection = ({
   }, [focusedBlockId, id, isGhosted]);
 
   const spriteAssets = assets.filter((asset) => asset.file_type === "sprite");
+
+  // 2. ชุดสไตล์สีม่วงแบบพรีเมียม ป้องกันเมนูดรอปดาวน์มุดทะลุขอบ
+  const selectStyles = {
+    control: (baseStyles, state) => ({
+      ...baseStyles,
+      borderColor: state.isFocused ? "#a855f7" : "#e5e7eb",
+      boxShadow: "none",
+      "&:hover": {
+        borderColor: state.isFocused ? "#a855f7" : "#d1d5db",
+      },
+      borderRadius: "0.5rem",
+      fontSize: "0.875rem",
+      fontFamily: "sans-serif",
+      paddingTop: "1px",
+      paddingBottom: "1px",
+    }),
+    menu: (baseStyles) => ({
+      ...baseStyles,
+      fontSize: "0.875rem",
+      borderRadius: "0.5rem",
+      zIndex: 50,
+    }),
+    menuPortal: (baseStyles) => ({
+      ...baseStyles,
+      zIndex: 9999,
+    }),
+  };
+
+  // 3. แปลงข้อมูลคลังภาพตัวละครให้อยู่ในฟอร์แมต { value, label } ของ react-select
+  const spriteOptions = spriteAssets.map((asset) => ({
+    value: String(asset.id),
+    label: asset.file_name || `ตัวละคร #${asset.id}`,
+  }));
+
+  // ตรวจหา Object ตัวเลือกที่เลือกอยู่ในปัจจุบัน
+  const currentSpriteOption = sprite
+    ? spriteOptions.find((opt) => opt.value === String(sprite))
+    : null;
+
   return (
     <div
       className={`relative flex flex-col gap-3 p-4 border rounded-xl mb-3 transition-all ${
@@ -41,7 +82,6 @@ const SpriteSection = ({
           <label className="text-xs font-bold text-black-400 tracking-wider">
             #{blockNumber} 🧑‍🤝‍🧑 ช่องจัดการภาพตัวละคร
           </label>
-          {/* 🚨 1. แสดงข้อความเตือนเมื่อโดน Ghosted */}
           {isGhosted && (
             <span className="text-xs text-red-500 font-bold animate-pulse">
               🚨 บล็อกนี้จะไม่ทำงานในเกม (อยู่หลังจุดสิ้นสุดเนื้อเรื่อง)
@@ -53,9 +93,7 @@ const SpriteSection = ({
             <label className="text-xs font-bold text-black-400 tracking-wider">
               เลื่อนบล็อก
             </label>
-            {/* กลุ่มปุ่มลูกศร สลับขึ้น-ลง */}
             <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-              {/* ปุ่มเลื่อนขึ้น */}
               <button
                 type="button"
                 onClick={onMoveUp}
@@ -77,8 +115,7 @@ const SpriteSection = ({
                   />
                 </svg>
               </button>
-              <div className="w-px h-4 bg-gray-200" /> {/* เส้นแบ่งกลางเล็กๆ */}
-              {/* ปุ่มเลื่อนลง */}
+              <div className="w-px h-4 bg-gray-200" />
               <button
                 type="button"
                 onClick={onMoveDown}
@@ -102,7 +139,6 @@ const SpriteSection = ({
               </button>
             </div>
 
-            {/* ปุ่มลบเดิม */}
             <button
               onClick={() => handleDeleteBlock(id)}
               className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-lg shadow-sm"
@@ -126,11 +162,10 @@ const SpriteSection = ({
         )}
       </div>
 
-      {/* ส่วนเนื้อหา Dropdown ที่จัดเรียงใหม่ */}
       <div className="flex gap-3 w-full">
-        {/* [ช่องที่ 1] คำสั่งภาพตัวละคร (ย้ายมาไว้หน้าสุดเพื่อให้สอดคล้องกับบล็อกเสียง) */}
+        {/* [ช่องที่ 1] คำสั่งภาพตัวละคร */}
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             คำสั่งภาพตัวละคร
           </label>
           <select
@@ -139,45 +174,56 @@ const SpriteSection = ({
             onChange={(e) =>
               handleUpdateBlock(id, "spritecommand", e.target.value)
             }
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="show">show (แสดงตัวละคร)</option>
             <option value="hide">hide (ซ่อนตัวละคร)</option>
           </select>
         </div>
 
-        {/* [ช่องที่ 2] ภาพตัวละคร (Sprite) */}
-        <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+        {/* 🎯 [ช่องที่ 2] ภาพตัวละคร (Sprite) - เปลี่ยนเป็น React-Select แบบค้นหาได้ */}
+        <div className="w-1/4 min-w-44">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             ภาพตัวละคร (Sprite)
           </label>
-          <select
-            value={sprite}
-            disabled={isGhosted}
-            onChange={(e) => handleUpdateBlock(id, "sprite", e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
-          >
-            {/* 🎯 จัดการ Placeholder ตามจำนวนภาพตัวละครจริงในระบบ */}
-            {spriteAssets.length === 0 ? (
-              <option value="">
-                ❌ ยังไม่มีภาพตัวละครใน asset library
-                (กรุณาอัปโหลดไฟล์ภาพตัวละครก่อน)
-              </option>
-            ) : (
-              <option value="">[ เลือกภาพพื้นหลังเริ่มต้น ]</option>
-            )}
-            {spriteAssets.map((asset) => (
-              <option key={asset.id} value={asset.id}>
-                {asset.file_name}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={spriteOptions}
+            value={currentSpriteOption}
+            isDisabled={isGhosted}
+            onChange={(selectedOption) => {
+              handleUpdateBlock(
+                id,
+                "sprite",
+                selectedOption ? selectedOption.value : "",
+              );
+            }}
+            placeholder={
+              spriteAssets.length === 0
+                ? "❌ ยังไม่มีภาพตัวละครใน asset library (กรุณาอัปโหลดก่อน)"
+                : "[ เลือกภาพตัวละครเริ่มต้น ]"
+            }
+            isClearable={true}
+            isSearchable={true}
+            menuPortalTarget={
+              typeof window !== "undefined" ? document.body : null
+            }
+            filterOption={(option, rawInput) => {
+              const labelText = option.label
+                ? String(option.label).toLowerCase()
+                : "";
+              const searchInput = rawInput
+                ? String(rawInput).toLowerCase()
+                : "";
+              return labelText.includes(searchInput);
+            }}
+            styles={selectStyles}
+          />
         </div>
 
-        {/* [ช่องที่ 3] ตำแหน่งภาพตัวละคร (จะซ่อนตัวเมื่อคำสั่งเป็น hide และเหลือพื้นที่จองไว้คงรูปเด็กลงกลุ่มเดิม) */}
+        {/* [ช่องที่ 3] ตำแหน่งภาพตัวละคร */}
         {spritecommand !== "hide" && (
           <div className="w-1/4 min-w-30">
-            <label className="text-xs font-bold text-gray-400 tracking-wider">
+            <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
               ตำแหน่งภาพตัวละคร
             </label>
             <select
@@ -186,7 +232,7 @@ const SpriteSection = ({
               onChange={(e) =>
                 handleUpdateBlock(id, "spriteposition", e.target.value)
               }
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
             >
               <option value="left">left</option>
               <option value="center">center</option>
@@ -197,7 +243,7 @@ const SpriteSection = ({
 
         {/* [ช่องที่ 4] ความเร็วภาพตัวละคร */}
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             ความเร็วภาพตัวละคร
           </label>
           <select
@@ -206,7 +252,7 @@ const SpriteSection = ({
             onChange={(e) =>
               handleUpdateBlock(id, "spriteSpeed", e.target.value)
             }
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="none">none</option>
             <option value="fast">fast (0.2)</option>

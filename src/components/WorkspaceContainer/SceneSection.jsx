@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef } from "react";
+// 1. นำเข้า Select สำหรับทำช่องค้นหา
+import Select from "react-select";
 
 const SceneSection = ({
   id,
@@ -10,7 +12,7 @@ const SceneSection = ({
   onAddBlock,
   focusedBlockId,
   setFocusedBlockId,
-  assets,
+  assets = [], // กำหนด default ป้องกันบัคเผื่อไม่มีการส่งค่ามา
   blockNumber,
   onMoveUp,
   onMoveDown,
@@ -30,6 +32,44 @@ const SceneSection = ({
     (asset) => asset.file_type === "background",
   );
 
+  // 2. เตรียมชุดสไตล์สีม่วงสำหรับตู้ค้นหาพื้นหลัง
+  const selectStyles = {
+    control: (baseStyles, state) => ({
+      ...baseStyles,
+      borderColor: state.isFocused ? "#a855f7" : "#e5e7eb",
+      boxShadow: "none",
+      "&:hover": {
+        borderColor: state.isFocused ? "#a855f7" : "#d1d5db",
+      },
+      borderRadius: "0.5rem",
+      fontSize: "0.875rem",
+      fontFamily: "sans-serif",
+      paddingTop: "1px",
+      paddingBottom: "1px",
+    }),
+    menu: (baseStyles) => ({
+      ...baseStyles,
+      fontSize: "0.875rem",
+      borderRadius: "0.5rem",
+      zIndex: 50,
+    }),
+    menuPortal: (baseStyles) => ({
+      ...baseStyles,
+      zIndex: 9999,
+    }),
+  };
+
+  // 3. แปลงคลังภาพพื้นหลังให้เข้ากับ Format ของ react-select
+  const backgroundOptions = backgroundAssets.map((asset) => ({
+    value: String(asset.id),
+    label: asset.file_name || `คลังภาพ #${asset.id}`,
+  }));
+
+  // ค้นหา Object ตัวเลือกที่ตรงกับสถานะปัจจุบัน
+  const currentBackgroundOption = background
+    ? backgroundOptions.find((opt) => opt.value === String(background))
+    : null;
+
   return (
     <div
       className={`relative flex flex-col gap-3 p-4 border rounded-xl mb-3 transition-all ${
@@ -41,7 +81,7 @@ const SceneSection = ({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <label className="text-xs font-bold text-black-400 tracking-wider">
-            #{blockNumber} 🖼️ ช่องจัดการฉากพื้นหลัง
+            #{blockNumber} 🖼️ ช่องจัดการฉากหลัง และภาพประกอบ
           </label>
           {isGhosted && (
             <span className="text-xs text-red-500 font-bold animate-pulse">
@@ -54,9 +94,7 @@ const SceneSection = ({
             <label className="text-xs font-bold text-black-400 tracking-wider">
               เลื่อนบล็อก
             </label>
-            {/* กลุ่มปุ่มลูกศร สลับขึ้น-ลง */}
             <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-              {/* ปุ่มเลื่อนขึ้น */}
               <button
                 type="button"
                 onClick={onMoveUp}
@@ -78,8 +116,7 @@ const SceneSection = ({
                   />
                 </svg>
               </button>
-              <div className="w-px h-4 bg-gray-200" /> {/* เส้นแบ่งกลางเล็กๆ */}
-              {/* ปุ่มเลื่อนลง */}
+              <div className="w-px h-4 bg-gray-200" />
               <button
                 type="button"
                 onClick={onMoveDown}
@@ -103,7 +140,6 @@ const SceneSection = ({
               </button>
             </div>
 
-            {/* ปุ่มลบเดิม */}
             <button
               onClick={() => handleDeleteBlock(id)}
               className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-lg shadow-sm"
@@ -126,38 +162,51 @@ const SceneSection = ({
           </div>
         )}
       </div>
+
       <div className="flex gap-3">
-        <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
-            ฉากพื้นหลัง
+        {/* 🎯 4. เปลี่ยนเฉพาะตู้ "ฉากพื้นหลัง" เป็นแบบพิมพ์ค้นหาได้ */}
+        <div className="w-1/4 min-w-44">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
+            ฉากพื้นหลัง หรือภาพประกอบ
           </label>
-          <select
-            value={background}
-            disabled={isGhosted}
-            onChange={(e) =>
-              handleUpdateBlock(id, "background", e.target.value)
+          <Select
+            options={backgroundOptions}
+            value={currentBackgroundOption}
+            isDisabled={isGhosted}
+            onChange={(selectedOption) => {
+              handleUpdateBlock(
+                id,
+                "background",
+                selectedOption ? selectedOption.value : "",
+              );
+            }}
+            // จัดการ Placeholder แสดงผลแจ้งเตือนกรณีไม่มีรูปในระบบอัตโนมัติ
+            placeholder={
+              backgroundAssets.length === 0
+                ? "ไม่มีภาพพื้นหลังใน asset library"
+                : "[ เลือกภาพพื้นหลังเริ่มต้น ]"
             }
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
-          >
-            {/* 🎯 จัดการ Placeholder ตามจำนวนภาพพื้นหลังจริงในระบบ */}
-            {backgroundAssets.length === 0 ? (
-              <option value="">
-                ❌ ยังไม่มีภาพพื้นหลังใน asset library
-                (กรุณาอัปโหลดไฟล์ภาพพื้นหลังก่อน)
-              </option>
-            ) : (
-              <option value="">[ เลือกภาพพื้นหลังเริ่มต้น ]</option>
-            )}
-            {/* วนลูปเฉพาะเพลงที่มีอยู่จริงเข้ามาแสดงผล */}
-            {backgroundAssets.map((asset) => (
-              <option key={asset.id} value={asset.id}>
-                {asset.file_name}
-              </option>
-            ))}
-          </select>
+            isClearable={true}
+            isSearchable={true}
+            menuPortalTarget={
+              typeof window !== "undefined" ? document.body : null
+            }
+            filterOption={(option, rawInput) => {
+              const labelText = option.label
+                ? String(option.label).toLowerCase()
+                : "";
+              const searchInput = rawInput
+                ? String(rawInput).toLowerCase()
+                : "";
+              return labelText.includes(searchInput);
+            }}
+            styles={selectStyles}
+          />
         </div>
+
+        {/* 🔒 5. โครงสร้างดรอปดาวน์เดิม (ไม่เปลี่ยนแปลงตามคำขอ) */}
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             เอฟเฟกต์พื้นหลัง
           </label>
           <select
@@ -166,7 +215,7 @@ const SceneSection = ({
             onChange={(e) =>
               handleUpdateBlock(id, "backgroundEffect", e.target.value)
             }
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="none">(ไม่มีเอฟเฟกต์)</option>
             <option value="dissolve">dissolve</option>
@@ -175,8 +224,9 @@ const SceneSection = ({
             <option value="hpunch">hpunch</option>
           </select>
         </div>
+
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             ความเร็วเอฟเฟกต์
           </label>
           <select
@@ -185,7 +235,7 @@ const SceneSection = ({
             onChange={(e) =>
               handleUpdateBlock(id, "backgroundEffectSpeed", e.target.value)
             }
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="none">none</option>
             <option value="fast">fast (0.2)</option>

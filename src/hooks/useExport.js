@@ -21,7 +21,7 @@ export function useExport() {
 
       if (chaptersError) throw chaptersError;
       if (!chapters || chapters.length === 0) {
-        alert('ไม่พบข้อมูล Chapter ในโปรเจคนี้');
+        alert('ไม่พบข้อมูล Chapter ในโปรเจกต์นี้');
         setIsExporting(false); // เคลียร์สถานะกรณีไม่มีข้อมูล
         setExportProgress('');
         return null;

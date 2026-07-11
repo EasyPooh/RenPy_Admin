@@ -30,6 +30,14 @@ const Navbar = () => {
 
   // ฟังก์ชันสำหรับล็อกเอาต์ออกจากระบบ
   const handleLogout = () => {
+    if (window.globalIsDataChanged === true) {
+      const isConfirmed = window.confirm(
+        "คุณแน่ใจใช่หรือไม่ที่จะออกจากระบบ? โปรดแน่ใจว่าคุณได้บันทึกงานแล้ว",
+      );
+
+      if (!isConfirmed) return; // ❌ ถ้าผู้ใช้กด Cancel ให้จบฟังก์ชันทันที (ไม่ล็อกเอาต์)
+      window.globalIsDataChanged = false; // 🔓 ถ้าผู้ใช้กด OK ให้ปลดล็อกสถานะเพื่อเตรียมย้ายหน้า
+    }
     //  สั่งย้ายหน้าที่หน้า Landingpage ("/")
     navigate("/");
 
@@ -98,7 +106,7 @@ const Navbar = () => {
                     d="M15 10l-2 4m1 1l2-4m-10 6h12a3 3 0 003-3V7a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                   />
                 </svg>
-                โปรเจค
+                โปรเจกต์
               </button>
             </Link>
           </div>
@@ -169,7 +177,7 @@ const Navbar = () => {
                         onClick={() => navigate("/Allproject")}
                         className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
                       >
-                        <LayoutDashboard className="w-4 h-4" /> โปรเจคของฉัน
+                        <LayoutDashboard className="w-4 h-4" /> โปรเจกต์ของฉัน
                       </button>
                     </div>
 

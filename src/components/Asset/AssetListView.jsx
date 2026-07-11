@@ -8,6 +8,7 @@ const AssetListView = ({
   onOpenEdit,
   onRefresh,
   projectId,
+  setPreviewAsset,
 }) => {
   // ฟังก์ชันดึง URL รูปภาพจาก Storage จริงมาแสดงผล
   const getAssetPreviewUrl = (filePath) => {
@@ -60,8 +61,7 @@ const AssetListView = ({
     return `${(parseFloat(sizeInKb) / 1024).toFixed(1)} MB`;
   };
 
-  // ฟังก์ชันจัดการการลบasset
-  // 🎯 ฟังก์ชันจัดการการลบassetแบบสมบูรณ์ (Storage + Database)
+  // ฟังก์ชันจัดการการลบasset (Storage + Database)
   const handleDelete = async (asset) => {
     if (!asset || !asset.id) {
       alert("ไม่พบข้อมูล asset ที่ต้องการลบ");
@@ -74,7 +74,6 @@ const AssetListView = ({
     if (!confirmDelete) return;
 
     try {
-      // 1️⃣ ขั้นตอนที่ 1: ลบไฟล์ดิบออกจาก Supabase Storage Buckets "game-assets"
       if (asset.storage_path) {
         const { error: storageError } = await supabase.storage
           .from("game-assets")
@@ -90,9 +89,6 @@ const AssetListView = ({
         }
       }
 
-      // 2️⃣ ขั้นตอนที่ 2: ลบแถวข้อมูลออกจากฐานข้อมูลตาราง (Database)
-      // ⚠️ คำเตือน: ระบบจะตรวจหาชื่อตารางอัตโนมัติ แต่ถ้าเกิด error ให้เปลี่ยนคำว่า "game_assets"
-      // ไปเป็นชื่อตารางเก็บ Asset จริงๆ ในฐานข้อมูลของคุณ (เช่น "Project_Assets" หรืออื่นๆ)
       const { error: dbError } = await supabase
         .from("assets")
         .delete()
@@ -102,9 +98,8 @@ const AssetListView = ({
 
       alert("ลบ Asset สำเร็จเรียบร้อยแล้ว!");
 
-      // 3️⃣ ขั้นตอนที่ 3: รีเฟรชหน้าจอเพื่ออัปเดตลบการ์ดที่ถูกลบออกไป
       if (onRefresh) {
-        onRefresh(); // เรียกฟังก์ชันดึงข้อมูลใหม่ที่ส่งมาจาก Component แม่
+        onRefresh();
       }
     } catch (error) {
       console.error("Error during asset deletion:", error.message);
@@ -116,7 +111,7 @@ const AssetListView = ({
     <div className="w-full p-4">
       {assets.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <p className="text-gray-400">ยังไม่มี Assets ในโปรเจคนี้</p>
+          <p className="text-gray-400">ยังไม่มี Assets ในโปรเจกต์นี้</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -133,6 +128,14 @@ const AssetListView = ({
                 key={asset.id}
                 className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden group"
               >
+                {asset.file_type === "sprite" && (
+                  <button
+                    onClick={() => setPreviewAsset(asset)} // กดแล้วโยนข้อมูล asset เข้า State
+                    className=" top-2 right-2 z-10 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm transition-all hover:bg-indigo-600"
+                  >
+                    ⚙️ ปรับพิกัด
+                  </button>
+                )}
                 {/*ส่วนแสดงตัวอย่าง (Thumbnail) */}
                 <div className="w-full h-44 bg-gray-50 flex items-center justify-center border-b border-gray-100 relative overflow-hidden bg-linear-to-br from-gray-50 to-gray-100">
                   {isImageAsset && previewUrl ? (

@@ -1,4 +1,3 @@
-// src/components/Asset/AssetEmptyState.jsx
 import React from "react";
 
 const AssetEmptyState = () => {

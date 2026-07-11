@@ -99,22 +99,36 @@ const WorkspaceContainer = ({
           />
         </div>
 
-        <div className="border-t border-dashed border-gray-200 my-5"></div>
+        <div className="border-t border-dashed border-gray-300 my-5"></div>
 
         {/* 2. พื้นที่กระดานแสดงบล็อกคำสั่ง */}
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-4 bg-violet-50/30 border border-gray-200  rounded-xl">
           {blocks.length === 0 ? (
             /* กล่องแสดงสถานะเมื่อยังไม่มีบล็อก */
-            <div className="border border-dashed border-purple-200 bg-purple-50/10 rounded-xl h-full flex flex-col items-center justify-center text-gray-400 text-xs py-20 w-full">
-              <p className="font-semibold text-purple-950 mb-1">
+            <div className="border border-dashed border-purple-200 bg-purple-50/30 rounded-xl h-full flex flex-col items-center justify-center text-gray-400 text-xs py-20 w-full">
+              <p className="font-semibold text-purple-950 mb-2.5">
                 {currentChapter
                   ? `กำลังทำงาน: บท "${currentChapter.name}"`
                   : "กรุณาเลือกบทเพื่อเริ่มทำงาน..."}
               </p>
-              <p className="text-gray-400">
+              <p className="text-xs text-gray-600 tracking-wider mb-5">
                 พื้นที่ตรงนี้ว่างอยู่
-                กดปุ่มแถบเครื่องมือด้านล่างเพื่อเพิ่มบทพูดเพื่อออกแบบเนื้อเรื่องได้ทันทีครับ
+                เลือกประเภทบล็อกด้านล่างเพื่อเริ่มต้นสร้างเนื้อเรื่องได้ทันทีครับ
               </p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => onAddBlock("dialogue")}
+                  className="flex items-center space-x-1.5 bg-white text-slate-700 font-medium border border-slate-200 shadow-sm hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                >
+                  <span>💬 บทพูด</span>
+                </button>
+                <button
+                  onClick={() => onAddBlock("sprite")}
+                  className="flex items-center space-x-1.5 bg-white text-slate-700 font-medium border border-slate-200 shadow-sm hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                >
+                  <span>🧑‍🤝‍🧑ตัวละคร</span>
+                </button>
+              </div>
             </div>
           ) : (
             /* วนลูปโชว์บล็อกบทพูด */
@@ -148,6 +162,7 @@ const WorkspaceContainer = ({
                       selected_asset_id={block.selected_asset_id}
                       sprite_tag={block.sprite_tag}
                       blockNumber={currentBlockNumber}
+                      spriteposition={block.spriteposition}
                     />
                   );
                 }

@@ -28,7 +28,7 @@ const [assetsList, setAssetsList] = useState([]);
     }
   };
 
-  // เรียกใช้งานฟังก์ชันดึงข้อมูลเมื่อโปรเจค id มีการเปลี่ยนแปลง
+  // เรียกใช้งานฟังก์ชันดึงข้อมูลเมื่อโปรเจกต์ id มีการเปลี่ยนแปลง
   useEffect(() => {
     if (id) {
       fetchProjectAssets();
@@ -47,7 +47,7 @@ const [assetsList, setAssetsList] = useState([]);
           setChapters(data);
           setActiveChapterId(data[0].id);
         } else {
-          // กรณีโปรเจคใหม่เอี่ยม ไม่มีข้อมูลเลย -> สร้างฉาก Start จำลองขึ้นมาทันที!
+          // กรณีโปรเจกต์ใหม่เอี่ยม ไม่มีข้อมูลเลย -> สร้างฉาก Start จำลองขึ้นมาทันที!
           const startId = crypto.randomUUID(); // ใช้ UUID แทนเลข 1
           const initialStartChapter = {
             id: startId,

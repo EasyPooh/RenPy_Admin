@@ -1,4 +1,3 @@
-// src/components/Asset/AssetStatCards.jsx
 import React from "react";
 
 const AssetStatCards = ({

@@ -17,6 +17,20 @@ function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  React.useEffect(() => {
+    const handleGlobalBeforeUnload = (e) => {
+      if (window.globalIsDataChanged === true) {
+        e.preventDefault();
+        e.returnValue = "คุณยังไม่ได้บันทึกข้อมูลล่าสุด";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleGlobalBeforeUnload);
+    return () =>
+      window.removeEventListener("beforeunload", handleGlobalBeforeUnload);
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);

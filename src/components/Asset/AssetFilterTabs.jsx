@@ -1,4 +1,3 @@
-// src/components/Asset/AssetFilterTabs.jsx
 import React from "react";
 
 const AssetFilterTabs = ({ activeTab, setActiveTab }) => {
@@ -7,7 +6,7 @@ const AssetFilterTabs = ({ activeTab, setActiveTab }) => {
     { id: "background", label: "พื้นหลัง" },
     { id: "sprite", label: "ตัวละคร" },
     { id: "music", label: "เพลง" },
-    { id: "sound_effect", label: "เอฟเฟกต์" }, // เปลี่ยนจาก soundEffect เป็น sound_effect
+    { id: "sound_effect", label: "เอฟเฟกต์" },
   ];
 
   return (

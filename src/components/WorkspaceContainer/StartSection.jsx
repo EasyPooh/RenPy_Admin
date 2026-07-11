@@ -56,7 +56,7 @@ const StartSection = ({
   );
 
   return (
-    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3 select-none">
+    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3 select-none">
       <div className="text-xs font-bold text-black-400 tracking-wider">
         🎬 CONFIG ฉากเริ่มต้น
       </div>
@@ -64,7 +64,7 @@ const StartSection = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Start Background */}
         <div className="flex items-center space-x-2">
-          <span className="w-28 text-gray-600 text-xs font-medium">
+          <span className="text-xs font-bold text-gray-700 tracking-wider">
             start background
           </span>
           <select
@@ -75,8 +75,7 @@ const StartSection = ({
           >
             {backgroundAssets.length === 0 ? (
               <option value="">
-                ❌ ยังไม่มีภาพพื้นหลังใน asset library
-                (กรุณาอัปโหลดไฟล์ภาพพื้นหลังก่อน)
+                ยังไม่มีภาพพื้นหลัง (อัปโหลดที่ปุ่ม Assets Library มุมขวาบน)
               </option>
             ) : (
               <option value="">[ เลือกภาพพื้นหลังเริ่มต้น ]</option>
@@ -91,7 +90,7 @@ const StartSection = ({
 
         {/* Start Music */}
         <div className="flex items-center space-x-2">
-          <span className="w-28 text-gray-600 text-xs font-medium">
+          <span className="text-xs font-bold text-gray-700 tracking-wider">
             start music
           </span>
           <select
@@ -102,7 +101,7 @@ const StartSection = ({
           >
             {musicAssets.length === 0 ? (
               <option value="">
-                ❌ ยังไม่มีเพลงใน asset library (กรุณาอัปโหลดไฟล์เสียงก่อน)
+                ยังไม่มีเพลง (อัปโหลดที่ปุ่ม Assets Library มุมขวาบน)
               </option>
             ) : (
               <option value="">[ เลือกเพลงพื้นหลังเริ่มต้น ]</option>
@@ -119,7 +118,7 @@ const StartSection = ({
       {/* Start Character */}
       <div className="flex flex-col space-y-2">
         <div className="flex items-center space-x-2">
-          <span className="w-28 text-gray-600 text-xs font-medium">
+          <span className="text-xs font-bold text-gray-700 tracking-wider">
             start character
           </span>
           <input
@@ -133,7 +132,7 @@ const StartSection = ({
           <div className="flex items-center space-x-2 gap-4">
             <span className="whitespace-nowrap text-gray-600 text-xs font-medium">
               {
-                "<--- เพิ่มตัวละครและบันทึกไว้ในส่วนนี้ แล้วจะปรากฏให้เลือกได้ในบล็อกบทสนทนา"
+                "<--- เพิ่มตัวละครกด Enter เพื่อบันทึก แล้วจะปรากฏให้เลือกได้ในบล็อกด้านล่าง"
               }
             </span>
           </div>
@@ -151,7 +150,7 @@ const StartSection = ({
                 className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-purple-100 text-purple-700 border-purple-300 font-medium"
-                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
                 }`}
               >
                 <span>{char}</span>

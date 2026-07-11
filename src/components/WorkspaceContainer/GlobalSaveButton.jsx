@@ -46,7 +46,7 @@ function GlobalSaveButton({ isDataChanged, onSaveAll }) {
     saved:
       "bg-gray-700 text-gray-400 cursor-not-allowed opacity-50 border border-gray-600",
     unsaved:
-      "bg-blue-600 hover:bg-blue-700 text-white shadow-md font-bold transform hover:scale-[1.01] active:scale-[0.99]",
+      "bg-violet-600 hover:bg-violet-700 text-white shadow-md font-bold transform hover:scale-[1.01] active:scale-[0.99] transition-all",
     saving: "bg-yellow-600 text-white cursor-wait",
     success: "bg-green-600 text-white font-bold",
   };

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
+import Select from "react-select";
 
 const DialogueSection = ({
   id,
@@ -20,28 +21,19 @@ const DialogueSection = ({
   assets = [],
   selected_asset_id,
   sprite_tag,
+  spriteposition,
 }) => {
+  // ✅ เก็บไว้สำหรับ Focus กล่องข้อความอัตโนมัติ
   const inputRef = useRef(null);
-  const dropdownRef = useRef(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // เอฟเฟกต์สำหรับ Auto Focus เมื่อเพิ่มบล็อกใหม่
   useEffect(() => {
     if (id === focusedBlockId) {
       inputRef.current?.focus();
     }
   }, [focusedBlockId, id, isGhosted]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
+  // จัดการปุ่ม Enter เพื่อเพิ่มบล็อกบทสนทนาใหม่
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -72,7 +64,6 @@ const DialogueSection = ({
       selected_asset_id: asset.id,
       sprite_tag: asset.main_tag || "",
     });
-    setIsDropdownOpen(false);
   };
 
   const handleClearAsset = () => {
@@ -80,9 +71,34 @@ const DialogueSection = ({
       expression: "",
       selected_asset_id: null,
       sprite_tag: "",
+      spriteposition: null,
     });
-    setIsDropdownOpen(false);
   };
+
+  // 1. แปลงรายชื่อตัวละครสำหรับตู้เลือกที่ 1
+  const characterOptions = (characterList || []).map((char) => ({
+    value: char,
+    label: char,
+  }));
+
+  const currentCharacterOption = character
+    ? { value: character, label: character }
+    : null;
+
+  // 2. แปลงคลังรูปภาพ/สีหน้าตัวละครสำหรับตู้เลือกที่ 2
+  const assetOptions = (spriteAssets || []).map((asset) => ({
+    value: asset.id,
+    label: `${asset.main_tag} (${asset.expression_tag || "ไม่มีแท็กสีหน้า"})`,
+    rawAsset: asset,
+  }));
+
+  const currentAssetOption = currentAsset
+    ? {
+        value: currentAsset.id,
+        label: `${currentAsset.main_tag} (${currentAsset.expression_tag || "ไม่มีแท็กสีหน้า"})`,
+        rawAsset: currentAsset,
+      }
+    : null;
 
   return (
     <div
@@ -110,9 +126,7 @@ const DialogueSection = ({
             <label className="text-xs font-bold text-black-400 tracking-wider">
               เลื่อนบล็อก
             </label>
-            {/* กลุ่มปุ่มลูกศร สลับขึ้น-ลง */}
             <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-              {/* ปุ่มเลื่อนขึ้น */}
               <button
                 type="button"
                 onClick={onMoveUp}
@@ -134,8 +148,7 @@ const DialogueSection = ({
                   />
                 </svg>
               </button>
-              <div className="w-px h-4 bg-gray-200" /> {/* เส้นแบ่งกลางเล็กๆ */}
-              {/* ปุ่มเลื่อนลง */}
+              <div className="w-px h-4 bg-gray-200" />
               <button
                 type="button"
                 onClick={onMoveDown}
@@ -159,7 +172,6 @@ const DialogueSection = ({
               </button>
             </div>
 
-            {/* ปุ่มลบเดิม */}
             <button
               onClick={() => handleDeleteBlock(id)}
               className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-lg shadow-sm"
@@ -184,136 +196,145 @@ const DialogueSection = ({
       </div>
 
       <div className="flex gap-3">
-        {/* 1. Dropdown เลือกชื่อคนพูด */}
+        {/* 1. ตู้เลือกชื่อคนพูด (react-select) */}
         <div className="w-1/4 min-w-30">
-          <label className="text-xs font-bold text-gray-400 tracking-wider">
+          <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             ชื่อคนพูด (บนกล่องข้อความ)
           </label>
-          <select
-            value={character}
-            disabled={isGhosted}
-            onChange={(e) => handleUpdateBlock(id, "character", e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer"
-          >
-            <option value="">(ไม่มีตัวละครพูด)</option>
-            {characterList &&
-              characterList.map((char, index) => (
-                <option key={index} value={char}>
-                  {char}
-                </option>
-              ))}
-          </select>
+          <Select
+            options={characterOptions}
+            value={currentCharacterOption}
+            isDisabled={isGhosted}
+            onChange={(selectedOption) => {
+              handleUpdateBlock(
+                id,
+                "character",
+                selectedOption ? selectedOption.value : "",
+              );
+            }}
+            placeholder="(ไม่มีตัวละครพูด)"
+            isClearable={true}
+            isSearchable={true}
+            menuPortalTarget={
+              typeof window !== "undefined" ? document.body : null
+            }
+            filterOption={(option, rawInput) => {
+              const labelText = option.label
+                ? String(option.label).toLowerCase()
+                : "";
+              const searchInput = rawInput
+                ? String(rawInput).toLowerCase()
+                : "";
+              return labelText.includes(searchInput);
+            }}
+            styles={{
+              control: (baseStyles, state) => ({
+                ...baseStyles,
+                borderColor: state.isFocused ? "#a855f7" : "#e5e7eb",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: state.isFocused ? "#a855f7" : "#d1d5db",
+                },
+                borderRadius: "0.5rem",
+                fontSize: "0.875rem",
+                fontFamily: "sans-serif",
+                paddingTop: "1px",
+                paddingBottom: "1px",
+              }),
+              menu: (baseStyles) => ({
+                ...baseStyles,
+                fontSize: "0.875rem",
+                borderRadius: "0.5rem",
+                zIndex: 50,
+              }),
+              menuPortal: (baseStyles) => ({
+                ...baseStyles,
+                zIndex: 9999,
+              }),
+            }}
+          />
         </div>
 
-        {/* 🖼️ 2. Custom Dropdown เลือกรูปภาพตัวละคร */}
-        <div className="w-2/5 min-w-44 relative" ref={dropdownRef}>
+        {/* 🖼️ 2. ตู้เลือกรูปภาพและสีหน้าตัวละคร (react-select) */}
+        <div className="w-2/5 min-w-44">
           <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
             รูปภาพและสีหน้าตัวละครที่ต้องการแสดง
           </label>
-
-          <button
-            type="button"
-            disabled={isGhosted}
-            onClick={() => {
-              setIsDropdownOpen(!isDropdownOpen);
-              setSearchTerm("");
+          <Select
+            options={assetOptions}
+            value={currentAssetOption}
+            isDisabled={isGhosted}
+            onChange={(selectedOption) => {
+              if (selectedOption) {
+                handleSelectAsset(selectedOption.rawAsset);
+              } else {
+                handleClearAsset();
+              }
             }}
-            className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm text-left h-9.5"
-          >
-            {currentAsset ? (
-              <div className="flex items-center gap-2 overflow-hidden">
-                <span className="truncate font-medium text-gray-700">
-                  {currentAsset.main_tag}{" "}
-                  <span className="text-gray-400 text-xs">
-                    ({currentAsset.expression_tag || "ไม่มีแท็กสีหน้า"})
-                  </span>
-                </span>
-              </div>
-            ) : (
-              <span className="text-gray-400 text-sm">
-                ❌ ไม่แสดงรูปภาพ / ซ่อนภาพ
-              </span>
-            )}
-            <svg
-              className="w-4 h-4 text-gray-400 shrink-0 ml-1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-
-          {isDropdownOpen && (
-            <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50 p-1">
-              <div className="sticky top-0 bg-white pb-1 z-10">
-                <input
-                  type="text"
-                  placeholder="พิมพ์ค้นหาชื่อตัวละคร หรือ สีหน้า..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:border-purple-400 bg-gray-50/50"
-                />
-              </div>
-
-              <div
-                onClick={handleClearAsset}
-                className="flex items-center px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-md cursor-pointer transition-colors"
-              >
-                ❌ ไม่แสดงรูปภาพ / ซ่อนภาพตัวละครในประโยคนี้
-              </div>
-              <hr className="my-1 border-gray-100" />
-
-              {(() => {
-                const filteredAssets = spriteAssets.filter((asset) => {
-                  const mainTag = (asset.main_tag || "").toLowerCase();
-                  const expTag = (
-                    asset.expression_tag || "ทั่วไป"
-                  ).toLowerCase();
-                  const query = searchTerm.toLowerCase().trim();
-                  return mainTag.includes(query) || expTag.includes(query);
-                });
-
-                if (filteredAssets.length === 0) {
-                  return (
-                    <div className="px-3 py-4 text-xs text-gray-400 text-center">
-                      {spriteAssets.length === 0
-                        ? "ไม่มีรูปภาพตัวละครในคลัง Asset"
-                        : "🔍 ไม่พบตัวละครหรือสีหน้าที่ค้นหา"}
-                    </div>
-                  );
-                }
-
-                return filteredAssets.map((asset) => (
-                  <div
-                    key={asset.id}
-                    onClick={() => {
-                      handleSelectAsset(asset);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`flex items-center gap-2.5 px-3 py-2 hover:bg-purple-50 rounded-md cursor-pointer transition-colors text-sm ${
-                      selected_asset_id === asset.id
-                        ? "bg-purple-50 font-semibold text-purple-700"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate">{asset.main_tag}</span>
-                      <span className="text-xs text-gray-400 truncate">
-                        สีหน้า: {asset.expression_tag || "ทั่วไป"}
-                      </span>
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          )}
+            placeholder="ไม่แสดงรูปภาพ / ซ่อนภาพ"
+            isClearable={true}
+            isSearchable={true}
+            menuPortalTarget={
+              typeof window !== "undefined" ? document.body : null
+            }
+            filterOption={(option, rawInput) => {
+              const labelText = option.label
+                ? String(option.label).toLowerCase()
+                : "";
+              const searchInput = rawInput
+                ? String(rawInput).toLowerCase()
+                : "";
+              return labelText.includes(searchInput);
+            }}
+            styles={{
+              control: (baseStyles, state) => ({
+                ...baseStyles,
+                borderColor: state.isFocused ? "#a855f7" : "#e5e7eb",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: state.isFocused ? "#a855f7" : "#d1d5db",
+                },
+                borderRadius: "0.5rem",
+                fontSize: "0.875rem",
+                fontFamily: "sans-serif",
+                paddingTop: "1px",
+                paddingBottom: "1px",
+              }),
+              menu: (baseStyles) => ({
+                ...baseStyles,
+                fontSize: "0.875rem",
+                borderRadius: "0.5rem",
+                zIndex: 50,
+              }),
+              menuPortal: (baseStyles) => ({
+                ...baseStyles,
+                zIndex: 9999,
+              }),
+            }}
+          />
         </div>
+        {expression && expression !== "" && (
+          <div className="w-1/4 min-w-30">
+            <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
+              ตำแหน่งภาพตัวละคร
+            </label>
+            <select
+              value={spriteposition || ""}
+              disabled={isGhosted}
+              onChange={(e) => {
+                const newValue = e.target.value === "" ? null : e.target.value;
+                // ยิงค่าเดี่ยวรูปแบบเดียวกันกับช่องพิมพ์ 'character' และ 'text'
+                handleUpdateBlock(id, "spriteposition", newValue);
+              }}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-9.5"
+            >
+              <option value="">ไม่เปลี่ยนตำแหน่ง</option>
+              <option value="left">left</option>
+              <option value="center">center</option>
+              <option value="right">right</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* 3. ช่องกรอกบทพูด */}

@@ -1,446 +1,66 @@
-// src/hooks/useRenPyExport.js
 import { useState } from "react";
 import { useExport } from "./useExport"; 
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { slugify } from 'transliteration';
+import { compileRenPyScript, generateZipFileName, generateConfigString, generateAssetsRpy } from "./renpyGenerator";
+import { supabase } from '../lib/supabaseClient';
 
-// ==========================================
-// 🛠️ PURE HELPER CONSTANTS & FUNCTIONS (DECOUPLED)
-// ==========================================
-const RENPY_SPEED_MAP = {
-  none: 0.0,
-  fast: 0.2,
-  normal: 0.5,
-  slow: 1.5,
-};
-
-function escapeDialog(text) {
-  if (text === null || text === undefined || typeof text === "object") return "";
-  return String(text).replace(/"/g, '\\"');
-}
-
-const isInvalidValue = (val) => {
-  if (!val) return true;
-  const str = String(val);
-  return str.includes("บล็อกใหม่") || str.includes("New Block") || str.trim() === "";
-};
-
-// ค้นหาข้อมูล Asset จากคลังข้อมูล
-const findAsset = (value, assets) => {
-  if (!value) return null;
-  const strVal = String(value).trim();
-  return assets?.find(
-    (a) => String(a.id) === strVal || String(a.name) === strVal || String(a.file_name) === strVal
-  ) || null;
-};
-
-// 🛠️ [FIX BUG 1] ฟังก์ชันแปลงข้อความเป็นมาตรฐานของ Ren'Py (อนุญาตให้มีช่องว่างได้)
-const cleanForScriptToken = (text, fallbackPrefix = "asset", assetId = "") => {
-  if (!text) return assetId ? `${fallbackPrefix}_${String(assetId).substring(0, 8)}` : fallbackPrefix;
-  let textStr = String(text).trim();
-
-  // จัดการกรณีภาษาไทย ให้ลบออกแล้วเหลือแต่สิ่งที่ Renpy อ่านได้
-  if (/[\u0e00-\u0e7f]/.test(textStr)) {
-    // ให้อนุญาตช่องว่าง (\s) ด้วย
-    let engOnly = textStr.replace(/[^a-zA-Z0-9_\s]/g, "").trim().replace(/\s+/g, " ");
-    if (engOnly) return engOnly.toLowerCase();
-    return assetId ? `${fallbackPrefix}_${String(assetId).substring(0, 8)}` : fallbackPrefix; 
-  }
-
-  // อนุญาตให้มีช่องว่างได้ เพื่อให้คำอย่าง "nevi 01" ไม่ถูกแปลงเป็น "nevi_01"
-  const res = textStr.toLowerCase().replace(/[^a-z0-9_\s]/g, "").replace(/\s+/g, " ");
-  return res || (assetId ? `${fallbackPrefix}_${String(assetId).substring(0, 8)}` : fallbackPrefix);
-};
-
-// 🎯 ฟังก์ชันสร้างชื่อไอดีเพื่อเขียนลง script.rpy
-const generateScriptAssetName = (asset, fallbackValue) => {
-  if (!asset) return cleanForScriptToken(fallbackValue);
-
-  if (asset.main_tag) {
-    const mainTagClean = cleanForScriptToken(asset.main_tag, "tag", asset.id);
-    // ตรวจสอบกันเหนียว เผื่อ main_tag เป็นภาษาไทยล้วนแล้วถูกตัดทิ้งจนกลายเป็น tag_ID 
-    // ถ้ายังพอมีชื่อไฟล์ภาษาอังกฤษ ให้ไปใช้ชื่อไฟล์แทนจะดีกว่า
-    if (!mainTagClean.startsWith("tag_") || !asset.file_name) {
-      const rawExpression = asset.expression_tag || asset.expression;
-      if (rawExpression) {
-        const cleanExpr = cleanForScriptToken(asset.expression, "expr", asset.id);
-        return `${mainTagClean} ${cleanExpr}`;
-      }
-      return mainTagClean;
-    }
-  }
-
-  const nameWithoutExt = asset.file_name ? asset.file_name.replace(/\.[^.]+$/, "") : (asset.name || "asset");
-  return cleanForScriptToken(nameWithoutExt, "asset", asset.id);
-};
-
-// 🎯 ฟังก์ชันสร้างชื่อไฟล์จริงเพื่อบันทึกลง ZIP ให้ตรงกับสคริปต์
-const generateZipFileName = (asset, isAudio) => {
-  const matchExt = asset.file_name ? asset.file_name.match(/\.[^.]+$/) : null;
-  const ext = matchExt ? matchExt[0].toLowerCase() : (isAudio ? ".mp3" : ".png");
-
-  if (asset.main_tag) {
-    const mainTagClean = cleanForScriptToken(asset.main_tag, "tag", asset.id);
-    if (!mainTagClean.startsWith("tag_") || !asset.file_name) {
-      if (asset.expression) {
-        const cleanExpr = cleanForScriptToken(asset.expression, "expr", asset.id);
-        return `${mainTagClean} ${cleanExpr}${ext}`; 
-      }
-      return `${mainTagClean}${ext}`;
-    }
-  }
-
-  const nameWithoutExt = asset.file_name ? asset.file_name.replace(/\.[^.]+$/, "") : (asset.name || "asset");
-  return cleanForScriptToken(nameWithoutExt, "asset", asset.id) + ext;
-};
-
-// ==========================================
-// 📦 CUSTOM HOOK PRINCIPAL
-// ==========================================
 export const useRenPyExport = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState("");
   const { handleExportZIP } = useExport(); 
 
-  const exportProject = async (projectId, projectName) => {
+  const exportProject = async (projectId, projectName, onSaveBeforeExport) => {
     if (!projectId) return;
 
     setIsExporting(true);
-    setExportProgress("กำลังดึงข้อมูลจากฐานข้อมูล...");
 
-    const gameData = await handleExportZIP(projectId);
-    if (!gameData) {
-      alert("ไม่สามารถดึงข้อมูลสำหรับส่งออกได้ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล");
-      setIsExporting(false);
-      setExportProgress("");
-      return;
-    }
-
-    const { chapters, blocks, assets } = gameData;
-
-    try {
-      setExportProgress("กำลังประมวลผลตัวละครและโครงสร้างสคริปต์...");
-
-      let rpyContent = `# ⚠️ Generated by Ren'Py Scenario Management System\n`;
-      rpyContent += `# Project: ${projectName}\n\n`;
-
-      // =========================================================
-      // 🔥 [ADDED] INJECT OVERRIDE CONFIG: ทำรูปครึ่งตัวอัตโนมัติ
-      // เขียนทับค่ามาตรฐาน left, center, right ของ Engine Ren'Py
-      // =========================================================
-      rpyContent += 'define config.say_attribute_transition = dissolve\n';
-      rpyContent += 'define config.show_transition = dissolve\n';
-      rpyContent += 'define config.hide_transition = dissolve\n';
-      rpyContent += `# ==========================================\n`;
-      rpyContent += `# AUTO GENERATED: HALF-BODY CONFIGURATION OVERRIDE\n`;
-      rpyContent += `# ==========================================\n`;
-      rpyContent += `transform center:\n`;
-      rpyContent += `    xalign 0.5\n`;
-      rpyContent += `    yalign 0.0\n`;
-      rpyContent += `    zoom 0.50\n`;      
-      rpyContent += `    yoffset 200\n\n`;  
-      rpyContent += `transform left:\n`;
-      rpyContent += `    xalign 0.15\n`;
-      rpyContent += `    yalign 0.0\n`;
-      rpyContent += `    zoom 0.50\n`;      
-      rpyContent += `    yoffset 200\n\n`;
-      rpyContent += `transform right:\n`;
-      rpyContent += `    xalign 0.85\n`;
-      rpyContent += `    yalign 0.0\n`;
-      rpyContent += `    zoom 0.50\n`;      
-      rpyContent += `    yoffset 200\n`;
-      rpyContent += `# ==========================================\n\n`;
-
-      const allCharacterNames = new Set();
-      const charMap = {};
-
-      if (chapters?.[0]?.start_characters) {
-        try {
-          const rawConfigChars = chapters[0].start_characters;
-          const parsedConfigChars = typeof rawConfigChars === "string" ? JSON.parse(rawConfigChars) : rawConfigChars;
-          if (Array.isArray(parsedConfigChars)) {
-            parsedConfigChars.forEach((item) => {
-              const nameStr = typeof item === "string" ? item : item.name || item.value;
-              if (nameStr && nameStr.trim() !== "") allCharacterNames.add(nameStr.trim());
-            });
-          }
-        } catch (e) {
-          console.error("ไม่สามารถแกะข้อมูล start_characters:", e);
-        }
-      }
-
-      blocks?.forEach((block) => {
-        if (block.character_name && block.character_name.trim() !== "") {
-          allCharacterNames.add(block.character_name.trim());
-        }
-      });
-
-      if (allCharacterNames.size > 0) {
-        rpyContent += `# ==========================================\n# CHARACTER DEFINITIONS\n# ==========================================\n`;
-        let charCounter = 1;
-        allCharacterNames.forEach((name) => {
-          let cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_");
-          if (!cleanName || /[\u0e00-\u0e7f]/.test(name)) cleanName = `char_${charCounter++}`;
-          const varName = `ch_${cleanName}`;
-          charMap[name] = varName;
-          rpyContent += `define ${varName} = Character("${escapeDialog(name)}", color="#000000")\n`;
-        });
-        rpyContent += `\n`;
-      }
-
-      chapters?.forEach((chapter, index) => {
-        let labelName = chapter.label_name || `chapter_${String(chapter.id).replace(/-/g, "_")}`;
-        if (index === 0) labelName = "start";
-
-        rpyContent += `label ${labelName}:\n`;
-
-        if (index === 0) {
-          if (chapter.start_bg_asset_id || chapter.start_bg_name) {
-            const initialBg = chapter.start_bg_name || chapter.start_bg_asset_id;
-            const asset = findAsset(initialBg, assets);
-            rpyContent += `    scene ${generateScriptAssetName(asset, initialBg || "bedroom")}\n`;
-          }
-          if (chapter.start_music_asset_id || chapter.start_music_name) {
-            const initialMusic = chapter.start_music_name || chapter.start_music_asset_id;
-            const asset = findAsset(initialMusic, assets);
-            rpyContent += `    play music ${generateScriptAssetName(asset, initialMusic || "audio_placeholder")}\n`;
-          }
-        }
-
-        const chapterBlocks = blocks ? blocks.filter((b) => b.chapter_id === chapter.id) : [];
-        if (chapterBlocks.length === 0) {
-          rpyContent += `    pass\n\n`;
-          return;
-        }
-
-        chapterBlocks.forEach((block) => {
-          const type = String(block.type).toLowerCase().trim();
-          let props = {};
-          try {
-            props = typeof block.properties === "string" ? JSON.parse(block.properties) : block.properties || {};
-          } catch (e) {
-            props = {};
-          }
-
-          const getTransitionStr = (isSpriteBlock = false) => {
-  let effectRaw = props?.backgroundEffect || props?.spriteEffect || props?.effect || props?.bg_effect || props?.transition || props?.["เอฟเฟกต์พื้นหลัง"] || block?.effect;
-  
-  const speedRaw = props?.backgroundEffectSpeed || props?.spriteSpeed || props?.speed || props?.bg_speed || props?.transition_speed || props?.["ความเร็วเอฟเฟกต์"] || ""; //
-  const cleanSpeedToken = String(speedRaw).toLowerCase().trim();
-
-  // 🟢 1. เคสพิเศษสำหรับบล็อก Sprite (ตัวละคร) ที่ไม่มีการเลือกเอฟเฟกต์ใน UI
-  if (!effectRaw && isSpriteBlock) {
-    // ถ้าความเร็วเป็น normal หรือไม่ได้เลือก ให้ปล่อยว่างไว้ (เพื่อให้ Ren'Py วิ่งไปใช้ config.show_transition / hide_transition เอง)
-    if (cleanSpeedToken === "normal" || cleanSpeedToken === "" || cleanSpeedToken === "none") {
-      return "";
-    }
-    // แต่ถ้าผู้ใช้จงใจเลือกความเร็วพิเศษ (เช่น slow, fast) ให้บังคับใช้ dissolve เพื่อใส่ duration ครอบลงไป
-    effectRaw = "dissolve";
-  }
-
-  // 🟢 2. ล้างค่าตัวแปรเอฟเฟกต์
-  const cleanEffect = String(effectRaw || "").toLowerCase().trim();
-  if (!cleanEffect || cleanEffect === "none" || cleanEffect.includes("ไม่มี")) {
-    return "";
-  }
-
-  // 🟢 3. ถ้าเอฟเฟกต์เป็นทั่วไป และความเร็วเป็น normal ไม่ต้องเจนโค้ด with ซ้ำซ้อน (ปล่อยให้ Config กลางคุม)
-  if (cleanSpeedToken === "normal" || cleanSpeedToken === "") {
-    // ยกเว้นฉากหลัง (Background) ที่ยังต้องการให้มีคำสั่งพื้นฐานกำกับไว้ชัดเจนในบางเคส 
-    // หรือถ้าอยากให้คลีนทั้งหมด สามารถสั่ง return "" ตรงนี้ได้เลยเช่นกันครับ
-    return ` with ${cleanEffect}`;
-  }
-  
-  // 🟢 4. คำนวณเวลาสำหรับ Speed พิเศษ (slow, fast)
-  let duration = RENPY_SPEED_MAP[cleanSpeedToken] !== undefined ? RENPY_SPEED_MAP[cleanSpeedToken] : 0.5; //
-
-  if (cleanEffect === "dissolve") {
-    return ` with Dissolve(${duration})`; //
-  }
-  
-  if (cleanEffect === "fade") {
-    let halfDuration = duration / 2;
-    return ` with Fade(${halfDuration}, 0.0, ${halfDuration})`;
-  }
-  
-  return ` with ${cleanEffect}`;
-};
-
-          if (type === "dialogue" || type === "character" || type === "text") {
-    // 🔍 1. ดักจับ ID ให้ครอบคลุมทุกฟิลด์เพื่อความปลอดภัย
-    const selectedAssetId = props?.selected_asset_id || block?.selected_asset_id || block?.asset_id;
-
-    if (selectedAssetId && !isInvalidValue(selectedAssetId)) {
-      const asset = findAsset(selectedAssetId, assets);
-      if (asset) {
-        // 🛠️ 2. ดึงค่าสีหน้าภาษาไทย (ปรับให้รองรับ expression_tag จากวัตถุจริงในคิวรีหลังบ้าน)
-        const rawExpression = props?.expression || block?.properties?.expression || asset?.expression_tag || asset?.expression;
-
-        // 🛠️ 3. เปลี่ยนมาใช้ slugify แปลงภาษาไทยเป็นคาราโอเกะแทนระบบไอดีเดิม
-        const cleanExpression = rawExpression && rawExpression.trim() 
-          ? slugify(rawExpression).replace(/-/g, "_")
-          : "";
-
-        // ดึงชื่อคำสั่งสไปรต์หลักขึ้นมาตั้งต้นก่อน
-        let spriteCommandName = generateScriptAssetName(asset, selectedAssetId);
-
-        // 4. ประกอบคำสั่ง show สไตล์คาราโอเกะแบบคลีน ๆ
-        if (cleanExpression) {
-          // 💡 ตรวจสอบความปลอดภัย: เผื่อฟังก์ชันหลักมีเมธอดแอบพ่วงไอดีระบบ (expr_) ติดมาด้วย 
-          // ให้จัดการสับส่วนท้ายออกแล้วแทนที่ด้วยคาราโอเกะทันที
-          if (spriteCommandName.includes("expr_")) {
-            const basePart = spriteCommandName.split("expr_")[0]; // จะได้ "nevi 01 "
-            spriteCommandName = `${basePart}${cleanExpression}`.trim();
-          } else {
-            // ถ้าไม่มีไอดีระบบพ่วงมา ให้เว้นวรรคแล้วต่อท้ายสีหน้าปกติ (เช่น nevi 01 hna_ning_cing_cing_na)
-            spriteCommandName = `${spriteCommandName} ${cleanExpression}`;
-          }
-          
-          rpyContent += `    show ${spriteCommandName}\n`;
-        } else {
-          // ไม่มีสีหน้า: พ่นเฉพาะชื่อตัวละครหลักตามเดิม
-          rpyContent += `    show ${spriteCommandName}\n`;
-        }
+    if (typeof onSaveBeforeExport === 'function') {
+      setExportProgress("กำลังบันทึกข้อมูลล่าสุดไปยังฐานข้อมูลอัตโนมัติ...");
+      const isSaveSuccess = await onSaveBeforeExport();
+      if (!isSaveSuccess) {
+        setIsExporting(false);
+        setExportProgress("");
+        return; 
       }
     }
     
-    // 5. ส่วนของการแปลงบทสนทนาและชื่อคนพูด (คงเดิมไว้)
-    const cleanContent = escapeDialog(block.content || props.text || props.dialogue || "");
-    if (block.character_name) {
-      const rawName = block.character_name.trim();
-      const assignedVar = charMap[rawName];
-      rpyContent += assignedVar ? `    ${assignedVar} "${cleanContent}"\n` : `    "${escapeDialog(rawName)}" "${cleanContent}"\n`;
-    } else {
-      rpyContent += `    "${cleanContent}"\n`;
-    }
-  }
-          
-          else if (type === "background" || type === "bg" || type === "scene" || type === "ภาพพื้นหลัง") {
-            let bgRaw = block.asset_id || props.bg_name || props.background || props.bg || props.scene || props?.["ฉากพื้นหลัง"] || block.content;
-            const asset = findAsset(bgRaw, assets);
-            const bgName = generateScriptAssetName(asset, isInvalidValue(bgRaw) ? "bedroom" : bgRaw);
-            rpyContent += `    scene ${bgName}${getTransitionStr()}\n`;
-          } 
-          
-          else if (type === "sprite" || type === "character_sprite" || type === "ตัวละคร" || type === "ภาพตัวละคร") {
-            let spriteRaw = block.asset_id || props.sprite_name || props.sprite || props.character || props.selected_asset_id || props?.["ภาพตัวละคร (Sprite)"] || block.content;
-            const asset = findAsset(spriteRaw, assets);
-            let spriteCommandName = generateScriptAssetName(asset, isInvalidValue(spriteRaw) ? "character_placeholder" : spriteRaw);
-            
-            // 🌟 เปลี่ยนจาก asset.expression เป็น asset.expression_tag ตามที่เจอใน Console
-            if (asset && asset.expression_tag && asset.expression_tag.trim()) {
-              const cleanExpr = slugify(asset.expression_tag).replace(/-/g, "_");
-              
-              // ถ้าชื่อเดิมมี expr_ พ่วงมา (เช่น nevi 01 expr_30c7afbf) ให้เปลี่ยนเป็นคาราโอเกะ
-              if (spriteCommandName.includes("expr_")) {
-                const basePart = spriteCommandName.split("expr_")[0]; // จะได้ "nevi 01 "
-                spriteCommandName = `${basePart}${cleanExpr}`.trim();   // ผลลัพธ์: "nevi 01 hna_ning_cing_cing_na"
-              } else {
-                // ถ้าไม่มีคำว่า expr_ อยู่ก่อน ให้เว้นวรรคแล้วต่อท้าย
-                spriteCommandName = `${spriteCommandName} ${cleanExpr}`;
-              }
-            }
-            
-            let hideTagName = spriteCommandName.includes(" ") ? spriteCommandName.split(" ")[0] : spriteCommandName;
-            
-            // 🟢 แก้ไขบรรทัดนี้: เพิ่ม props.spritecommand เข้าไปเช็กก่อน
-            const actionRaw = props.spritecommand || props.action || props?.["คำสั่งภาพตัวละคร"] || "show";
-            const action = String(actionRaw).toLowerCase().includes("hide") || String(actionRaw).includes("ซ่อน") ? "hide" : "show";
+    setExportProgress("กำลังดึงข้อมูลจากฐานข้อมูล...");
 
-            // 🟢 แก้ไขบรรทัดนี้ด้วย: เพิ่ม props.spriteposition เพื่อป้องกันบั๊กตำแหน่งไม่เปลี่ยนในอนาคต
-            const position = props.spriteposition || props.position || props?.["ตำแหน่งภาพตัวละคร"] || "center";
+    try {
+      // 1. ดึงชื่อโปรเจกต์จากคอลัมน์ titles ในตาราง Projects ผ่าน Supabase Client
+      const { data: projectData, error: projectError } = await supabase
+        .from('Projects')       // ชื่อตารางอิงตามโครงสร้างฐานข้อมูล
+        .select('titles')       // คอลัมน์เก็บชื่อเกม
+        .eq('id', projectId)
+        .single();
 
-            if (action === "hide") {
-              rpyContent += `    hide ${hideTagName}${getTransitionStr(true)}\n`;
-            } else {
-              rpyContent += `    show ${spriteCommandName} at ${position}${getTransitionStr(true)}\n`;
-            }
-          }
-          
-          else if (type === "audio" || type === "music" || type === "sound" || type === "เสียง") {
-            console.log("Audio Block Properties:", props);
-            const audioActionRaw = props.audiocommand || props.command || "play"; 
-            const audioAction = String(audioActionRaw).toLowerCase().trim();
+      if (projectError) {
+        console.error("❌ ไม่สามารถดึงชื่อโปรเจกต์จากคลาวด์ได้:", projectError.message);
+      }
 
-            console.log("Detected Action:", audioAction);
-            
-            let audioRaw = block.asset_id || props.selected_asset_id || block.content || props.audio_name || props.music_name || props?.["เลือกไฟล์เสียง"];
-            const asset = findAsset(audioRaw, assets);
-            const audioName = generateScriptAssetName(asset, isInvalidValue(audioRaw) ? "audio_placeholder" : audioRaw);
-            
-            const audioTypeRaw = props.audiotype || props.audio_type || props?.["ประเภทเสียง"] || (asset ? asset.file_type : "");
-            const isSoundEffect = String(audioTypeRaw).toLowerCase().includes("sound") || String(audioTypeRaw).toLowerCase().includes("sfx") || String(audioTypeRaw).includes("เอฟเฟกต์");
-            
-            if (audioAction === "stop") {
-              rpyContent += `    stop ${isSoundEffect ? "sound" : "music"}\n`;
-            } else {
-              rpyContent += `    play ${isSoundEffect ? "sound" : "music"} ${audioName}\n`;
-            }
-          }
-          
-          else if (type === "choice" || type === "menu" || type === "options") {
-    let options = props.choice || props.options || props.choices || block.options || [];
-    rpyContent += `    menu:\n`;
-    if (options.length === 0) {
-      rpyContent += `        "ดำเนินเนื้อเรื่องต่อไป":\n            pass\n`;
-    } else {
-      options.forEach((opt) => {
-        let optText = typeof opt === "string" ? opt : opt.text || opt.title || opt.label || "ทางเลือก";
-        let targetChapterId = opt?.target_destination?.type === "NEW_CHAPTER" ? opt.target_destination.chapter_id : opt.target_chapter_id || opt.targetId;
-        
-        rpyContent += `        "${escapeDialog(optText)}":\n`;
-        let hasAction = false;
+      // ใช้ชื่อที่ดึงมาสดๆ จากตารางซูพาเบส (หากดึงพลาดจะดรอปกลับไปใช้ชื่อจากพารามิเตอร์หรือชื่อ Default)
+      const currentProjectName = projectData?.titles || projectName || "Untitled_Project";
 
-        if (opt.dialoguesList) {
-          opt.dialoguesList.forEach((d) => {
-            const dText = typeof d === "object" ? d.text : d;
-            
-            // ดึงชื่อคนพูดจาก State (ที่ผูกไว้กับ Dropdown ตัวละครในช้อยส์)
-            const rawName = typeof d === "object" && d.character ? d.character.trim() : "";
+      // 2. ดึงข้อมูลเนื้อหาเกม (Chapters, Blocks, Assets)
+      const gameData = await handleExportZIP(projectId);
+      if (!gameData) {
+        alert("ไม่สามารถดึงข้อมูลสำหรับส่งออกได้ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล");
+        setIsExporting(false);
+        setExportProgress("");
+        return;
+      }
 
-            if (dText?.trim()) {
-              if (rawName) {
-                // 🌟 ใช้ charMap เช็คเหมือนบล็อกสนทนาหลัก
-                const assignedVar = charMap[rawName];
-                
-                if (assignedVar) {
-                  // มีตัวแปรย่อ (เช่น e "ข้อความ")
-                  rpyContent += `            ${assignedVar} "${escapeDialog(dText)}"\n`;
-                } else {
-                  // ไม่มีตัวแปรย่อ ให้ใส่เครื่องหมายคำพูดครอบชื่อเต็ม (เช่น "ภูภาณุ" "ข้อความ")
-                  rpyContent += `            "${escapeDialog(rawName)}" "${escapeDialog(dText)}"\n`;
-                }
-              } else {
-                // ไม่มีคนพูด พ่นเป็นบทบรรยายธรรมดา
-                rpyContent += `            "${escapeDialog(dText)}"\n`;
-              }
-              hasAction = true;
-            }
-          });
-        }
+      const { chapters, blocks, assets } = gameData;
 
-        if (targetChapterId) {
-          const targetIndex = chapters.findIndex((c) => String(c.id) === String(targetChapterId));
-          if (targetIndex !== -1) {
-            const targetLabel = targetIndex === 0 ? "start" : chapters[targetIndex].label_name || `chapter_${String(targetChapterId).replace(/-/g, "_")}`;
-            rpyContent += `            jump ${targetLabel}\n`;
-            hasAction = true;
-          }
-        }
-        if (!hasAction) rpyContent += `            pass\n`;
-      });
-    }
-  }
-          
-          else if (type === "jump") {
-            const targetChapterId = block.target_chapter_id || props.target_chapter_id;
-            const targetIndex = chapters.findIndex((c) => String(c.id) === String(targetChapterId));
-            rpyContent += targetIndex !== -1 ? `    jump ${targetIndex === 0 ? "start" : chapters[targetIndex].label_name || `chapter_${String(targetChapterId).replace(/-/g, "_")}`}\n` : `    return\n`;
-          }
-        });
-        rpyContent += `    \n`;
-      });
+      setExportProgress("กำลังประมวลผลตัวละครและโครงสร้างสคริปต์...");
+
+      // 🎯 ส่งข้อมูลเข้าฟังก์ชันเจเนอเรตสคริปต์ภาษา Ren'Py
+      const rpyContent = compileRenPyScript(currentProjectName, chapters, blocks, assets);
+      const configContent = generateConfigString(currentProjectName);
+      // 🔥 [จุดที่ 1] เจนเนื้อหาของไฟล์สคริปต์ asset พิกัดซูมต่างๆ
+      const assetsContent = generateAssetsRpy(assets); 
 
       // ==========================================
       // 📦 ZIP PACKAGING
@@ -448,21 +68,22 @@ export const useRenPyExport = () => {
       setExportProgress("กำลังม้วนสคริปต์ลงโฟลเดอร์ ZIP...");
       const zip = new JSZip();
       const gameFolder = zip.folder("game");
+      
       gameFolder.file("script.rpy", rpyContent);
+      gameFolder.file("project_config.rpy", configContent);
+      // 🔥 [จุดที่ 2] เขียนไฟล์ assets_definition.rpy ลงไปในโฟลเดอร์ game ของ ZIP
+      gameFolder.file("assets_definition.rpy", assetsContent); 
 
       const imagesFolder = gameFolder.folder("images");
       const audioFolder = gameFolder.folder("audio");
 
       if (assets && assets.length > 0) {
-        const { supabase } = await import("../lib/supabaseClient"); 
-        
         for (let i = 0; i < assets.length; i++) {
           const asset = assets[i];
           if (!asset.storage_path) continue;
 
           try {
             setExportProgress(`กำลังดึงไฟล์ (${i + 1}/${assets.length}): ${asset.file_name || "คลังภาพ"}`);
-            console.log("เช็คข้อมูลไฟล์ที่กำลังแพ็ก:", asset);
             const { data } = supabase.storage.from("game-assets").getPublicUrl(asset.storage_path);
             
             const response = await fetch(data.publicUrl);
@@ -473,31 +94,21 @@ export const useRenPyExport = () => {
             const matchExt = asset.file_name ? asset.file_name.match(/\.[^.]+$/) : null;
             const ext = matchExt ? matchExt[0].toLowerCase() : "";
 
-            // [FIX BUG 2] แก้ไขเช็คประเภทไฟล์เสียง ให้สแกนหาคำที่เกี่ยวข้องแทนการใช้ Exact Match
             const isAudio = fileType.includes("music") || 
                             fileType.includes("audio") || 
                             fileType.includes("sound") || 
                             fileType.includes("sfx") || 
                             fileType.includes("bgm") || 
+                            fileType.includes("summit") || // แก้ไข typos เผื่อไว้
                             [".mp3", ".wav", ".ogg", ".opus"].includes(ext);
 
-            // 1. เรียกใช้ฟังก์ชันเดิมเพื่อสร้างชื่อไฟล์ตั้งต้นใน ZIP
             let finalFileName = generateZipFileName(asset, isAudio);
 
-            // 🌟 [MODIFIED FOR METHOD B] ตรรกะจัดการชื่อไฟล์รูปภาพประเภท Sprite ด้วยการใช้ slugify
             if (!isAudio && fileType.includes("sprite")) {
-              const rawExpression = asset.expression_tag; // ดึงค่าภาษาไทย เช่น "หน้านิ่งจริงๆนะ"
-              
+              const rawExpression = asset.expression_tag;
               if (rawExpression && rawExpression.trim()) {
-                // แปลงภาษาไทยเป็นคาราโอเกะภาษาอังกฤษ (เช่น "hna-ning-cing-cing-na")
-                let cleanExpr = slugify(rawExpression);
-                
-                // 💡 เปลี่ยนเครื่องหมายลบ (-) ให้เป็น Under Score (_) 
-                // เพื่อความปลอดภัยของ Syntax ระบบโครงสร้างของตัวแปรใน Engine Ren'Py 
-                cleanExpr = cleanExpr.replace(/-/g, "_");
-
+                let cleanExpr = slugify(rawExpression).replace(/-/g, "_");
                 if (cleanExpr) {
-                  // ค้นหาตำแหน่งจุดนามสกุลไฟล์เพื่อแทรกสีหน้าคาราโอเกะเข้าไปข้างหน้า (เช่น Nevi 01.png -> Nevi 01 hna_ning_cing_cing_na.png)
                   const dotIndex = finalFileName.lastIndexOf(".");
                   if (dotIndex !== -1) {
                     const baseName = finalFileName.substring(0, dotIndex);
@@ -510,7 +121,6 @@ export const useRenPyExport = () => {
               }
             }
 
-            // แยกไฟล์ลง Folder ตามประเภทลง ZIP
             if (isAudio) {
               audioFolder.file(finalFileName, fileBlob);
             } else {
@@ -524,7 +134,7 @@ export const useRenPyExport = () => {
 
       setExportProgress("กำลังดาวน์โหลดไฟล์ลงเครื่อง...");
       const zipBlob = await zip.generateAsync({ type: "blob" });
-     const safeFileName = projectName.toLowerCase().replace(/[\/:*?"<>|]/g, "_").trim();
+      const safeFileName = currentProjectName.toLowerCase().replace(/[\/:*?"<>|]/g, "_").trim();
       saveAs(zipBlob, `${safeFileName || "renpy_project"}_export.zip`);
 
     } catch (error) {

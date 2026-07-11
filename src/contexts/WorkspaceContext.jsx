@@ -18,6 +18,8 @@ export const WorkspaceProvider = ({ children, initialId }) => {
     return initialId || null;
   });
 
+  const [isDataChanged, setIsDataChanged] = useState(false);
+
   // 🟢 4. [เพิ่ม] ทุกครั้งที่เปลี่ยนบทที่กำลังแอดมิน ให้บันทึกความจำลง LocalStorage ทันที
   useEffect(() => {
     if (projectId && activeChapterId) {
@@ -29,7 +31,14 @@ export const WorkspaceProvider = ({ children, initialId }) => {
   }, [activeChapterId, projectId]);
 
   return (
-    <WorkspaceContext.Provider value={{ activeChapterId, setActiveChapterId }}>
+    <WorkspaceContext.Provider
+      value={{
+        activeChapterId,
+        setActiveChapterId,
+        isDataChanged,
+        setIsDataChanged,
+      }}
+    >
       {children}
     </WorkspaceContext.Provider>
   );

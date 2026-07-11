@@ -13,9 +13,9 @@
 
   export const useChapters = (id) => {
     
-    const [isDataChanged, setIsDataChanged] = useState(false);
+   // const [isDataChanged, setIsDataChanged] = useState(false);
     
-    const { activeChapterId, setActiveChapterId } = useWorkspaceContext();  
+    const { activeChapterId, setActiveChapterId, isDataChanged, setIsDataChanged} = useWorkspaceContext();  
     
    /* const [Chapters, setChapters] = useState([
       { id: "", name: "เริ่มเกม (Start)", label_name: "start", status: "draft", tags: ["จุดเริ่มต้น"] },

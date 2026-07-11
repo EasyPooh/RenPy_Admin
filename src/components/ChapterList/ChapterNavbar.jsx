@@ -9,11 +9,18 @@ const ChapterNavbar = ({
   onStatusChange,
   onSave,
   isDataChanged,
+  setIsDataChanged,
   onSaveAll,
   handleStatusChange,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const [localForceSave, setLocalForceSave] = useState(false);
+
+  useEffect(() => {
+    setLocalForceSave(false);
+  }, [currentChapter?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -49,9 +56,9 @@ const ChapterNavbar = ({
       </div>
 
       <div className="flex items-center space-x-4">
-        <span className="text-xs font-bold text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
+        {/* <span className="text-xs font-bold text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
           [ ID: {currentChapter.id.toString().padStart(3, "0")} ]
-        </span>
+        </span>*/}
 
         {/* Dropdown แสดงค่าสถานะที่แมปตามตัวแปรผันผวนชั่วคราว tempStatus */}
         <div className="relative" ref={dropdownRef}>
@@ -76,6 +83,8 @@ const ChapterNavbar = ({
                   onStatusChange("draft"); // เปลี่ยนค่าสถานะบนหน้าจอชั่วคราว
                   setIsDropdownOpen(false);
                   handleStatusChange(currentChapter.id, "draft");
+                  setIsDataChanged?.(true);
+                  setLocalForceSave(true);
                 }}
                 className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center space-x-2 hover:bg-gray-50 ${
                   currentChapter.status === "draft"
@@ -92,6 +101,8 @@ const ChapterNavbar = ({
                   onStatusChange("done"); // เปลี่ยนค่าสถานะบนหน้าจอชั่วคราว
                   setIsDropdownOpen(false);
                   handleStatusChange(currentChapter.id, "done");
+                  setIsDataChanged?.(true);
+                  setLocalForceSave(true);
                 }}
                 className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center space-x-2 hover:bg-gray-50 ${
                   currentChapter.status === "done"
@@ -106,7 +117,13 @@ const ChapterNavbar = ({
           )}
         </div>
 
-        <GlobalSaveButton isDataChanged={isDataChanged} onSaveAll={onSaveAll} />
+        <GlobalSaveButton
+          isDataChanged={isDataChanged || localForceSave}
+          onSaveAll={() => {
+            if (onSaveAll) onSaveAll();
+            setLocalForceSave(false); // 💾 เมื่อกดเซฟสำเร็จ ให้ดับไฟปุ่มกลับไปตามปกติ
+          }}
+        />
 
         {/* 🌟 เชื่อมปุ่มบันทึกใหญ่เข้าฟังก์ชัน Commit ข้อมูลลงแถบรายชื่อด้านซ้าย 
         <button

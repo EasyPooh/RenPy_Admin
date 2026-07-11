@@ -9,6 +9,7 @@ import AssetFilterTabs from "../components/Asset/AssetFilterTabs";
 import AssetEmptyState from "../components/Asset/AssetEmptyState";
 import AssetListView from "../components/Asset/AssetListView";
 import AssetModal from "../components/Asset/AssetModal";
+import CharacterPreviewModal from "../components/Asset/CharacterPreviewModal";
 
 const AssetPage = () => {
   const { id } = useParams(); // project_id
@@ -16,6 +17,7 @@ const AssetPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("upload");
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [previewAsset, setPreviewAsset] = useState(null);
 
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,6 +84,42 @@ const AssetPage = () => {
     });
   }, [assetsList, activeTab, searchQuery]);
 
+  const handleSaveTransformConfig = async (assetId, config) => {
+    try {
+      const { data, error } = await supabase
+        .from("assets")
+        .update({ transform_config: config })
+        .eq("id", assetId);
+
+      if (error) throw error;
+
+      // 🎯 1. อัปเดต State ของรายการ Assets ทั้งหมดในหน้าหลัก
+      // (สมมติว่าคุณประกาศ State ไว้ในชื่อ [assets, setAssets])
+      setAssetsList((prevAssets) =>
+        prevAssets.map(
+          (item) =>
+            item.id === assetId
+              ? { ...item, transform_config: config } // อัปเดตเฉพาะตัวที่ ID ตรงกัน
+              : item, // ตัวอื่นปล่อยไว้เหมือนเดิม
+        ),
+      );
+
+      // 🎯 2. (ถ้ามี) ถ้าหน้าจอนี้มี State แยกสำหรับตัวที่กำลังเลือกดู/พรีวิวอยู่ด้วย เช่น selectedAsset
+      // อย่าลืมอัปเดตตัวนั้นด้วย เพื่อให้พิกัดบนจอพรีวิวขยับทันทีครับ
+      if (selectedAsset && selectedAsset.id === assetId) {
+        setSelectedAsset((prev) => ({
+          ...prev,
+          transform_config: config,
+        }));
+      }
+
+      alert("บันทึกพิกัดเรียบร้อย!");
+    } catch (error) {
+      console.error("Save failed:", error.message);
+      alert("เกิดข้อผิดพลาดในการบันทึก");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Navbar />
@@ -116,11 +154,19 @@ const AssetPage = () => {
               onRefresh={fetchProjectAssets}
               projectId={id}
               searchQuery={searchQuery}
+              setPreviewAsset={setPreviewAsset}
             />
           ) : (
             <AssetEmptyState onUploadClick={handleOpenUpload} />
           )}
         </div>
+        {/* วางแอบไว้ตรงนี้ มันจะทำงานเมื่อ previewAsset ไม่เป็น null */}
+        <CharacterPreviewModal
+          isOpen={previewAsset !== null}
+          assetData={previewAsset}
+          onClose={() => setPreviewAsset(null)}
+          onSave={handleSaveTransformConfig}
+        />
       </div>
 
       {/* กล่องอัปโหลด/แก้ไขไฟล์ */}

@@ -61,14 +61,11 @@ const AssetModal = ({
 
   if (!isOpen) return null;
 
-  // 🌟 จุดปรับปรุงที่ 1: ระบบแกะชื่อไฟล์เป็นแท็กอัจฉริยะ (Smart Tag Auto-Fill)
   const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
       try {
-        // 1. ส่งไฟล์เข้ากระบวนการบีบอัดและย่อความสูงเหลือ 1080px (รักษาสัดส่วนเดิม)
-        // *หากไม่ใช่ไฟล์รูปภาพ ตัว Hook จะคืนไฟล์ดิบเดิมกลับมาให้ทันทีโดยไม่ประมวลผล*
         const optimizedFile = await compressImage(file, 1080);
 
         console.log(
@@ -82,29 +79,21 @@ const AssetModal = ({
           "KB",
         );
 
-        // 2. นำไฟล์ที่ผ่านการปรับขนาดและบีบอัดแล้ว เก็บเข้า State ของระบบ
-        // (State ตัวนี้จะถูกส่งไปยิงขึ้น Supabase Storage ในฟังก์ชันอัปโหลดของคุณ)
         setSelectedFile(optimizedFile);
 
-        // 3. แยกชื่อไฟล์ออกจากนามสกุล (คงโค้ด Logic เดิมของคุณไว้ทั้งหมดอย่างปลอดภัย)
         const rawName = optimizedFile.name.split(".").slice(0, -1).join(".");
         setAssetName(rawName);
 
-        // 4. ถ้าเป็นประเภท Sprite จะแยก Pattern ชื่อไฟล์เพื่อเดาแท็กให้ผู้ใช้ล่วงหน้า
         if (assetType === "sprite") {
-          // รองรับทั้งการคั่นด้วย _ หรือ - (เช่น fuse_smile หรือ fuse-smile)
           const parts = rawName.split(/[_-]/);
           if (parts.length >= 2) {
-            // ส่วนแรกมักเป็นชื่อตัวละคร, ส่วนสองเป็นสีหน้า
             setMainTag(parts[0].trim().toLowerCase());
             setExpressionTag(parts[1].trim().toLowerCase());
           } else if (parts.length === 1) {
-            // มีคำเดี่ยวๆ ยัดเป็นชื่อตัวละครไว้ก่อน
             setMainTag(parts[0].trim().toLowerCase());
           }
         }
       } catch (error) {
-        // ดักจับกรณีเกิดข้อผิดพลาดในการประมวลผลไฟล์ผ่าน Canvas API
         console.error("เกิดข้อผิดพลาดในการบีบอัดรูปภาพ:", error);
         alert(
           "ระบบไม่สามารถประมวลผลรูปภาพนี้ได้ กรุณาลองอัปโหลดใหม่อีกครั้งครับ",
@@ -123,7 +112,6 @@ const AssetModal = ({
     e.preventDefault();
     if (!assetName.trim()) return alert("กรุณากรอกชื่อ asset");
 
-    // 🌟 จุดปรับปรุงที่ 2: เช็กความพร้อมของแท็กถ้าเป็น Sprite
     if (assetType === "sprite" && (!mainTag.trim() || !expressionTag.trim())) {
       return alert(
         "ภาพตัวละคร (Sprite) จำเป็นต้องระบุทั้ง ชื่อตัวละคร (Main Tag) และ สีหน้า (Expression)",
@@ -157,7 +145,6 @@ const AssetModal = ({
         return alert("กรุณาเลือกไฟล์ที่ต้องการอัปโหลด");
       }
 
-      // ทำความสะอาดข้อมูลแท็กเพื่อความเสถียรของโค้ดสคริปต์ปลายทาง
       const finalMainTag = mainTag.trim();
       const finalExpressionTag = expressionTag.trim();
 
@@ -202,7 +189,7 @@ const AssetModal = ({
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
           <h3 className="text-lg font-bold text-gray-900">
             {mode === "edit" ? "แก้ไขไฟล์ asset" : "อัปโหลดไฟล์ใหม่"}
           </h3>
@@ -244,7 +231,7 @@ const AssetModal = ({
               </select>
             </div>
 
-            {/* 🌟 จุดปรับปรุงที่ 3: เพิ่มคำอธิบายกำกับ (Helper text) และปรับ Placeholder ของ Sprite Input */}
+            {/* เพิ่มคำอธิบายกำกับ (Helper text) และปรับ Placeholder ของ Sprite Input */}
             {assetType === "sprite" && (
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3 animate-in fade-in duration-200">
                 <p className="text-[11px] text-amber-600 font-medium">
@@ -428,7 +415,7 @@ const AssetModal = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-white flex-shrink-0">
+          <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-white shrink-0">
             <button
               type="button"
               onClick={onClose}

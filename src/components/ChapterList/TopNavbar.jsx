@@ -5,19 +5,15 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRenPyExport } from "../../hooks/useRenPyExport";
 import { Download, Folder, FileDown } from "lucide-react";
 
-// 💡 กำหนด URL ของไฟล์ Template (เลือกเปิดใช้วิธีใดวิธีหนึ่ง)
-// วิธีที่ 1: หากเก็บในโฟลเดอร์ public ของโปรเจค React
 //const TEMPLATE_URL = "/templates/renpy-thai-template.zip";
 
-// วิธีที่ 2: หากเก็บใน Supabase Storage (เปลี่ยน URL ให้ตรงกับโปรเจคของคุณ)
 const TEMPLATE_URL =
   //  "https://qwhrixreaurkpwzocqff.supabase.co/storage/v1/object/public/game-templates/renpy_templete-1.0-pc.zip";
   "https://github.com/EasyPooh/RenPy_Admin/releases/download/v1.0/renpy_template-1.0-pc.zip";
 
-const TopNavbar = ({ id }) => {
+const TopNavbar = ({ id, onExportClick, isExporting, exportProgress }) => {
   const navigate = useNavigate();
   const [projectName, setProjectName] = useState("กำลังโหลด...");
-  const { exportProject, isExporting, exportProgress } = useRenPyExport();
 
   useEffect(() => {
     const fetchProjectName = async () => {
@@ -31,7 +27,7 @@ const TopNavbar = ({ id }) => {
 
         if (error) throw error;
         if (data) {
-          setProjectName(data.titles || "ไม่มีชื่อโปรเจค");
+          setProjectName(data.titles || "ไม่มีชื่อโปรเจกต์");
         }
       } catch (error) {
         console.error("Error fetching project name:", error.message);
@@ -47,10 +43,12 @@ const TopNavbar = ({ id }) => {
   };
 
   const handleExportClick = () => {
-    exportProject(id, projectName);
+    if (typeof onExportClick === "function") {
+      onExportClick(projectName); // เรียก Callback จากหน้าหลักแทน และส่งชื่อโปรเจกต์กลับไป
+    }
   };
 
-  // 💡 เพิ่มฟังก์ชันสำหรับจัดการดาวน์โหลดไฟล์เทมเพลต
+  // เพิ่มฟังก์ชันสำหรับจัดการดาวน์โหลดไฟล์เทมเพลต
   const handleDownloadTemplate = () => {
     // สร้าง element <a> จำลองเพื่อสั่งดาวน์โหลดแบบโปรแกรมมิ่ง (Best Practice สำหรับ Web)
     const link = document.createElement("a");
@@ -75,7 +73,7 @@ const TopNavbar = ({ id }) => {
           <span className="text-sm">🔮</span>
           <span className="font-bold text-gray-700">RenPy Admin</span>
           <span className="text-gray-300">|</span>
-          <span className="text-gray-400">ชื่อโปรเจค : {projectName}</span>
+          <span className="text-gray-400">ชื่อโปรเจกต์ : {projectName}</span>
         </div>
       </div>
 
@@ -86,7 +84,7 @@ const TopNavbar = ({ id }) => {
           </span>
         )}
 
-        {/* 💡 ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ */}
+        {/* ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ */}
         <button
           onClick={handleDownloadTemplate}
           title="ดาวน์โหลดตัวเกมRen'Py สำหรับวางไฟล์เนื้อเรื่อง"

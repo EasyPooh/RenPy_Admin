@@ -1,9 +1,20 @@
-// src/components/Asset/AssetHeader.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Download } from "lucide-react";
 
 const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
   const navigate = useNavigate();
+  const TEMPLATE_URL =
+    "https://github.com/EasyPooh/RenPy_Admin/releases/download/v1.0/renpy_template-1.0-pc.zip";
+
+  const handleDownloadDemo = () => {
+    const link = document.createElement("a");
+    link.href = TEMPLATE_URL;
+    link.setAttribute("download", "renpy-thai-template.zip"); // ชื่อไฟล์ที่จะเซฟลงเครื่องผู้ใช้
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link); // เคลียร์ element ทิ้งหลังจากดาวน์โหลดเสร็จ
+  };
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
@@ -18,7 +29,7 @@ const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
         <div>
           <h1 className="text-xl font-bold text-gray-900">คลังจัดการ Assets</h1>
           <p className="text-xs text-gray-500">
-            อัปโหลด ค้นหา และแก้ไขไฟล์ต่าง ๆ ภายในโปรเจค
+            อัปโหลด ค้นหา และแก้ไขไฟล์ต่าง ๆ ภายในโปรเจกต์
           </p>
         </div>
       </div>
@@ -34,6 +45,14 @@ const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
             className="w-full pl-3 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50"
           />
         </div>
+        <button
+          onClick={handleDownloadDemo}
+          title="ดาวน์โหลดไฟล์ Assets สำหรับลองเทส"
+          className="flex items-center gap-1.5 text-slate-700 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95"
+        >
+          <Download className="w-4 h-4" />
+          <span>Download Assets Demo</span>
+        </button>
         <button
           onClick={handleOpenUpload}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm transition-all whitespace-nowrap"

@@ -43,10 +43,10 @@ const Allproject = ({ session }) => {
     fetchProjects();
   }, [session]); // 🔥 เพิ่มบรรทัดนี้: ให้ทำฟังก์ชันใหม่เมื่อ session มีการอัปเดต
 
-  // โค้ดเดิมของคุณ (ระบบลบไฟล์ขยะ และลบโปรเจค - รักษาไว้ 100%)
+  // โค้ดเดิมของคุณ (ระบบลบไฟล์ขยะ และลบโปรเจกต์ - รักษาไว้ 100%)
   const handleDeleteProject = async (projectId) => {
     const confirmDelete = window.confirm(
-      "คุณแน่ใจหรือไม่ที่จะลบโปรเจคนี้และ Assets ทั้งหมดในเกม?",
+      "คุณแน่ใจหรือไม่ที่จะลบโปรเจกต์นี้และ Assets ทั้งหมดในเกม?",
     );
     if (!confirmDelete) return;
 
@@ -88,10 +88,10 @@ const Allproject = ({ session }) => {
         prevProjects.filter((item) => item.id !== projectId),
       );
 
-      alert("ลบโปรเจคและเคลียร์ Assets ขยะสำเร็จเรียบร้อยแล้ว!");
+      alert("ลบโปรเจกต์และเคลียร์ Assets ขยะสำเร็จเรียบร้อยแล้ว!");
     } catch (error) {
       console.error("Error deleting project:", error.message);
-      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลโปรเจคได้ - " + error.message);
+      alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลโปรเจกต์ได้ - " + error.message);
     }
   };
 
@@ -149,7 +149,7 @@ const Allproject = ({ session }) => {
               </div>
               <div>
                 <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-                  โปรเจคของฉัน
+                  โปรเจกต์ของฉัน
                 </h1>
                 <p className="text-gray-500 mt-1 flex items-center gap-2">
                   <Gamepad2 className="w-4 h-4" />{" "}
@@ -162,7 +162,7 @@ const Allproject = ({ session }) => {
               <div className="flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 w-64 focus-within:border-violet-600 focus-within:ring-1 focus-within:ring-violet-600 transition-all">
                 <input
                   type="text"
-                  placeholder="ค้นหาชื่อโปรเจค..."
+                  placeholder="ค้นหาชื่อโปรเจกต์..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent border-none outline-none w-full text-sm text-gray-700 placeholder-gray-400"
@@ -172,7 +172,7 @@ const Allproject = ({ session }) => {
               <Link to="/CreateProject">
                 <button className="group inline-flex items-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl font-bold text-lg hover:bg-violet-700 transition-all duration-300 shadow-md hover:shadow-violet-200 active:scale-95">
                   <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-                  สร้างโปรเจคใหม่
+                  สร้างโปรเจกต์ใหม่
                 </button>
               </Link>
             </div>
@@ -183,7 +183,7 @@ const Allproject = ({ session }) => {
             <div className="flex flex-col items-center justify-center py-32 space-y-4">
               <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
               <p className="text-gray-400 font-medium">
-                กำลังดึงข้อมูลโปรเจค...
+                กำลังดึงข้อมูลโปรเจกต์...
               </p>
             </div>
           ) : filteredProjects.length === 0 ? (
@@ -229,10 +229,11 @@ const Allproject = ({ session }) => {
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex-1 space-y-3">
                       <h3 className="font-extrabold text-xl text-gray-900 group-hover:text-violet-600 transition-colors line-clamp-1">
-                        {item.titles || "ไม่มีชื่อโปรเจค"}
+                        {item.titles || "ไม่มีชื่อโปรเจกต์"}
                       </h3>
                       <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed">
-                        {item.description || "ไม่มีคำอธิบายสำหรับโปรเจคนี้..."}
+                        {item.description ||
+                          "ไม่มีคำอธิบายสำหรับโปรเจกต์นี้..."}
                       </p>
                     </div>
 
@@ -244,7 +245,7 @@ const Allproject = ({ session }) => {
                         onClick={() => navigate(`/EditProject/${item.id}`)}
                         className="text-sm font-bold text-violet-600 hover:text-violet-800 transition-colors"
                       >
-                        แก้ไขโปรเจค
+                        แก้ไขโปรเจกต์
                       </button>
                       <button
                         onClick={() => handleDeleteProject(item.id)}

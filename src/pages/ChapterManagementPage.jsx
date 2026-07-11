@@ -19,6 +19,7 @@ import { useSaveManager } from "../hooks/useSaveManager";
 import { useChapters } from "../hooks/useChapters";
 import { WorkspaceProvider } from "../contexts/WorkspaceContext.jsx";
 import { useBlocks } from "../hooks/useBlocks.js";
+import { useRenPyExport } from "../hooks/useRenPyExport";
 
 const ChapterManagementPage = () => {
   const { id } = useParams();
@@ -33,6 +34,7 @@ const ChapterManagementPage = () => {
 const ChapterContent = ({ projectId: id }) => {
   const { assetsList, isAssetsLoading } = useAssets(id);
   const { handleSaveAll, isSaving } = useSaveManager();
+  const { exportProject, isExporting, exportProgress } = useRenPyExport();
 
   const {
     Chapters,
@@ -77,6 +79,28 @@ const ChapterContent = ({ projectId: id }) => {
     clearPendingDeletions,
     loading: blocksLoading,
   } = useBlocks(id, activeChapterId, isDataChanged, setIsDataChanged);
+
+  // วางต่อท้ายกลุ่ม useChapters, useBlocks, useChapterConfig ใน ChapterManagementPage.jsx
+
+  /*// 🛡️ 1. ดักจับตอนผู้ใช้จะ "ปิดแท็บเบราว์เซอร์" หรือ "กด รีเฟรชหน้าจอ (F5)"
+  React.useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      // ส่องดูค่า isDataChanged ที่อยู่ตรงนี้ได้เลยโดยตรง
+      if (isDataChanged) {
+        e.preventDefault();
+        e.returnValue = "คุณยังไม่ได้บันทึกข้อมูลล่าสุด";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDataChanged]);*/
+
+  React.useEffect(() => {
+    // ⚡ ทุกครั้งที่ตัวแปร React (isDataChanged) เปลี่ยนแปลง ไม่ว่าจะมาจากจุดไหนใน 74 จุด
+    // มันจะวิ่งมาอัปเดตค่าให้ตัวแปรของเบราว์เซอร์ (window) ทันทีโดยอัตโนมัติ!
+    window.globalIsDataChanged = isDataChanged;
+  }, [isDataChanged]);
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
@@ -158,11 +182,34 @@ const ChapterContent = ({ projectId: id }) => {
     }
   }, [focusedBlockId, id]);
 
+  const handleTriggerExport = (projectName) => {
+    exportProject(id, projectName, async () => {
+      // สั่งทำงานฟังก์ชันเซฟรวมกลุ่ม พร้อมเปิดโหมดเงียบ (true ตัวสุดท้าย)
+      const success = await handleSaveAll(
+        id,
+        Chapters, // 💡 State จากหน้าหลักของคุณ
+        allConfigs, // 💡 State จากหน้าหลักของคุณ
+        allBlocks, // 💡 State จากหน้าหลักของคุณ
+        pendingDeletions,
+        clearPendingDeletions,
+        setIsDataChanged,
+        true, // 🔥 สั่งเป็น true เพื่อเปิดระบบเซฟเงียบ (ไม่โชว์ Alert บันทึกสำเร็จแยกต่างหาก)
+      );
+      return success; // ส่งสถานะ true/false กลับไปเพื่อให้ดาวน์โหลดทำงานต่อ
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
       <div className="flex-none bg-white">
         <Navbar />
-        <TopNavbar title="Chapter Management" id={id} />
+        <TopNavbar
+          title="Chapter Management"
+          id={id}
+          onExportClick={handleTriggerExport}
+          isExporting={isExporting}
+          exportProgress={exportProgress}
+        />
         <ChapterNavbar
           currentChapter={currentActiveChapter}
           tempStatus={tempStatus}

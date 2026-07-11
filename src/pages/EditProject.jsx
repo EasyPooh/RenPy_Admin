@@ -37,7 +37,7 @@ function EditProject() {
           setOldImageUrl(data.image_url || ""); // 👈 จำ URL รูปเดิมไว้ตอนดึงข้อมูลมาครั้งแรก
         }
       } catch (error) {
-        alert("ไม่พบข้อมูลโปรเจคนี้");
+        alert("ไม่พบข้อมูลโปรเจกต์นี้");
         navigate("/Allproject");
       } finally {
         setFetching(false);
@@ -109,7 +109,7 @@ function EditProject() {
         .eq("id", id);
 
       if (error) throw error;
-      alert("แก้ไขโปรเจคสำเร็จ!");
+      alert("แก้ไขโปรเจกต์สำเร็จ!");
       navigate("/Allproject");
     } catch (error) {
       alert(error.message);
@@ -174,9 +174,11 @@ function EditProject() {
             </div>
 
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">แก้ไขโปรเจค</h1>
+              <h1 className="text-2xl font-bold text-slate-800">
+                แก้ไขโปรเจกต์
+              </h1>
               <p className="text-gray-500 text-sm">
-                ตรวจสอบและปรับปรุงข้อมูลโปรเจคของคุณ
+                ตรวจสอบและปรับปรุงข้อมูลโปรเจกต์ของคุณ
               </p>
             </div>
           </div>
@@ -186,10 +188,10 @@ function EditProject() {
             className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-12"
           >
             <div className="space-y-8">
-              {/* ชื่อโปรเจค */}
+              {/* ชื่อโปรเจกต์ */}
               <div className="space-y-2">
                 <label className="block text-slate-700 font-bold mb-2">
-                  ชื่อโปรเจค <span className="text-red-500">*</span>
+                  ชื่อโปรเจกต์ <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -259,7 +261,7 @@ function EditProject() {
               {/* ภาพปกปัจจุบัน */}
               <div className="space-y-2">
                 <label className="block text-slate-700 font-bold mb-2">
-                  ภาพปกโปรเจค
+                  ภาพปกโปรเจกต์
                 </label>
 
                 <input
@@ -316,7 +318,7 @@ function EditProject() {
 
                       <div className="text-center">
                         <p className="text-sm font-semibold text-gray-500">
-                          ยังไม่มีภาพปกโปรเจค
+                          ยังไม่มีภาพปกโปรเจกต์
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           แนะนำขนาด 16:9 (คลิกเพื่ออัปโหลด)
