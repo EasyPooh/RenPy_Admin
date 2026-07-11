@@ -18,6 +18,8 @@ const AssetModal = ({
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageResolution, setImageResolution] = useState(null);
+  const [isTooSmall, setIsTooSmall] = useState(false);
 
   const [mainTag, setMainTag] = useState("");
   const [expressionTag, setExpressionTag] = useState("");
@@ -65,8 +67,35 @@ const AssetModal = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
+      // 1. เช็กความละเอียดจริง (Resolution) ของไฟล์ต้นฉบับก่อน
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const width = img.width;
+            const height = img.height;
+
+            // บันทึกขนาดลง State เพื่อเอาไปใช้แสดงผลบนหน้า UI
+            setImageResolution({ width, height });
+
+            // ถ้าเป็นสไปรท์ตัวละครแล้วความสูงต่ำกว่า 2400px ให้แจ้งเตือนสถานะ Too Small
+            if (assetType === "sprite" && height < 1080) {
+              setIsTooSmall(true);
+            } else {
+              setIsTooSmall(false);
+            }
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
       try {
-        const optimizedFile = await compressImage(file, 1080);
+        // 2. ปรับ Dynamic Max Width/Height ตามประเภท Asset
+        // ถ้าเป็น sprite ขยายเพดานเป็น 2500px เพื่อไม่ให้ภาพแตกและตัวจิ๋วใน Ren'Py
+        const targetSize = assetType === "sprite" ? 2560 : 1080;
+        const optimizedFile = await compressImage(file, targetSize);
 
         console.log(
           " ขนาดไฟล์เดิมก่อนบีบ:",
@@ -80,6 +109,10 @@ const AssetModal = ({
         );
 
         setSelectedFile(optimizedFile);
+
+        // สร้าง Preview URL สำหรับนำไปแสดงผลในแท็ก <img>
+        const url = URL.createObjectURL(optimizedFile);
+        setPreviewUrl(url);
 
         const rawName = optimizedFile.name.split(".").slice(0, -1).join(".");
         setAssetName(rawName);
@@ -105,6 +138,9 @@ const AssetModal = ({
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setPreviewUrl("");
+    // 3. รีเซ็ตค่าสเกลหน้าจอเมื่อกดยกเลิกไฟล์
+    setImageResolution(null);
+    setIsTooSmall(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -231,7 +267,7 @@ const AssetModal = ({
               </select>
             </div>
 
-            {/* เพิ่มคำอธิบายกำกับ (Helper text) และปรับ Placeholder ของ Sprite Input */}
+            {/* Sprite Input */}
             {assetType === "sprite" && (
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3 animate-in fade-in duration-200">
                 <p className="text-[11px] text-amber-600 font-medium">
@@ -287,11 +323,40 @@ const AssetModal = ({
                 {previewUrl ? (
                   <>
                     {isImageType ? (
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover object-[center_10%]"
-                      />
+                      <div className="relative w-full h-full">
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover object-[center_10%]"
+                        />
+                        {/* --- ส่วนที่เพิ่มเข้ามาใหม่ --- */}
+                        {imageResolution && (
+                          <div
+                            className={`absolute bottom-0 left-0 right-0 px-3 py-2 text-[10px] backdrop-blur-sm border-t ${
+                              isTooSmall
+                                ? "bg-red-50/90 text-red-600 border-red-100"
+                                : "bg-white/80 text-gray-500 border-gray-100"
+                            }`}
+                          >
+                            {isTooSmall ? (
+                              <div className="flex items-center gap-1 font-bold">
+                                <span>⚠️</span>
+                                <span>
+                                  ขนาดเล็กเกินไป ({imageResolution.width} ×{" "}
+                                  {imageResolution.height} px) แนะนำความสูง
+                                  1080px+
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="font-medium">
+                                ขนาดภาพ: {imageResolution.width} ×{" "}
+                                {imageResolution.height} px
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* ------------------------ */}
+                      </div>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-indigo-50/50 gap-2 px-4">
                         <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
@@ -385,7 +450,7 @@ const AssetModal = ({
               </div>
             </div>
 
-            {/* 4. ชื่อ Asset ที่ต้องการ */}
+            {/* 4. ชื่อ Asset */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 ชื่อ Asset ที่ต้องการ
@@ -399,7 +464,7 @@ const AssetModal = ({
               />
             </div>
 
-            {/* 5. คำอธิบาย / รายละเอียดเพิ่มเติม */}
+            {/* 5. คำอธิบาย */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 คำอธิบาย / รายละเอียดเพิ่มเติม
