@@ -5,12 +5,12 @@ import { Download } from "lucide-react";
 const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
   const navigate = useNavigate();
   const TEMPLATE_URL =
-    "https://github.com/EasyPooh/RenPy_Admin/releases/download/v1.0/renpy_template-1.0-pc.zip";
+    "https://github.com/EasyPooh/RenPy_Admin/releases/download/v1.0/assets_demo.zip";
 
   const handleDownloadDemo = () => {
     const link = document.createElement("a");
     link.href = TEMPLATE_URL;
-    link.setAttribute("download", "renpy-thai-template.zip"); // ชื่อไฟล์ที่จะเซฟลงเครื่องผู้ใช้
+    link.setAttribute("download", "assets_demo.zip"); // ชื่อไฟล์ที่จะเซฟลงเครื่องผู้ใช้
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link); // เคลียร์ element ทิ้งหลังจากดาวน์โหลดเสร็จ
