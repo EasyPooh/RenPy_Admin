@@ -134,7 +134,6 @@ const Allproject = ({ session }) => {
     item.titles?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // โค้ดส่วน UI และ Layout เดิมของคุณทั้งหมด (รักษาไว้ 100%)
   return (
     <div className="min-h-screen bg-[#F8F9FD] flex flex-col font-sans">
       <Navbar />

@@ -58,9 +58,9 @@ const ChapterItem = React.forwardRef(
             <span
               className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-purple-600" : "bg-gray-300"}`}
             ></span>
-            <span className="text-xs font-bold text-gray-400 select-none">
+            {/* <span className="text-xs font-bold text-gray-400 select-none">
               {index}.
-            </span>
+            </span>*/}
 
             <input
               type="text"

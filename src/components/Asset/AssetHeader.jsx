@@ -27,7 +27,7 @@ const AssetHeader = ({ searchQuery, setSearchQuery, handleOpenUpload }) => {
           ← กลับ
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">คลังจัดการ Assets</h1>
+          <h1 className="text-xl font-bold text-gray-900">Asset Library</h1>
           <p className="text-xs text-gray-500">
             อัปโหลด ค้นหา และแก้ไขไฟล์ต่าง ๆ ภายในโปรเจกต์
           </p>

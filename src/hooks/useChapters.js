@@ -122,7 +122,7 @@
       try {
         const newChapterData = await chapterService.createChapter(
           id, 
-          `บทที่ ${Chapters.length + 1}`, 
+          `บทใหม่`, 
           Chapters.length, 
           [], 
           "draft"

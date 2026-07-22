@@ -141,16 +141,16 @@ export default function CharacterPreviewModal({
                     {assetData?.file_name?.split(".")[0] || "Character Name"}
                   </div>
                   <div className="mt-1 text-[11px] text-slate-600 leading-relaxed">
-                    "กล่องคำพูดจำลองการแสดงบทสนทนา"
+                    "กล่องคำพูดพรีวิวการแสดงบทสนทนา"
                   </div>
                 </div>
               )}
             </div>
 
-            {/* แถบควบคุมใต้จอจำลอง */}
+            {/* แถบควบคุมใต้จอพรีวิว */}
             <div className="mt-3 flex items-center justify-between">
               <span className="text-xs text-slate-400">
-                * จอจำลองสัดส่วนคล้ายหน้าจอภายในตัวเกม Ren'Py
+                * จอพรีวิวสัดส่วนคล้ายหน้าจอภายในตัวเกม Ren'Py
               </span>
               <button
                 onClick={() => setShowTextbox(!showTextbox)}

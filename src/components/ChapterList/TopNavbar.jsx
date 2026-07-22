@@ -84,7 +84,7 @@ const TopNavbar = ({ id, onExportClick, isExporting, exportProgress }) => {
           </span>
         )}
 
-        {/* ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ */}
+        {/* ผูกฟังก์ชัน handleDownloadTemplate เข้ากับ onClick ที่นี่ 
         <button
           onClick={handleDownloadTemplate}
           title="ดาวน์โหลดตัวเกมRen'Py สำหรับวางไฟล์เนื้อเรื่อง"
@@ -92,7 +92,7 @@ const TopNavbar = ({ id, onExportClick, isExporting, exportProgress }) => {
         >
           <Download className="w-4 h-4" />
           <span>Download game template</span>
-        </button>
+        </button>*/}
 
         <button
           onClick={handleAssetPage}
@@ -110,7 +110,7 @@ const TopNavbar = ({ id, onExportClick, isExporting, exportProgress }) => {
           className="flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-2 rounded-xl font-medium transition-all duration-300 ease-in-out hover:bg-violet-100 hover:text-violet-800 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:scale-95 "
         >
           <FileDown className="w-4 h-4" />
-          <span>{isExporting ? "Exporting..." : "Export ZIP"}</span>
+          <span>{isExporting ? "Exporting..." : "Export Game ZIP"}</span>
         </button>
       </div>
     </div>
