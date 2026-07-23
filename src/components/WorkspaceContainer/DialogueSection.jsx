@@ -258,7 +258,7 @@ const DialogueSection = ({
         {/* 🖼️ 2. ตู้เลือกรูปภาพและสีหน้าตัวละคร (react-select) */}
         <div className="w-2/5 min-w-44">
           <label className="text-xs font-bold text-gray-400 tracking-wider block mb-1">
-            รูปภาพและสีหน้าตัวละครที่ต้องการแสดง
+            รูปภาพและ(สีหน้าตัวละคร)ที่ต้องการแสดง
           </label>
           <Select
             options={assetOptions}

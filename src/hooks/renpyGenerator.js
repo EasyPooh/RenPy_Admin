@@ -484,21 +484,21 @@ export function generateAssetsRpy(assetsList) {
     const imageName = lastDotIndex !== -1 ? finalFileName.substring(0, lastDotIndex) : finalFileName;
     
     // เขียนโค้ดลงทะเบียนภาพลงสคริปต์
-    rpyContent += `image ${imageName}:\n`;
-    rpyContent += `    "images/${finalFileName}"\n`;
+    /*rpyContent += `image ${imageName}:\n`;
+    rpyContent += `    "images/${finalFileName}"\n`;*/
 
     // คีย์เวิร์ดเด็ด: เติมค่าคอนฟิกตำแหน่งทางเทคนิคลงไปคุมท้ายภาพตัวละคร
     if (isSprite) {
-      // ดึงค่า config ฝั่ง Sprite
-      const zoom = asset.transform_config?.zoom ?? 1.0;
-      // เปลี่ยนมาดึงค่า yoffset ตรงๆ (หน่วยเป็นพิกเซล เช่น 0, 200, 400)
-      const yoffset = asset.transform_config?.yoffset ?? 0;
+  // 🟢 โค้ดสำหรับภาพตัวละคร (ใช้ Block style)
+  const zoom = asset.transform_config?.zoom ?? 1.0;
+  const yoffset = asset.transform_config?.yoffset ?? 0;
 
-      rpyContent += `    zoom ${Number(zoom).toFixed(2)}\n`;
-      // ควบคุมระยะความสูงของตัวละครเป็นพิกเซล
-      rpyContent += `    yoffset ${parseInt(yoffset)}\n\n`; // พ่นค่า offset ไปควบคุมระยะขยับแทน
+  rpyContent += `image ${imageName}:\n`;
+  rpyContent += `    "images/${finalFileName}"\n`;
+  rpyContent += `    zoom ${Number(zoom).toFixed(2)}\n`;
+  rpyContent += `    yoffset ${parseInt(yoffset)}\n\n`;
     } else {
-      rpyContent += `\n`; 
+      rpyContent += `image ${imageName} = Transform("images/${finalFileName}", size=(1920, 1080), fit="cover")\n\n`;
     }
   });
 

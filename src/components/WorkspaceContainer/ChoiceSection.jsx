@@ -145,11 +145,15 @@ const ChoiceSection = ({
   const handleRemoveDialogueItem = (choiceId, dialogueId) => {
     const updatedChoices = choicesList.map((c) => {
       if (c.id === choiceId) {
+        // 🟢 ดึงข้อมูลชุดปัจจุบันมาตั้งต้นก่อนลบ
+        const currentDialogues =
+          c.dialoguesList && c.dialoguesList.length > 0
+            ? c.dialoguesList
+            : [{ id: `${choiceId}_d1`, text: "", character: "" }];
+
         return {
           ...c,
-          dialoguesList: (c.dialoguesList || []).filter(
-            (d) => d.id !== dialogueId,
-          ),
+          dialoguesList: currentDialogues.filter((d) => d.id !== dialogueId),
         };
       }
       return c;
@@ -160,9 +164,15 @@ const ChoiceSection = ({
   const handleDialogueTextChange = (choiceId, dialogueId, value) => {
     const updatedChoices = choicesList.map((c) => {
       if (c.id === choiceId) {
+        // 🟢 ดึงข้อมูลชุดปัจจุบัน ถ้ายังไม่มี ให้ใช้อาร์เรย์เริ่มต้นก่อน
+        const currentDialogues =
+          c.dialoguesList && c.dialoguesList.length > 0
+            ? c.dialoguesList
+            : [{ id: `${choiceId}_d1`, text: "", character: "" }];
+
         return {
           ...c,
-          dialoguesList: (c.dialoguesList || []).map((d) =>
+          dialoguesList: currentDialogues.map((d) =>
             d.id === dialogueId ? { ...d, text: value } : d,
           ),
         };
@@ -175,9 +185,15 @@ const ChoiceSection = ({
   const handleUpdateChoiceDialogue = (choiceItemId, dialogueId, key, value) => {
     const updatedChoices = choicesList.map((c) => {
       if (c.id === choiceItemId) {
+        // 🟢 เช็กว่าถ้า dialoguesList ยังไม่มี หรือเป็นอาร์เรย์ว่าง ให้สร้างตัวเริ่มต้นไว้ก่อน (ID ต้องตรงกับใน UI)
+        const currentDialogues =
+          c.dialoguesList && c.dialoguesList.length > 0
+            ? c.dialoguesList
+            : [{ id: `${choiceItemId}_d1`, text: "", character: "" }];
+
         return {
           ...c,
-          dialoguesList: (c.dialoguesList || []).map((d) => {
+          dialoguesList: currentDialogues.map((d) => {
             if (d.id !== dialogueId) return d;
             return { ...d, [key]: value };
           }),
@@ -185,6 +201,7 @@ const ChoiceSection = ({
       }
       return c;
     });
+
     handleUpdateBlock(id, "choice", updatedChoices);
   };
 
@@ -329,7 +346,7 @@ const ChoiceSection = ({
               {/* บรรทัดที่ 1: พิมพ์ข้อความตัวเลือก */}
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-gray-400 tracking-wider w-25 shrink-0">
-                  ตัวเลือกที่ {index + 1}:
+                  ตัวเลือก {index + 1}
                 </span>
                 <input
                   ref={index === 0 ? inputRef : null}
@@ -368,9 +385,8 @@ const ChoiceSection = ({
 
               {/* บรรทัดย่อย: จัดการบทสนทนาภายในช้อยส์ */}
               <div className="flex flex-col gap-2 mt-2 w-full">
-                {(
-                  item.dialoguesList || [{ id: item.id + "_d1", text: "" }]
-                ).map((dialogueItem, dIndex) => {
+                {/* 🟢 ปรับตรงนี้: ถ้าลบจนเหลือ [] ก็ให้วนลูป 0 รอบ (ไม่แสดงแถบเลย) */}
+                {(item.dialoguesList || []).map((dialogueItem, dIndex) => {
                   // 🎯 ค้นหาตัวเลือกตัวละครในปัจจุบันเพื่อผูกค่าเข้ากับ react-select
                   const currentCharacterOption = characterOptions.find(
                     (opt) => opt.value === (dialogueItem.character || ""),
@@ -382,10 +398,10 @@ const ChoiceSection = ({
                       className="flex items-center gap-2"
                     >
                       <span className="text-xs font-bold text-gray-400 tracking-wider w-25 shrink-0">
-                        บทสนทนา {dIndex + 1} :
+                        คำพูดตอบรับ {index + 1}.{dIndex + 1}
                       </span>
 
-                      {/* 🎯 สลับร่าง <select> เดิมเป็นเครื่องมือค้นหา React-Select อัจฉริยะ */}
+                      {/* 🎯 Dropdown เลือกตัวละคร */}
                       <div className="min-w-44 text-gray-700 font-sans">
                         <Select
                           options={characterOptions}
@@ -409,24 +425,26 @@ const ChoiceSection = ({
                         />
                       </div>
 
+                      {/* Input พิมพ์บทสนทนา */}
                       <input
                         ref={(el) => {
                           if (el)
                             dialogueInputsRef.current[dialogueItem.id] = el;
                         }}
                         type="text"
-                        placeholder="พิมพ์บทสนทนาที่คำตอบจะต่างไป..."
+                        placeholder="พิมพ์คำพูดที่จะแสดงทันทีหลังผู้เล่นกดช้อยส์นี้ (เช่น อ๋อ เรื่องนั้นเองเหรอ...)"
                         value={dialogueItem.text || ""}
                         disabled={isGhosted}
                         onChange={(e) =>
                           handleDialogueTextChange(
                             item.id,
                             dialogueItem.id,
-                            "e.target.value" === "true" ? true : e.target.value,
+                            e.target.value, // 🟢 แก้ไข: ตัดเงื่อนไข String "e.target.value" ออก ให้ส่ง e.target.value ได้เลย
                           )
                         }
                         className="w-full bg-white text-gray-700 placeholder-gray-300 text-xs md:text-sm border border-gray-200 rounded-lg py-2 px-3 focus:outline-none focus:border-purple-400 h-9.5"
                       />
+
                       <button
                         onClick={() =>
                           handleRemoveDialogueItem(item.id, dialogueItem.id)
@@ -473,7 +491,7 @@ const ChoiceSection = ({
                         d="M12 4.5v15m7.5-7.5h-15"
                       />
                     </svg>
-                    เพิ่มบทสนทนาเฉพาะช้อยส์นี้
+                    เพิ่มคำพูดตอบรับหลังกดช้อยส์นี้
                   </button>
                 </div>
               </div>

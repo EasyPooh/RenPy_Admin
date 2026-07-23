@@ -8,10 +8,23 @@ export default function CharacterPreviewModal({
   onSave,
 }) {
   const [zoom, setZoom] = useState(1.0);
-  const [yoffset, setYoffset] = useState(0); // เปลี่ยนจาก yalign เป็น yoffset (หน่วยพิกเซล)
+  const [yoffset, setYoffset] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [showTextbox, setShowTextbox] = useState(true);
   const [imageUrl, setImageUrl] = useState(null);
+
+  // 🌟 เพิ่ม State สำหรับสลับตำแหน่งพรีวิว (left, center, right)
+  const [previewAlign, setPreviewAlign] = useState("center");
+
+  // เก็บขนาดจริงของไฟล์ภาพ
+  const [imgDimensions, setImgDimensions] = useState({ width: 0, height: 0 });
+
+  // แมปตำแหน่งRen'Py (xalign) เป็น % บน Canvas
+  const alignMap = {
+    left: { label: "ซ้าย (0.16)", value: "16%" },
+    center: { label: "กลาง (0.50)", value: "50%" },
+    right: { label: "ขวา (0.84)", value: "84%" },
+  };
 
   // 1. Sync Initial Data เมื่อ assetData เปลี่ยนแปลง
   useEffect(() => {
@@ -24,7 +37,12 @@ export default function CharacterPreviewModal({
     }
   }, [assetData]);
 
-  // 2. Fetch Signed URL พร้อมระบบ Cleanup ป้องกัน Race Conditions
+  // Reset ขนาดภาพเมื่อเปลี่ยน Asset
+  useEffect(() => {
+    setImgDimensions({ width: 0, height: 0 });
+  }, [assetData?.id]);
+
+  // 2. Fetch Signed URL
   useEffect(() => {
     let isMounted = true;
 
@@ -62,13 +80,26 @@ export default function CharacterPreviewModal({
     };
   }, [assetData?.storage_path, isOpen]);
 
+  const handleImageLoad = (e) => {
+    setImgDimensions({
+      width: e.target.naturalWidth,
+      height: e.target.naturalHeight,
+    });
+  };
+
+  const handleAutoFit = () => {
+    if (imgDimensions.height > 0) {
+      const fitZoom = Number((1080 / imgDimensions.height).toFixed(2));
+      setZoom(fitZoom);
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleSaveClick = async () => {
     setIsSaving(true);
     try {
       if (typeof onSave === "function") {
-        // ส่งโครงสร้าง yoffset กลับไปบันทึกใน Database
         await onSave(assetData.id, { zoom, yoffset });
         onClose();
       } else {
@@ -82,14 +113,25 @@ export default function CharacterPreviewModal({
     }
   };
 
+  const calculatedHeightPercentage = imgDimensions.height
+    ? `${(imgDimensions.height / 1080) * 100}%`
+    : "100%";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="w-full max-w-5xl rounded-xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4 bg-white">
-          <h3 className="text-base font-bold text-gray-900">
-            ปรับแต่งพิกัดตัวละคร: {assetData?.file_name}
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-bold text-gray-900">
+              ปรับแต่งพิกัดตัวละคร: {assetData?.file_name}
+            </h3>
+            {imgDimensions.width > 0 && (
+              <span className="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                {imgDimensions.width} × {imgDimensions.height} px
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -100,7 +142,7 @@ export default function CharacterPreviewModal({
 
         {/* Body Layout */}
         <div className="p-6 grid grid-cols-1 gap-6 lg:grid-cols-3 overflow-y-auto">
-          {/* ฝั่งซ้าย: Canvas จำลองหน้าจอเกม 16:9 */}
+          {/* ฝั่งซ้าย: Canvas จำลองหน้าจอเกม 16:9 (1920x1080) */}
           <div className="lg:col-span-2 flex flex-col">
             <div
               className="relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200"
@@ -111,32 +153,33 @@ export default function CharacterPreviewModal({
                 backgroundSize: "20px 20px",
               }}
             >
-              {/* เส้นไกด์กึ่งกลางจอแนวดิ่ง */}
-              <div className="absolute inset-y-0 left-1/2 w-px border-l border-dashed border-slate-300 pointer-events-none"></div>
+              {/* เส้นไกด์ตำแหน่ง 3 จุด (ซ้าย 16%, กลาง 50%, ขวา 84%) */}
+              <div className="absolute inset-y-0 left-[16%] w-px border-l border-dashed border-slate-200 pointer-events-none z-10 opacity-60"></div>
+              <div className="absolute inset-y-0 left-1/2 w-px border-l border-dashed border-slate-300 pointer-events-none z-10"></div>
+              <div className="absolute inset-y-0 left-[84%] w-px border-l border-dashed border-slate-200 pointer-events-none z-10 opacity-60"></div>
 
-              {/* ตัวละครที่มีการคำนวณแบบสัดส่วนตรงกับ Ren'Py */}
+              {/* ตัวละครที่พรีวิวตามตำแหน่งที่เลือก */}
               {imageUrl && (
                 <img
                   src={imageUrl}
                   alt="Character Preview"
-                  className="absolute will-change-transform select-none"
+                  onLoad={handleImageLoad}
+                  className="absolute will-change-transform select-none max-w-none transition-[left] duration-200 ease-out"
                   style={{
-                    height: "100%",
-                    left: "50%",
-                    bottom: "0%",
-                    /* 
-        แก้ไข: แปลงหน่วย yoffset (พิกเซลเกม) ให้เป็น % เทียบกับความสูงหน้าจอเกมจริง (1080px) 
-        ทำให้แสดงผลตำแหน่งได้ตรงตามหน้าจอเกม 1:1 และภาพไม่หลุดขอบจอพรีวิว
-      */
-                    transform: `translate(-50%, calc((${yoffset} / 1080) * 100%)) scale(${zoom})`,
+                    height: calculatedHeightPercentage,
+                    width: "auto",
+                    /* 🌟 ปรับตำแหน่ง left ตามปุ่มที่เลือก (16%, 50%, หรือ 84%) */
+                    left: alignMap[previewAlign].value,
+                    bottom: `calc((${yoffset} / 1080) * -100%)`,
+                    transform: `translateX(-50%) scale(${zoom})`,
                     transformOrigin: `center bottom`,
                   }}
                 />
               )}
 
-              {/* กล่องคำพูดจำลอง (Dialogue Box Mockup) */}
+              {/* กล่องคำพูดจำลอง */}
               {showTextbox && (
-                <div className="absolute bottom-4 left-1/2 w-[92%] -translate-x-1/2 rounded-xl bg-white/95 backdrop-blur-sm p-4 border border-slate-200 shadow-lg pointer-events-none select-none transition-all">
+                <div className="absolute bottom-4 left-1/2 w-[92%] -translate-x-1/2 rounded-xl bg-white/95 backdrop-blur-sm p-4 border border-slate-200 shadow-lg pointer-events-none select-none transition-all z-20">
                   <div className="text-xs font-bold text-indigo-600">
                     {assetData?.file_name?.split(".")[0] || "Character Name"}
                   </div>
@@ -150,7 +193,7 @@ export default function CharacterPreviewModal({
             {/* แถบควบคุมใต้จอพรีวิว */}
             <div className="mt-3 flex items-center justify-between">
               <span className="text-xs text-slate-400">
-                * จอพรีวิวสัดส่วนคล้ายหน้าจอภายในตัวเกม Ren'Py
+                * พรีวิวอ้างอิงอัตราส่วนจอ 1920x1080 (WYSIWYG)
               </span>
               <button
                 onClick={() => setShowTextbox(!showTextbox)}
@@ -165,14 +208,48 @@ export default function CharacterPreviewModal({
             </div>
           </div>
 
-          {/* ฝั่งขวา: แผงควบคุม (Sliders Panel) */}
+          {/* ฝั่งขวา: แผงควบคุม (Sliders & Preview Align) */}
           <div className="flex flex-col justify-between rounded-xl bg-slate-50 p-5 border border-slate-100">
-            <div className="space-y-6">
-              <div className="border-b border-slate-200 pb-2">
+            <div className="space-y-5">
+              <div className="border-b border-slate-200 pb-2 flex justify-between items-center">
                 <h4 className="text-sm font-bold text-slate-800">
                   คอนโทรลพิกัด (Transform)
                 </h4>
+                <button
+                  type="button"
+                  onClick={handleAutoFit}
+                  className="text-[11px] text-indigo-600 font-semibold hover:underline"
+                >
+                  ปรับพอดีจอ
+                </button>
               </div>
+
+              {/* 🌟 ปุ่มเลือกตำแหน่งพรีวิว (Left / Center / Right) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  ทดลองวางตำแหน่งพรีวิว
+                </label>
+                <div className="grid grid-cols-3 gap-1 bg-slate-200/70 p-1 rounded-lg">
+                  {Object.keys(alignMap).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setPreviewAlign(key)}
+                      className={`py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                        previewAlign === key
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {key === "left" && "ซ้าย"}
+                      {key === "center" && "กลาง"}
+                      {key === "right" && "ขวา"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <hr className="border-slate-200 my-2" />
 
               {/* Slider 1: Zoom */}
               <div className="space-y-2">
@@ -184,9 +261,9 @@ export default function CharacterPreviewModal({
                 </div>
                 <input
                   type="range"
-                  min="0.3"
+                  min="0.1"
                   max="3.0"
-                  step="0.05"
+                  step="0.01"
                   value={zoom}
                   onChange={(e) => setZoom(parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
@@ -205,9 +282,9 @@ export default function CharacterPreviewModal({
                 </div>
                 <input
                   type="range"
-                  min="-600" // ปรับค่าพิกเซลให้ยืดหยุ่นขยับขึ้นบนได้สูง
-                  max="600" // ขยับลงล่างได้ลึก
-                  step="5" // เลื่อนทีละ 5px เพื่อความลื่นไหลในการปรับแต่ง
+                  min="-800"
+                  max="800"
+                  step="5"
                   value={yoffset}
                   onChange={(e) => setYoffset(parseInt(e.target.value, 10))}
                   className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
@@ -215,8 +292,8 @@ export default function CharacterPreviewModal({
               </div>
             </div>
 
-            {/* ปุ่ม Actions ด้านล่างแผงควบคุม */}
-            <div className="mt-8 flex gap-3 border-t border-slate-200 pt-4">
+            {/* ปุ่ม Actions */}
+            <div className="mt-6 flex gap-3 border-t border-slate-200 pt-4">
               <button
                 onClick={onClose}
                 className="flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"

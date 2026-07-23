@@ -58,14 +58,14 @@ const StartSection = ({
   return (
     <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3 select-none">
       <div className="text-xs font-bold text-black-400 tracking-wider">
-        🎬 CONFIG ฉากเริ่มต้น
+        🎬 CONFIG ตั้งค่าเริ่มต้นของบทนี้
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Start Background */}
         <div className="flex items-center space-x-2">
           <span className="text-xs font-bold text-gray-700 tracking-wider">
-            start background
+            ภาพพื้นหลังเริ่มต้น
           </span>
           <select
             value={startBg}
@@ -91,7 +91,7 @@ const StartSection = ({
         {/* Start Music */}
         <div className="flex items-center space-x-2">
           <span className="text-xs font-bold text-gray-700 tracking-wider">
-            start music
+            เพลงพื้นหลังเริ่มต้น
           </span>
           <select
             value={startMusic}
@@ -119,7 +119,7 @@ const StartSection = ({
       <div className="flex flex-col space-y-2">
         <div className="flex items-center space-x-2">
           <span className="text-xs font-bold text-gray-700 tracking-wider">
-            start character
+            ชื่อตัวละครที่อยู่บทนี้
           </span>
           <input
             type="text"

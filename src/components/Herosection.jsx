@@ -1,23 +1,36 @@
 import React from "react";
 import { Link } from "react-router";
 
-// 1. รับค่า session เข้ามาเป็น Prop
 const Herosection = ({ session }) => (
-  <section className="pt-32 pb-20 px-4 bg-linear-to-b from-purple-50 to-white text-center">
-    <h1 className="text-5xl md:text-6xl font-bold mb-6">
-      ให้การสร้าง <span className="text-purple-600">Visual Novel</span>
-      <br />
-      เป็นเรื่องง่าย
+  <section className="relative pt-28 pb-20 px-4 bg-gradient-to-b from-purple-100/70 via-purple-50/30 to-white text-center text-balance overflow-hidden">
+    {/* Ambient Background Glow (แสงฟุ้งสร้างมิติ) */}
+    <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] bg-purple-300/30 blur-[100px] pointer-events-none rounded-full" />
+
+    {/* Pill Badge ดึงสายตา 
+    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-100/80 border border-purple-200 text-purple-700 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
+      <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
+      Ren'Py Visual Scripting Platform
+    </div>*/}
+
+    {/* Heading พร้อม Gradient Text */}
+    <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 text-slate-900 tracking-tight">
+      สร้างเกม{" "}
+      <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+        วิชวลโนเวล
+      </span>{" "}
+      บนเว็บ
     </h1>
-    <p className="text-gray-500 max-w-2xl mx-auto mb-10 text-lg">
-      ระบบสำหรับพัฒนา Ren'Py อย่างง่าย — จัดการบทเนื้อเรื่อง ตัวละคร และ Asset
-      ของ Ren'Py ได้ครบจบในที่เดียว
+
+    <p className="text-slate-600 max-w-2xl mx-auto mb-10 text-base sm:text-lg leading-relaxed">
+      พัฒนาเกมผ่านระบบ Visual Blocks
+      <br className="hidden sm:inline" />
+      ลดเวลาเขียนโค้ด สร้างบทสนทนา ตัวละคร และ Assets ได้เป็นระบบมากยิ่งขึ้น
     </p>
-    <div className="flex justify-center gap-4">
-      {/* 2. เช็กเงื่อนไขในช่อง to: ถ้าล็อกอินแล้วไป /Allproject ถ้ายังไม่ล็อกอินให้ไป /LoginPage */}
+
+    <div className="flex justify-center gap-4 relative z-10">
       <Link to={session ? "/Allproject" : "/LoginPage"}>
-        <button className="bg-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-purple-700 transition active:scale-95">
-          Get Started →
+        <button className="bg-purple-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-purple-700 transition active:scale-95 shadow-lg shadow-purple-600/25">
+          เริ่มสร้างเลย →
         </button>
       </Link>
     </div>
@@ -25,9 +38,3 @@ const Herosection = ({ session }) => (
 );
 
 export default Herosection;
-{
-  /* 
-      <button className="border border-gray-200 px-8 py-3 rounded-xl font-semibold hover:bg-gray-50 transition">
-        คู่มือการใช้
-      </button>*/
-}

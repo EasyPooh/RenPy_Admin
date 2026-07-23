@@ -61,6 +61,23 @@ const AssetModal = ({
     return () => URL.revokeObjectURL(objectUrl);
   }, [selectedFile]);
 
+  // 🟢 อ่านขนาดภาพทุกครั้งที่ previewUrl มีการเปลี่ยนแปลง (การันตีว่าทำงานแน่นอน 100%)
+  useEffect(() => {
+    if (!previewUrl) {
+      setImageResolution(null);
+      return;
+    }
+
+    const img = new Image();
+    img.src = previewUrl;
+    img.onload = () => {
+      setImageResolution({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      });
+    };
+  }, [previewUrl]);
+
   if (!isOpen) return null;
 
   const handleFileChange = async (e) => {
@@ -150,7 +167,7 @@ const AssetModal = ({
 
     if (assetType === "sprite" && (!mainTag.trim() || !expressionTag.trim())) {
       return alert(
-        "ภาพตัวละคร (Sprite) จำเป็นต้องระบุทั้ง ชื่อตัวละคร (Main Tag) และ สีหน้า (Expression)",
+        "ภาพตัวละคร (Sprite) จำเป็นต้องระบุทั้ง ชื่อตัวละคร และ สีหน้าตัวละคร",
       );
     }
 
@@ -219,7 +236,38 @@ const AssetModal = ({
     }
   };
 
+  const getAssetUploadInfo = (type) => {
+    switch (type) {
+      case "background":
+        return {
+          title: "คลิกเพื่ออัปโหลด ภาพพื้นหลัง",
+          hint: "แนะนำสัดส่วน 1920x1080 สำหรับฉากหลัง",
+        };
+      case "sprite":
+        return {
+          title: "คลิกเพื่ออัปโหลด ภาพตัวละคร",
+          hint: "แนะนำไฟล์ .PNG ที่ไม่มีพื้นหลัง (Transparent)",
+        };
+      case "music":
+        return {
+          title: "คลิกเพื่ออัปโหลด เพลงประกอบ (BGM)",
+          hint: "รองรับไฟล์รูปแบบ MP3, WAV, OGG",
+        };
+      case "sound_effect":
+        return {
+          title: "คลิกเพื่ออัปโหลด เอฟเฟกต์เสียง (SFX)",
+          hint: "รองรับไฟล์รูปแบบ MP3, WAV, OGG",
+        };
+      default:
+        return {
+          title: "คลิกเพื่ออัปโหลดไฟล์ asset",
+          hint: "",
+        };
+    }
+  };
+
   const isImageType = assetType === "background" || assetType === "sprite";
+  const isSprite = assetType === "sprite" || selectedAsset?.type === "sprite";
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -260,7 +308,7 @@ const AssetModal = ({
               >
                 <option value="background">ภาพพื้นหลัง (Background)</option>
                 <option value="sprite">ภาพตัวละคร (Sprite)</option>
-                <option value="music">เพลงประกอบ (Music)</option>
+                <option value="music">เพลงประกอบ (Background Music)</option>
                 <option value="sound_effect">
                   เอฟเฟกต์เสียง (Sound Effect)
                 </option>
@@ -270,14 +318,14 @@ const AssetModal = ({
             {/* Sprite Input */}
             {assetType === "sprite" && (
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3 animate-in fade-in duration-200">
-                <p className="text-[11px] text-amber-600 font-medium">
+                {/* <p className="text-[11px] text-amber-600 font-medium">
                   ⚠️
                   แท็กเหล่านี้จะถูกใช้ในการจับคู่กับชื่อตัวละครและสีหน้าในระบบเนื้อเรื่องอัตโนมัติ
-                </p>
+                </p>*/}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">
-                      ตัวละคร (Main Tag) <span className="text-red-500">*</span>
+                      ชื่อตัวละคร <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -289,8 +337,7 @@ const AssetModal = ({
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">
-                      สีหน้า (Expression){" "}
-                      <span className="text-red-500">*</span>
+                      สีหน้าตัวละคร <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -319,43 +366,34 @@ const AssetModal = ({
                 className="hidden"
               />
 
-              <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group transition-all duration-300">
+              <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group transition-all duration-300">
                 {previewUrl ? (
                   <>
                     {isImageType ? (
-                      <div className="relative w-full h-full">
+                      <div
+                        className={`relative w-full h-full rounded-lg overflow-hidden ${
+                          isSprite ? "bg-slate-100/80" : "bg-black/5"
+                        }`}
+                      >
                         <img
                           src={previewUrl}
                           alt="Preview"
-                          className="w-full h-full object-cover object-[center_10%]"
+                          className={`w-full h-full transition-all ${
+                            isSprite
+                              ? "object-contain p-2 pb-7"
+                              : "object-cover object-center"
+                          }`}
                         />
-                        {/* --- ส่วนที่เพิ่มเข้ามาใหม่ --- */}
+
+                        {/* แถบแสดงขนาดภาพ */}
                         {imageResolution && (
-                          <div
-                            className={`absolute bottom-0 left-0 right-0 px-3 py-2 text-[10px] backdrop-blur-sm border-t ${
-                              isTooSmall
-                                ? "bg-red-50/90 text-red-600 border-red-100"
-                                : "bg-white/80 text-gray-500 border-gray-100"
-                            }`}
-                          >
-                            {isTooSmall ? (
-                              <div className="flex items-center gap-1 font-bold">
-                                <span>⚠️</span>
-                                <span>
-                                  ขนาดเล็กเกินไป ({imageResolution.width} ×{" "}
-                                  {imageResolution.height} px) แนะนำความสูง
-                                  1080px+
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="font-medium">
-                                ขนาดภาพ: {imageResolution.width} ×{" "}
-                                {imageResolution.height} px
-                              </div>
-                            )}
+                          <div className="absolute bottom-0 left-0 right-0 z-20 px-3 py-1.5 text-[10px] backdrop-blur-md bg-white/80 text-gray-600 border-t border-gray-200/50">
+                            <div className="font-medium">
+                              ขนาดภาพ: {imageResolution.width} ×{" "}
+                              {imageResolution.height} px
+                            </div>
                           </div>
                         )}
-                        {/* ------------------------ */}
                       </div>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-indigo-50/50 gap-2 px-4">
@@ -436,13 +474,10 @@ const AssetModal = ({
                     )}
                     <div className="text-center">
                       <p className="text-sm font-semibold text-gray-500">
-                        คลิกเพื่ออัปโหลด{" "}
-                        {isImageType ? "ภาพ Asset" : "ไฟล์เสียงประกอบ"}
+                        {getAssetUploadInfo(assetType).title}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {isImageType
-                          ? "แนะนำสัดส่วน 16:9 สำหรับฉากหลัง"
-                          : "รองรับไฟล์รูปแบบ MP3, WAV, OGG"}
+                        {getAssetUploadInfo(assetType).hint}
                       </p>
                     </div>
                   </div>
@@ -474,7 +509,7 @@ const AssetModal = ({
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
-                placeholder="กรอกข้อมูลบันทึกความจำ หรือรายละเอียดสเปกของไฟล์นี้..."
+                placeholder="กรอกข้อมูลบันทึกความจำ หรือรายละเอียดของไฟล์นี้..."
               />
             </div>
           </div>

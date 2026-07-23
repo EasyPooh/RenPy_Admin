@@ -218,10 +218,10 @@ const SceneSection = ({
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-purple-400 text-sm font-sans cursor-pointer h-[38px]"
           >
             <option value="none">(ไม่มีเอฟเฟกต์)</option>
-            <option value="dissolve">dissolve</option>
-            <option value="fade">fade</option>
-            <option value="vpunch">vpunch</option>
-            <option value="hpunch">hpunch</option>
+            <option value="dissolve">dissolve (สลายภาพ)</option>
+            <option value="fade">fade (เฟดภาพ)</option>
+            <option value="vpunch">vpunch (สั่นแนวตั้ง)</option>
+            <option value="hpunch">hpunch (สั่นแนวนอน)</option>
           </select>
         </div>
 
