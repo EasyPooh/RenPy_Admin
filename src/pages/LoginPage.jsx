@@ -19,7 +19,7 @@ const LoginPage = () => {
     });
 
     if (error) {
-      alert(error.message); // แสดง Error ถ้า Login ไม่ผ่าน
+      alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง"); // แสดง Error ถ้า Login ไม่ผ่าน
       setLoading(false);
     } else {
       alert("เข้าสู่ระบบสำเร็จ!");

@@ -171,6 +171,10 @@ const AssetModal = ({
       );
     }
 
+    if (!selectedFile && !previewUrl) {
+      return alert("กรุณาอัปโหลดไฟล์ asset ก่อนทำการบันทึกข้อมูลครับ");
+    }
+
     try {
       setIsSubmitting(true);
       let filePath = selectedAsset?.storage_path || "";

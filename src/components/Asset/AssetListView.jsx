@@ -177,9 +177,9 @@ const AssetListView = ({
                       >
                         {badge.text}
                       </span>
-                      <span className="text-xs text-gray-400 font-medium">
+                      {/* <span className="text-xs text-gray-400 font-medium">
                         {formatFileSize(asset.size_kb || asset.file_size_kb)}
-                      </span>
+                      </span>*/}
                     </div>
                   </div>
 

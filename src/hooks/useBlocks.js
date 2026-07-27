@@ -101,13 +101,16 @@ export const useBlocks = (projectId, chapterId, isDataChanged, setIsDataChanged)
 
   const currentBlocks = allBlocks[chapterId] || [];
 
+  
+
   const handleAddBlock = (type, inheritedData = null) => {
+    const initialContent = type === "dialogue" ? "" : null;
     if (!chapterId) return;
     const newId = crypto.randomUUID();
     let newBlock = {
       id: newId,
       type: type || "default",
-      content: `บล็อกใหม่ที่ #${currentBlocks.length + 1}`,
+      content: initialContent,
       createdAt: new Date().toLocaleTimeString(),
     };
 
