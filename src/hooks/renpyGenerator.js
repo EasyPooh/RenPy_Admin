@@ -96,6 +96,30 @@ export const generateZipFileName = (asset, isAudio) => {
   return cleanForScriptToken(nameWithoutExt, "asset", asset.id) + ext;
 };
 
+// ฟังก์ชันช่วยแปลงข้อมูล Asset เสียงเป็น Relative Path ที่ Ren'Py อ่านได้ (เช่น "audio/door knock.mp3")
+export const getAudioScriptPath = (audioRaw, assets) => {
+  if (!audioRaw || isInvalidValue(audioRaw)) return null;
+  const asset = findAsset(audioRaw, assets);
+
+  let fileName = "";
+  if (asset) {
+    fileName = generateZipFileName(asset, true);
+  } else {
+    fileName = String(audioRaw).trim();
+    // ถ้ายังไม่มีนามสกุลไฟล์ ให้ต่อท้ายด้วย .mp3 เป็นค่าเริ่มต้น
+    if (!/\.[a-zA-Z0-9]+$/.test(fileName)) {
+      fileName += ".mp3";
+    }
+  }
+
+  // เติม prefix audio/ ถ้ายังไม่มี
+  if (!fileName.startsWith("audio/")) {
+    fileName = `audio/${fileName}`;
+  }
+
+  return `"${escapeDialog(fileName)}"`;
+};
+
 // 🎯 ฟังก์ชั่นหลักในการแปลง Data เป็นสคริปต์สคริปต์เขียนไฟล์ .rpy
 // -------------------------------------------------------------
 // 📌 จุดที่ 2: ฟังก์ชันหลัก `compileRenPyScript` (ตัวคอมไพล์เนื้อเรื่องหลัก)
@@ -181,9 +205,10 @@ transform right:
     // 2. จัดการเพลงประกอบเริ่มต้นของ Chapter นี้ (ถ้ามีการกำหนดไว้)
     const initialMusic = chapter.start_music_name || chapter.start_music_asset_id;
     if (initialMusic && !isInvalidValue(initialMusic)) {
-      const musicAsset = findAsset(initialMusic, assets);
-      const musicName = generateScriptAssetName(musicAsset, initialMusic);
-      rpyContent += `    play music ${musicName} fadein 2.0\n`;
+      const audioPath = getAudioScriptPath(initialMusic, assets);
+      if (audioPath) {
+        rpyContent += `    play music ${audioPath} fadein 2.0\n`;
+      }
     }
     
 
@@ -315,21 +340,25 @@ transform right:
         }
       }
       
-      // เคสที่ 3.4: บล็อกควบคุมระบบเสียง (Audio / Music / Sound SFX)
+      //  เคสที่ 3.4: บล็อกควบคุมระบบเสียง (Audio / Music / Sound SFX)
       else if (type === "audio" || type === "music" || type === "sound" || type === "เสียง") {
         const audioAction = String(props.audiocommand || props.command || "play").toLowerCase().trim();
         let audioRaw = block.asset_id || props.selected_asset_id || block.content || props.audio_name || props.music_name || props?.["เลือกไฟล์เสียง"];
         const asset = findAsset(audioRaw, assets);
-        const audioName = generateScriptAssetName(asset, isInvalidValue(audioRaw) ? "audio_placeholder" : audioRaw);
         const audioTypeRaw = props.audiotype || props.audio_type || props?.["ประเภทเสียง"] || (asset ? asset.file_type : "");
-        const isSoundEffect = String(audioTypeRaw).toLowerCase().includes("sound") || String(audioTypeRaw).toLowerCase().includes("sfx") || String(audioTypeRaw).includes("เอฟเฟกต์");
+        const isSoundEffect = String(audioTypeRaw).toLowerCase().includes("sound") || 
+                              String(audioTypeRaw).toLowerCase().includes("sfx") || 
+                              String(audioTypeRaw).includes("เอฟเฟกต์") ||
+                              type === "sound";
         
         if (audioAction === "stop") {
           rpyContent += `    stop ${isSoundEffect ? "sound" : "music"}\n`;
         } else {
-          rpyContent += `    play ${isSoundEffect ? "sound" : "music"} ${audioName}\n`;
+          const audioPath = getAudioScriptPath(audioRaw, assets) || '"audio/audio_placeholder.mp3"';
+          rpyContent += `    play ${isSoundEffect ? "sound" : "music"} ${audioPath}\n`;
         }
       }
+      
       //  เคสที่ 3.5: บล็อกสร้างทางเลือกเนื้อเรื่องแยกย่อย (Choice / Interactive Menu)
       else if (type === "choice" || type === "menu" || type === "options") {
         let options = props.choice || props.options || props.choices || block.options || [];
