@@ -75,83 +75,97 @@ localStorage.removeItem(`draft_deletions_project_${projectId}`);
       }
 
       // 4. บันทึก บล็อกเนื้อเรื่อง/คำสั่ง ทั้งหมดด้วยวิธี Bulk Upsert
-      if (allBlocks) {
-        const blocksToUpsert = [];
+if (allBlocks) {
+  const blocksToUpsert = [];
 
-        for (const [chapterId, blockList] of Object.entries(allBlocks)) {
-          if (!chapterId || chapterId === "mock-initial") continue;
+  // 1. ดึงรายชื่อ Chapter ID ทั้งหมดที่มีอยู่ในระบบจริงๆ ออกมาทำเป็น Set ไว้เช็ค
+  const validChapterIds = new Set(chapters.map(c => c.id));
 
-          for (let index = 0; index < blockList.length; index++) {
-            const b = blockList[index];
-            
-            const characterName = b.character_name || b.character || null;
-            const assetId = b.type === 'dialogue' 
-    ? (b.selected_asset_id || null)
-    : (b.asset_id || b.background || b.audio || b.sprite || null);
-            const contentText = b.type === 'dialogue' ? (b.text !== undefined ? b.text : '') : (b.content || '');
+  for (const [chapterId, blockList] of Object.entries(allBlocks)) {
+    if (!chapterId || chapterId === "mock-initial") continue;
 
-            const extraProperties = {
-              expression: b.expression || null,
-              sprite_tag: b.sprite_tag || null,
-              backgroundEffect: b.backgroundEffect || null,
-              backgroundEffectSpeed: b.backgroundEffectSpeed || null,
-              spritecommand: b.spritecommand || null,
-              spriteposition: b.spriteposition || null,
-              spriteSpeed: b.spriteSpeed || null,
-              audiocommand: b.audiocommand || null,
-              audiotype: b.audiotype || null,
-              choice: b.choice || null,
-              ...(b.properties || {})
-            };
+    // 2. 🛡️ เช็คว่า chapterId นี้มีตัวตนอยู่ใน chapters จริงไหม ถ้าไม่มีให้ข้ามไปเลยเพื่อป้องกัน Error 23503
+    if (!validChapterIds.has(chapterId)) {
+      console.warn(`⚠️ ข้ามการบันทึก blocks ของ chapter_id: [${chapterId}] เนื่องจากไม่พบในรายการ Chapters`);
+      continue;
+    }
 
-            let targetChapterId = b.target_chapter_id || b.target_workspace_id || b.target || b.targetChapterId || null;
+    for (let index = 0; index < blockList.length; index++) {
+      const b = blockList[index];
+      
+      const characterName = b.character_name || b.character || null;
+      const assetId = b.type === 'dialogue' 
+        ? (b.selected_asset_id || null)
+        : (b.asset_id || b.background || b.audio || b.sprite || null);
+      const contentText = b.type === 'dialogue' ? (b.text !== undefined ? b.text : '') : (b.content || '');
 
-            if (typeof targetChapterId === 'string') {
-              targetChapterId = targetChapterId.trim();
-              const lowerValue = targetChapterId.toLowerCase();
-              if (targetChapterId === '' || lowerValue === 'null' || lowerValue === 'undefined' || lowerValue === 'return') {
-                targetChapterId = null;
-              }
-            }
+      const extraProperties = {
+        expression: b.expression || null,
+        sprite_tag: b.sprite_tag || null,
+        backgroundEffect: b.backgroundEffect || null,
+        backgroundEffectSpeed: b.backgroundEffectSpeed || null,
+        spritecommand: b.spritecommand || null,
+        spriteposition: b.spriteposition || null,
+        spriteSpeed: b.spriteSpeed || null,
+        audiocommand: b.audiocommand || null,
+        audiotype: b.audiotype || null,
+        choice: b.choice || null,
+        ...(b.properties || {})
+      };
 
-            if (b.type === 'jump') {
-              const isReturnAction = b.action_type === 'return' || b.jumpType === 'return' || b.properties?.action_type === 'return' || b.properties?.jumpType === 'return';
-              if (isReturnAction) targetChapterId = null;
-            }
+      let targetChapterId = b.target_chapter_id || b.target_workspace_id || b.target || b.targetChapterId || null;
 
-            if (targetChapterId && typeof targetChapterId === 'string' && targetChapterId.length < 30) {
-              targetChapterId = null; 
-            }
-
-            const blockPayload = {
-              id: b.id,
-              chapter_id: chapterId, 
-              type: b.type || 'default',
-              character_name: characterName,
-              content: contentText,
-              asset_id: assetId,
-              sort_order: index, 
-              target_chapter_id: targetChapterId, 
-              properties: extraProperties
-            };
-
-            if (typeof b.id === 'string' && b.id.length > 15) {
-              blockPayload.id = b.id;
-            }
-
-            blocksToUpsert.push(blockPayload);
-          }
-        }
-
-        if (blocksToUpsert.length > 0) {
-          console.log("🚀 กำลังยิงบล็อกเนื้อหาขึ้นฐานข้อมูลแบบกลุ่ม:", blocksToUpsert);
-          const { error: upsertError } = await supabase
-            .from('blocks')
-            .upsert(blocksToUpsert, { onConflict: 'id' });
-
-          if (upsertError) throw upsertError;
+      if (typeof targetChapterId === 'string') {
+        targetChapterId = targetChapterId.trim();
+        const lowerValue = targetChapterId.toLowerCase();
+        if (targetChapterId === '' || lowerValue === 'null' || lowerValue === 'undefined' || lowerValue === 'return') {
+          targetChapterId = null;
         }
       }
+
+      if (b.type === 'jump') {
+        const isReturnAction = b.action_type === 'return' || b.jumpType === 'return' || b.properties?.action_type === 'return' || b.properties?.jumpType === 'return';
+        if (isReturnAction) targetChapterId = null;
+      }
+
+      if (targetChapterId && typeof targetChapterId === 'string' && targetChapterId.length < 30) {
+        targetChapterId = null; 
+      }
+
+      // 🛡️ เช็คเพิ่ม: ถ้า target_chapter_id ไม่อยู่ใน validChapterIds ให้เซ็ตเป็น null ป้องกัน Foreign Key ล้มอีกจุด
+      if (targetChapterId && !validChapterIds.has(targetChapterId)) {
+        targetChapterId = null;
+      }
+
+      const blockPayload = {
+        id: b.id,
+        chapter_id: chapterId, 
+        type: b.type || 'default',
+        character_name: characterName,
+        content: contentText,
+        asset_id: assetId,
+        sort_order: index, 
+        target_chapter_id: targetChapterId, 
+        properties: extraProperties
+      };
+
+      if (typeof b.id === 'string' && b.id.length > 15) {
+        blockPayload.id = b.id;
+      }
+
+      blocksToUpsert.push(blockPayload);
+    }
+  }
+
+  if (blocksToUpsert.length > 0) {
+    console.log("🚀 กำลังยิงบล็อกเนื้อหาขึ้นฐานข้อมูลแบบกลุ่ม:", blocksToUpsert);
+    const { error: upsertError } = await supabase
+      .from('blocks')
+      .upsert(blocksToUpsert, { onConflict: 'id' });
+
+    if (upsertError) throw upsertError;
+  }
+}
 
       setIsDataChanged(false); 
       if (!isSilent) {
