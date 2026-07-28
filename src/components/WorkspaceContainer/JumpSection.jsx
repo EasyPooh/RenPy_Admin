@@ -16,7 +16,10 @@ const JumpSection = ({
   isLast,
   blockNumber,
 }) => {
-  const currentActionType = action_type || "jump";
+  const currentActionType =
+    action_type === "return" || action_type === "end" || !target_chapter_id
+      ? "return"
+      : "jump";
 
   const handleModeChange = (mode) => {
     if (mode === "return") {
