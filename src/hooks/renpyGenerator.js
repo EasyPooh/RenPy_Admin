@@ -163,25 +163,28 @@ transform right:
     rpyContent += `\n`;
   }
 
-  // แปลงเนื้อหาทีละตอน (Chapter Loops) โดย Chapter แรกสุดจะถูกบังคับแปลงชื่อฉลากเป็น `label start:` เสมอตามกฎ Ren'Py
+  // แปลงเนื้อหาทีละตอน (Chapter Loops)
   chapters?.forEach((chapter, index) => {
     let labelName = chapter.label_name || `chapter_${String(chapter.id).replace(/-/g, "_")}`;
     if (index === 0) labelName = "start";
 
     rpyContent += `label ${labelName}:\n`;
 
-    // เซ็ตอัปฉากเริ่มต้นและเพลงประกอบตอนเริ่มเกมใน Chapter แรกสุด
-    
-      if (chapter.start_bg_asset_id || chapter.start_bg_name) {
-        const initialBg = chapter.start_bg_name || chapter.start_bg_asset_id;
-        const asset = findAsset(initialBg, assets);
-        rpyContent += `    scene ${generateScriptAssetName(asset, initialBg || "bg_placeholder")} with dissolve\n`;
-      }
-      if (chapter.start_music_asset_id || chapter.start_music_name) {
-        const initialMusic = chapter.start_music_name || chapter.start_music_asset_id;
-        const asset = findAsset(initialMusic, assets);
-        rpyContent += `    play music ${generateScriptAssetName(asset, initialMusic || "audio_placeholder")} fadein 2.0\n`;
-      }
+    // 1. จัดการภาพพื้นหลังเริ่มต้นของ Chapter นี้ (ถ้ามีการกำหนดไว้)
+    const initialBg = chapter.start_bg_name || chapter.start_bg_asset_id;
+    if (initialBg && !isInvalidValue(initialBg)) {
+      const bgAsset = findAsset(initialBg, assets);
+      const bgName = generateScriptAssetName(bgAsset, initialBg);
+      rpyContent += `    scene ${bgName} with dissolve\n`;
+    }
+
+    // 2. จัดการเพลงประกอบเริ่มต้นของ Chapter นี้ (ถ้ามีการกำหนดไว้)
+    const initialMusic = chapter.start_music_name || chapter.start_music_asset_id;
+    if (initialMusic && !isInvalidValue(initialMusic)) {
+      const musicAsset = findAsset(initialMusic, assets);
+      const musicName = generateScriptAssetName(musicAsset, initialMusic);
+      rpyContent += `    play music ${musicName} fadein 2.0\n`;
+    }
     
 
     // กรองบล็อกเหตุการณ์ที่สังกัดอยู่ในบทนี้มาทำการแยกแกะและสร้างเป็นคำสั่ง
