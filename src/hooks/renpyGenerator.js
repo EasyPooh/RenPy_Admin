@@ -171,7 +171,7 @@ transform right:
     rpyContent += `label ${labelName}:\n`;
 
     // เซ็ตอัปฉากเริ่มต้นและเพลงประกอบตอนเริ่มเกมใน Chapter แรกสุด
-    if (index === 0) {
+    
       if (chapter.start_bg_asset_id || chapter.start_bg_name) {
         const initialBg = chapter.start_bg_name || chapter.start_bg_asset_id;
         const asset = findAsset(initialBg, assets);
@@ -182,7 +182,7 @@ transform right:
         const asset = findAsset(initialMusic, assets);
         rpyContent += `    play music ${generateScriptAssetName(asset, initialMusic || "audio_placeholder")} fadein 2.0\n`;
       }
-    }
+    
 
     // กรองบล็อกเหตุการณ์ที่สังกัดอยู่ในบทนี้มาทำการแยกแกะและสร้างเป็นคำสั่ง
     const chapterBlocks = blocks ? blocks.filter((b) => b.chapter_id === chapter.id) : [];
