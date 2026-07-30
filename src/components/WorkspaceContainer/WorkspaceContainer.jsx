@@ -31,6 +31,7 @@ const WorkspaceContainer = ({
   handleSaveAll,
   isSaving,
   updateConfig,
+  loading,
 }) => {
   const characterList = workspace?.start_characters || [];
 
@@ -56,8 +57,10 @@ const WorkspaceContainer = ({
 
   const returnBlockIndex = blocks.findIndex(
     (b) =>
-      b.type === "jump" &&
-      (b.action_type === "return" || b.jumpType === "return"),
+      (b.type === "jump" || b.type === "route") &&
+      (b.action_type === "return" ||
+        b.target_chapter_id === null ||
+        b.target_chapter_id === "return"),
   );
 
   return (
@@ -305,15 +308,17 @@ const WorkspaceContainer = ({
       </div>
 
       <div className="p-5 w-full flex-none -mt-10">
-        {returnBlockIndex === -1 ? (
-          // สถานะปกติ: แสดง Toolbar ปุ่มกดเพิ่มบล็อก
-          <WorkspaceToolbar onAddBlock={onAddBlock} />
-        ) : (
-          // สถานะติด Return: พ่นแถบแจ้งเตือนสีแดงล็อกการกดเพิ่มเนื้อเรื่องต่อท้าย
-          <div className="text-red-500 font-sans text-sm p-3 bg-red-50 border border-red-200 rounded-xl text-center flex items-center justify-center gap-2 select-none font-bold shadow-sm animate-pulse">
+        {loading ? (
+          <div className="text-center text-gray-400 text-sm p-3 font-sans">
+            กำลังตรวจสอบบล็อก...
+          </div>
+        ) : returnBlockIndex !== -1 ? (
+          <div className="text-red-500 font-sans text-sm p-3 bg-red-50 border border-red-200 rounded-xl text-center flex items-center justify-center gap-2">
             🚨
             ไม่สามารถเพิ่มบล็อกเนื้อเรื่องต่อได้เนื่องจากการสิ้นสุดเนื้อเรื่องด้านบนแล้ว
           </div>
+        ) : (
+          <WorkspaceToolbar onAddBlock={onAddBlock} />
         )}
       </div>
     </div>

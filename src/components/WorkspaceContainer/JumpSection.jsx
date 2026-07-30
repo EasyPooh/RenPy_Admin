@@ -17,16 +17,26 @@ const JumpSection = ({
   blockNumber,
 }) => {
   const currentActionType =
-    action_type === "return" || action_type === "end" || !target_chapter_id
-      ? "return"
-      : "jump";
+    action_type === "jump"
+      ? "jump"
+      : action_type === "return"
+        ? "return"
+        : target_chapter_id
+          ? "jump"
+          : "return";
 
   const handleModeChange = (mode) => {
     if (mode === "return") {
-      handleUpdateBlock(id, "target_chapter_id", null); // 🔄 อัปเดตคอลัมน์ใหม่
       handleUpdateBlock(id, "action_type", "return");
+      handleUpdateBlock(id, "target_chapter_id", null);
     } else {
+      // เมื่อกดเลือก Jump
       handleUpdateBlock(id, "action_type", "jump");
+
+      // ถ้าเดิมไม่มี target_chapter_id ให้ใส่ Chapter แรกในลิสต์เป็นค่าเริ่มต้นทันที
+      if (!target_chapter_id && chapterList && chapterList.length > 0) {
+        handleUpdateBlock(id, "target_chapter_id", chapterList[0].id);
+      }
     }
   };
 

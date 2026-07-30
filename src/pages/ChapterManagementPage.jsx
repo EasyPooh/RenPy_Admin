@@ -80,6 +80,8 @@ const ChapterContent = ({ projectId: id }) => {
     loading: blocksLoading,
   } = useBlocks(id, activeChapterId, isDataChanged, setIsDataChanged);
 
+  const isWorkspaceLoading = blocksLoading || configLoading || isLoading;
+
   // วางต่อท้ายกลุ่ม useChapters, useBlocks, useChapterConfig ใน ChapterManagementPage.jsx
 
   /*// 🛡️ 1. ดักจับตอนผู้ใช้จะ "ปิดแท็บเบราว์เซอร์" หรือ "กด รีเฟรชหน้าจอ (F5)"
@@ -274,7 +276,7 @@ const ChapterContent = ({ projectId: id }) => {
 
         <WorkspaceContainer
           currentChapter={Chapters.find((s) => s.id === activeChapterId)}
-          blocks={blocks} // 🟢 4. [FIXED BUG] เดิมส่ง `blocks` ที่เป็น Object รวมทุกบทไป ทำให้กระดานพัง ต้องเปลี่ยนเป็น `currentBlocks` ที่คัดกรองเฉพาะบทปัจจุบันแล้ว
+          blocks={blocks}
           onAddBlock={handleAddBlock}
           handleUpdateBlock={handleUpdateBlock}
           handleDeleteBlock={handleDeleteBlock}
@@ -291,7 +293,7 @@ const ChapterContent = ({ projectId: id }) => {
           handleSaveAll={handleSaveAll}
           isSaving={isSaving}
           updateConfig={updateConfig}
-          loading={configLoading}
+          loading={blocksLoading || configLoading}
         />
       </div>
     </div>
